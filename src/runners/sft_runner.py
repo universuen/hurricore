@@ -5,10 +5,11 @@ import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import Dataset, DataLoader
+from torch.cuda import memory_allocated
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 
-class SFTTrainer:
+class SFTRunner:
     def __init__(
         self, 
         model: PreTrainedModel,
@@ -26,10 +27,11 @@ class SFTTrainer:
         self.logger = logger
         self.env = dict()
     
-    def run(self, **training_configs: dict) -> None:
-        epochs = training_configs.get('epochs', 3)
-        batch_size = training_configs.get('batch_size', 32)
+    def train(self, **training_configs: dict) -> None:
+        epochs = training_configs.get('epochs', 1)
+        batch_size = training_configs.get('batch_size', 1)
         max_len = training_configs.get('max_len', 512)
+        gradient_accumulation_steps = training_configs.get('gradient_accumulation_steps', 1)
         data_loader = DataLoader(
             dataset=self.dataset, 
             batch_size=batch_size, 
@@ -40,22 +42,40 @@ class SFTTrainer:
         
         self.env['max_len'] = max_len
 
+        if hasattr(self.model, 'gradient_checkpointing_enable'):
+            self.env['use_cache'] = False
+            self.model.gradient_checkpointing_enable()
+            self._print('Gradient Checkpointing enabled')
+
+        self.optimizer.zero_grad()
         for epoch in range(1, epochs + 1):
             losses = []
-            self._print(f'Epoch {epoch} started', 'info')
-            for batch in data_loader:
+            self._print(f'Epoch {epoch} started')
+
+            for batch_idx, batch in enumerate(data_loader):
                 loss = self.calculate_loss(batch)
+                loss = loss / gradient_accumulation_steps 
                 loss.backward()
-                self.optimizer.step()
-                self._print(f'Current loss: {loss.item(): .5f}')
-                losses.append(loss.item())
+                
+                if (batch_idx + 1) % gradient_accumulation_steps == 0 \
+                or (batch_idx + 1) == len(data_loader):
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+                    loss_value = loss.item() * gradient_accumulation_steps
+                    self._print(f'Current loss: {loss_value: .5f}')
+                    if self.model.device != 'cpu':
+                        allocated_memory = memory_allocated(self.model.device) / 1024 ** 3
+                        self._print(f'Allocated memory: {allocated_memory}')
+                    losses.append(loss_value) 
+
             if self.scheduler is not None:
                 self.scheduler.step()
-            self._print(f'Epoch {epoch} finished with average loss: {sum(losses) / len(losses)}', 'info')
+
+            avg_loss = sum(losses) / len(losses)
+            self._print(f'Epoch {epoch} finished with average loss: {avg_loss}')
     
     def calculate_loss(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
         self.model.train()
-        self.optimizer.zero_grad()
 
         input_ids, attention_masks, labels = batch
         input_ids = input_ids.to(self.model.device)
@@ -66,11 +86,13 @@ class SFTTrainer:
             input_ids=input_ids,
             attention_mask=attention_masks,
             labels=labels,
+            use_cache=self.env.get('use_cache', True),
         )[0]
+
         return loss
             
 
-    def _print(self, msg: str, level: str = None):
+    def _print(self, msg: str, level: str = 'info'):
         if self.logger is None:
             print(msg)
         else:
@@ -94,9 +116,11 @@ class SFTTrainer:
         ]
         outputs = self.tokenizer(
             text=chats_strings,
-            padding=True,
+            padding='max_length',
             add_special_tokens=False,
             return_tensors='pt',
+            max_length=self.env['max_len'],
+            truncation=True,
         )
         input_ids = outputs.input_ids
         attention_masks = outputs.attention_mask
@@ -108,6 +132,8 @@ class SFTTrainer:
                 ],
                 tokenize=True,
                 add_generation_prompt=True,
+                max_length=self.env['max_len'],
+                truncation=True,
             )
             for question, _ in batch
         ]
