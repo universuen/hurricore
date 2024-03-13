@@ -1,0 +1,15 @@
+# IDE configurations
+/.vscode/
+/.idea/
+
+# cache
+__pycache__/
+
+# virtual environment
+/venv/
+
+# space-intensive data
+/data/
+
+# general test file
+/tests/playground.py
