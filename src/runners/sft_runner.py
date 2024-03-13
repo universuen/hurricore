@@ -5,7 +5,7 @@ import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import Dataset, DataLoader
-from torch.cuda import memory_allocated
+from torch.cuda import memory_reserved
 from transformers import PreTrainedModel, PreTrainedTokenizer
 
 
@@ -32,6 +32,8 @@ class SFTRunner:
         batch_size = training_configs.get('batch_size', 1)
         max_len = training_configs.get('max_len', 512)
         gradient_accumulation_steps = training_configs.get('gradient_accumulation_steps', 1)
+        enable_gradient_checkpointing = training_configs.get('enable_gradient_checkpointing', True)
+        test_prompt = training_configs.get('test_prompt', None)
         data_loader = DataLoader(
             dataset=self.dataset, 
             batch_size=batch_size, 
@@ -42,12 +44,14 @@ class SFTRunner:
         
         self.env['max_len'] = max_len
 
-        if hasattr(self.model, 'gradient_checkpointing_enable'):
+        if hasattr(self.model, 'gradient_checkpointing_enable') \
+        and enable_gradient_checkpointing:
             self.env['use_cache'] = False
             self.model.gradient_checkpointing_enable()
             self._print('Gradient Checkpointing enabled')
 
         self.optimizer.zero_grad()
+
         for epoch in range(1, epochs + 1):
             losses = []
             self._print(f'Epoch {epoch} started')
@@ -56,17 +60,24 @@ class SFTRunner:
                 loss = self.calculate_loss(batch)
                 loss = loss / gradient_accumulation_steps 
                 loss.backward()
-                
+
                 if (batch_idx + 1) % gradient_accumulation_steps == 0 \
                 or (batch_idx + 1) == len(data_loader):
+
                     self.optimizer.step()
                     self.optimizer.zero_grad()
+
                     loss_value = loss.item() * gradient_accumulation_steps
                     self._print(f'Current loss: {loss_value: .5f}')
-                    if self.model.device != 'cpu':
-                        allocated_memory = memory_allocated(self.model.device) / 1024 ** 3
-                        self._print(f'Allocated memory: {allocated_memory}')
                     losses.append(loss_value) 
+
+                    if self.model.device != 'cpu':
+                        memory_used = memory_reserved(self.model.device) / 1024 ** 3
+                        self._print(f'Memory used: {memory_used:.2f}GB')
+                    
+                    if test_prompt is not None:
+                        self._print(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
+                    
 
             if self.scheduler is not None:
                 self.scheduler.step()
@@ -74,7 +85,10 @@ class SFTRunner:
             avg_loss = sum(losses) / len(losses)
             self._print(f'Epoch {epoch} finished with average loss: {avg_loss}')
     
-    def calculate_loss(self, batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
+    def calculate_loss(
+        self, 
+        batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    ) -> torch.Tensor:
         self.model.train()
 
         input_ids, attention_masks, labels = batch
@@ -90,7 +104,6 @@ class SFTRunner:
         )[0]
 
         return loss
-            
 
     def _print(self, msg: str, level: str = 'info'):
         if self.logger is None:
@@ -98,9 +111,18 @@ class SFTRunner:
         else:
             getattr(self.logger, level)(msg)
 
+    @torch.no_grad()
     def test(self, prompt: str) -> str:
-        input_ids = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-        outputs = self.model.generate(**input_ids, max_new_tokens=100)
+        self.model.eval()
+        input_ids = self.tokenizer.apply_chat_template(
+            conversation=[
+                {"role": "user", "content": f"{prompt}"}
+            ],
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors='pt'
+        ).to(self.model.device)
+        outputs = self.model.generate(input_ids, max_new_tokens=100)
         return self.tokenizer.decode(outputs[0], skip_special_tokens=True)
     
     def collate_fn(self, batch: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -116,7 +138,7 @@ class SFTRunner:
         ]
         outputs = self.tokenizer(
             text=chats_strings,
-            padding='max_length',
+            padding='longest',
             add_special_tokens=False,
             return_tensors='pt',
             max_length=self.env['max_len'],
@@ -124,7 +146,6 @@ class SFTRunner:
         )
         input_ids = outputs.input_ids
         attention_masks = outputs.attention_mask
-
         formatted_questions_ids = [
             self.tokenizer.apply_chat_template(
                 conversation=[
@@ -132,14 +153,18 @@ class SFTRunner:
                 ],
                 tokenize=True,
                 add_generation_prompt=True,
-                max_length=self.env['max_len'],
+                max_length=input_ids.shape[1],
                 truncation=True,
+                padding='max_length',
+                return_tensors='pt',
             )
             for question, _ in batch
         ]
+        # FIXME: Wrong when left padding
+        formatted_questions_ids = torch.cat(formatted_questions_ids, dim=0)
         labels = input_ids.clone()
-        for idx, ids in enumerate(formatted_questions_ids):
-            labels[idx, :len(ids)] = -100
+        assert formatted_questions_ids.shape == labels.shape
+        labels[formatted_questions_ids!=self.tokenizer.pad_token_id] = -100
         return input_ids, attention_masks, labels
         
         
