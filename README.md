@@ -1,5 +1,5 @@
-# SFT-LLM
-Performing **S**upervised **F**ine-**T**uning on **L**arge **L**anguage **M**odels.
+# Hurricane
+Easy-to-use model training framework.
 
 ## Environment
 
