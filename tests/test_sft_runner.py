@@ -13,7 +13,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
     model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
 
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    tokenizer.add_special_tokens({'pad_token': '<pad>'})
     model.resize_token_embeddings(len(tokenizer))
 
     dataset = ZhihuQADataset()

@@ -1,4 +1,5 @@
 import os
+import time
 from logging import Logger
 
 import torch
@@ -7,8 +8,9 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import Dataset, DataLoader
 from transformers import PreTrainedModel, PreTrainedTokenizer
 from accelerate import Accelerator
-from tqdm import tqdm
+from torch.cuda import memory_cached
 
+from src.utils import get_list_mean
 
 class SFTRunner:
     def __init__(
@@ -32,6 +34,30 @@ class SFTRunner:
         self.logger = logger
         self.env = dict()
     
+    def _should_record(self):
+        return self.accelerator.is_main_process \
+                and (
+                    self.env['batch_idx'] % 10 == 0 \
+                    or self.env['batch_idx'] == self.env['num_batches']
+                )
+    
+    def _should_test(self):
+        return self.accelerator.is_main_process and self.env['test_prompt'] is not None
+
+    def _record(self):
+        progress = (self.env['batch_idx'] / self.env['num_batches'])
+        elapsed_time = time.time() - self.env['start_time']
+        remaining_time = (elapsed_time / self.env['batch_idx']) * (self.env['num_batches'] - self.env['batch_idx'])
+        formatted_remaining_time = time.strftime('%H:%M:%S', time.gmtime(remaining_time))
+        self._print(
+            f"Epoch: {self.env['epoch']}/{self.env['epochs']} | "
+            f"Step: {self.env['batch_idx']}/{self.env['num_batches']} | "
+            f"Loss: {self.env['step_loss']:.5f} | "
+            f"Progress: {progress:.2%} | "
+            f"Time left: {formatted_remaining_time} | "
+            f"Memory cached: {memory_cached() / 1024 ** 3:.2f}GB"
+        )
+
     def train(
         self, 
         epochs = 1,
@@ -39,6 +65,7 @@ class SFTRunner:
         max_len = 512,
         test_prompt: str = None,
     ) -> None:
+        ### TODO: data_loader should be passed to init by user
         data_loader = DataLoader(
             dataset=self.dataset, 
             batch_size=batch_size, 
@@ -47,35 +74,44 @@ class SFTRunner:
             collate_fn=self.collate_fn,
         )
         data_loader = self.accelerator.prepare(data_loader)
+
+        self.env['test_prompt'] = test_prompt
+        self.env['num_batches'] = len(data_loader)
+        self.env['epochs'] = epochs
+        ### TODO: Decouple max_len and collate_fn
         self.env['max_len'] = max_len
 
         self.optimizer.zero_grad()
 
         for epoch in range(1, epochs + 1):
-            batch_losses = []
+
+            self.env['epoch'] = epoch
+            self.env['losses_per_batch'] = []
             self._print(f'Epoch {epoch} started')
+            self.env['start_time'] = time.time()
 
-            for batch in tqdm(data_loader, desc="Training progress"):
+            for batch_idx, batch in enumerate(data_loader, start=1):
+
+                self.env['batch_idx'] = batch_idx
                 loss = self.compute_loss(batch)
-                self.accelerator.backward(loss)
-
-                self.optimizer.step()
                 self.optimizer.zero_grad()
-
-                device_losses = self.accelerator.gather(loss).detach()
-                avg_loss = device_losses.mean().item()
+                self.accelerator.backward(loss)
+                self.optimizer.step()
+                step_loss = self.accelerator.gather(loss).detach().mean().item()
 
                 if self.accelerator.is_main_process:
-                    tqdm.write(f'Current loss: {avg_loss: .5f}')
-                    batch_losses.append(avg_loss)
-
-                    if test_prompt is not None:
-                        tqdm.write(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
+                    self.env['losses_per_batch'].append(step_loss)
+                    self.env['step_loss'] = step_loss
+                
+                if self._should_record():
+                    self._record()
+                if self._should_test():
+                    self._print(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
                     
             if self.scheduler is not None:
                 self.scheduler.step()
 
-            avg_loss = sum(batch_losses) / len(batch_losses)
+            avg_loss = get_list_mean(self.env['losses_per_batch'])
             self._print(f'Epoch {epoch} finished with average loss: {avg_loss}')
     
     def compute_loss(
@@ -95,12 +131,13 @@ class SFTRunner:
 
         return loss
 
-    def _print(self, msg: str, level: str = 'info'):
+    def _print(self, msg: str, level: str = 'info') -> None:
+        if not self.accelerator.is_main_process:
+            return
         if self.logger is None:
-            self.accelerator.print(msg)
+            print(msg)
         else:
-            if self.accelerator.is_main_process:
-                getattr(self.logger, level)(msg)
+            getattr(self.logger, level)(msg)
 
     @torch.no_grad()
     def test(self, prompt: str) -> str:
