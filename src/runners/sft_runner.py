@@ -153,19 +153,32 @@ class SFTRunner:
                 ],
                 tokenize=True,
                 add_generation_prompt=True,
-                max_length=input_ids.shape[1],
-                truncation=True,
-                padding='max_length',
                 return_tensors='pt',
             )
             for question, _ in batch
         ]
-        # FIXME: Wrong when left padding
-        formatted_questions_ids = torch.cat(formatted_questions_ids, dim=0)
         labels = input_ids.clone()
-        assert formatted_questions_ids.shape == labels.shape
-        labels[formatted_questions_ids!=self.tokenizer.pad_token_id] = -100
+        for i, (label, question_id) in enumerate(zip(labels, formatted_questions_ids)):
+            question_id = question_id.squeeze()
+            question_start_idx_in_label = self._find_start_index(label, question_id)
+            if question_start_idx_in_label == -1:
+                self._print(
+                    f'Failed to match a question in a lable!\n'
+                    f'question_text:{batch[i][0]}\n'
+                    f'question_id:{question_id}\n'
+                    f'chat_string:{chats_strings[i]}\n'
+                    f'chat_label:{label}\n'
+                    f'Skipped!'
+                )
+                continue
+            question_end_idx_in_label = question_start_idx_in_label + len(question_id)
+            labels[i][question_start_idx_in_label:question_end_idx_in_label] = -100
         return input_ids, attention_masks, labels
-        
+    
+    def _find_start_index(self, a: torch.Tensor, b: torch.Tensor) -> int:
+        for i in range(len(a) - len(b) + 1):
+            if torch.all(a[i:i + len(b)] == b):
+                return i
+        return -1
         
 
