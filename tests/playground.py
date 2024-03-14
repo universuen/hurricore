@@ -1,29 +1,30 @@
-import context
-
-
-from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaForCausalLM, Trainer
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from datasets import load_dataset
 from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
-# model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", device_map='auto')
+dataset = load_dataset("wangrui6/Zhihu-KOL", split="train")
 
-tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-chats_strings = [
-            tokenizer.apply_chat_template(
-                conversation=[
-                    {"role": "user", "content": f"{question}"},
-                    {"role": "assistant", "content": f"{answer}"},
-                ],
-                tokenize=False
-            )
-            for question, answer in [
-                ('Hello', "Thank you"),
-                ('Hello Hello', "Thank you Thank you"),
-                ('Wow', 'Fantastic'),
-            ]
-]
-outputs = tokenizer(
-            text=chats_strings,
-            padding=True
+model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
+tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+
+def formatting_prompts_func(example):
+    output_texts = []
+    for i in range(len(example['INSTRUCTION'])):
+        text = f"### Question: {example['INSTRUCTION'][i]}\n ### Answer: {example['RESPONSE'][i]}"
+        output_texts.append(text)
+    return output_texts
+
+response_template = " ### Answer:"
+collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
+
+trainer = SFTTrainer(
+    model,
+    args=TrainingArguments(per_gpu_train_batch_size=1, output_dir='/opt/tiger/haggs/'),
+    train_dataset=dataset,
+    formatting_func=formatting_prompts_func,
+    data_collator=collator,
+    max_seq_length=512,
 )
-pass
+
+trainer.train()
+

@@ -6,34 +6,33 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from src.runners.sft_runner import SFTRunner
 from src.datasets.zhihu_qa_dataset import ZhihuQADataset
 from src.logger import Logger
+from src.utils import launch_for_parallel_training
 
 
-runner = SFTRunner(
-    model=None,
-    tokenizer=None,
-    dataset=None,
-    optimizer=None,
-    scheduler=None,
-    logger=None,
-)
+def main():
+    tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+    model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
 
-runner._print('Hello from print')
-runner.logger = Logger('test')
-runner._print('Hello from logger.info', 'info')
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    model.resize_token_embeddings(len(tokenizer))
 
-tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b-it")
-tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-runner.tokenizer = tokenizer
+    dataset = ZhihuQADataset()
+    optimizer = torch.optim.AdamW(model.parameters(), 1e-4)
+    scheduler = torch.optim.lr_scheduler.LinearLR(optimizer)
 
-runner.model = AutoModelForCausalLM.from_pretrained("google/gemma-2b-it", device_map='auto')
-runner.model.resize_token_embeddings(len(tokenizer))
-runner.dataset = ZhihuQADataset()
-runner.optimizer = torch.optim.AdamW(runner.model.parameters(), 1e-4)
-runner.scheduler = torch.optim.lr_scheduler.LinearLR(runner.optimizer)
+    runner = SFTRunner(
+        model=model,
+        tokenizer=tokenizer,
+        dataset=dataset,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        logger=None,
+    )
 
-runner.train(
-    batch_size=4,
-    gradient_accumulation_steps=32, 
-    max_len=512,
-    test_prompt='如何看待明天下雨？'
-)
+    runner._print('Hello from print')
+    runner.logger = Logger('test')
+    runner._print('Hello from logger.info', 'info')
+
+    runner.train()
+
+launch_for_parallel_training(main, num_processes=4, use_port='8000')

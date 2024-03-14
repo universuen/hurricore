@@ -5,8 +5,8 @@ import torch
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import Dataset, DataLoader
-from torch.cuda import memory_reserved
 from transformers import PreTrainedModel, PreTrainedTokenizer
+from accelerate import Accelerator
 
 
 class SFTRunner:
@@ -19,6 +19,10 @@ class SFTRunner:
         scheduler: LRScheduler = None,
         logger: Logger = None,
     ) -> None:
+
+        self.accelerator = Accelerator(split_batches=True)
+        model, optimizer, scheduler = self.accelerator.prepare(model, optimizer, scheduler)
+
         self.model = model
         self.tokenizer = tokenizer
         self.dataset = dataset
@@ -27,13 +31,13 @@ class SFTRunner:
         self.logger = logger
         self.env = dict()
     
-    def train(self, **training_configs: dict) -> None:
-        epochs = training_configs.get('epochs', 1)
-        batch_size = training_configs.get('batch_size', 1)
-        max_len = training_configs.get('max_len', 512)
-        gradient_accumulation_steps = training_configs.get('gradient_accumulation_steps', 1)
-        enable_gradient_checkpointing = training_configs.get('enable_gradient_checkpointing', True)
-        test_prompt = training_configs.get('test_prompt', None)
+    def train(
+        self, 
+        epochs = 1,
+        batch_size = 8,
+        max_len = 512,
+        test_prompt: str = None,
+    ) -> None:
         data_loader = DataLoader(
             dataset=self.dataset, 
             batch_size=batch_size, 
@@ -41,14 +45,8 @@ class SFTRunner:
             num_workers=os.cpu_count(),
             collate_fn=self.collate_fn,
         )
-        
+        data_loader = self.accelerator.prepare(data_loader)
         self.env['max_len'] = max_len
-
-        if hasattr(self.model, 'gradient_checkpointing_enable') \
-        and enable_gradient_checkpointing:
-            self.env['use_cache'] = False
-            self.model.gradient_checkpointing_enable()
-            self._print('Gradient Checkpointing enabled')
 
         self.optimizer.zero_grad()
 
@@ -56,27 +54,18 @@ class SFTRunner:
             losses = []
             self._print(f'Epoch {epoch} started')
 
-            for batch_idx, batch in enumerate(data_loader):
-                loss = self.calculate_loss(batch)
-                loss = loss / gradient_accumulation_steps 
-                loss.backward()
+            for batch in data_loader:
+                loss = self.compute_loss(batch)
+                self.accelerator.backward(loss)
 
-                if (batch_idx + 1) % gradient_accumulation_steps == 0 \
-                or (batch_idx + 1) == len(data_loader):
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
-                    self.optimizer.step()
-                    self.optimizer.zero_grad()
+                self._print(f'Current loss: {loss.item(): .5f}')
+                losses.append(loss.item()) 
 
-                    loss_value = loss.item() * gradient_accumulation_steps
-                    self._print(f'Current loss: {loss_value: .5f}')
-                    losses.append(loss_value) 
-
-                    if self.model.device != 'cpu':
-                        memory_used = memory_reserved(self.model.device) / 1024 ** 3
-                        self._print(f'Memory used: {memory_used:.2f}GB')
-                    
-                    if test_prompt is not None:
-                        self._print(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
+                if test_prompt is not None:
+                    self._print(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
                     
 
             if self.scheduler is not None:
@@ -85,16 +74,13 @@ class SFTRunner:
             avg_loss = sum(losses) / len(losses)
             self._print(f'Epoch {epoch} finished with average loss: {avg_loss}')
     
-    def calculate_loss(
+    def compute_loss(
         self, 
         batch: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
     ) -> torch.Tensor:
         self.model.train()
 
         input_ids, attention_masks, labels = batch
-        input_ids = input_ids.to(self.model.device)
-        attention_masks = attention_masks.to(self.model.device)
-        labels = labels.to(self.model.device)
 
         loss = self.model(
             input_ids=input_ids,
@@ -107,9 +93,10 @@ class SFTRunner:
 
     def _print(self, msg: str, level: str = 'info'):
         if self.logger is None:
-            print(msg)
+            self.accelerator.print(msg)
         else:
-            getattr(self.logger, level)(msg)
+            if self.accelerator.is_main_process:
+                getattr(self.logger, level)(msg)
 
     @torch.no_grad()
     def test(self, prompt: str) -> str:
@@ -181,4 +168,3 @@ class SFTRunner:
                 return i
         return -1
         
-
