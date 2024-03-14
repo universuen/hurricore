@@ -33,6 +33,6 @@ def main():
     runner.logger = Logger('test')
     runner._print('Hello from logger.info', 'info')
 
-    runner.train()
+    runner.train(epochs=1000, batch_size=32)
 
 launch_for_parallel_training(main, num_processes=4, use_port='8000')

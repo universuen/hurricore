@@ -19,7 +19,7 @@ collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenize
 
 trainer = SFTTrainer(
     model,
-    args=TrainingArguments(per_gpu_train_batch_size=1, output_dir='/opt/tiger/haggs/'),
+    args=TrainingArguments(per_gpu_train_batch_size=8, output_dir='/opt/tiger/haggs/'),
     train_dataset=dataset,
     formatting_func=formatting_prompts_func,
     data_collator=collator,

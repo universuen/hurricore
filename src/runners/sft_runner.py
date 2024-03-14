@@ -7,6 +7,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import Dataset, DataLoader
 from transformers import PreTrainedModel, PreTrainedTokenizer
 from accelerate import Accelerator
+from tqdm import tqdm
 
 
 class SFTRunner:
@@ -51,27 +52,30 @@ class SFTRunner:
         self.optimizer.zero_grad()
 
         for epoch in range(1, epochs + 1):
-            losses = []
+            batch_losses = []
             self._print(f'Epoch {epoch} started')
 
-            for batch in data_loader:
+            for batch in tqdm(data_loader, desc="Training progress"):
                 loss = self.compute_loss(batch)
                 self.accelerator.backward(loss)
 
                 self.optimizer.step()
                 self.optimizer.zero_grad()
 
-                self._print(f'Current loss: {loss.item(): .5f}')
-                losses.append(loss.item()) 
+                device_losses = self.accelerator.gather(loss).detach()
+                avg_loss = device_losses.mean().item()
 
-                if test_prompt is not None:
-                    self._print(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
+                if self.accelerator.is_main_process:
+                    tqdm.write(f'Current loss: {avg_loss: .5f}')
+                    batch_losses.append(avg_loss)
+
+                    if test_prompt is not None:
+                        tqdm.write(f'Test prompt: {test_prompt}. Result: {self.test(test_prompt)}')
                     
-
             if self.scheduler is not None:
                 self.scheduler.step()
 
-            avg_loss = sum(losses) / len(losses)
+            avg_loss = sum(batch_losses) / len(batch_losses)
             self._print(f'Epoch {epoch} finished with average loss: {avg_loss}')
     
     def compute_loss(
