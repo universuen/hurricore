@@ -27,8 +27,10 @@ class AcceleratedTrainer(Trainer):
         self.hooks = [LoggerHookWithAccelerator(logger)]
 
     def training_step(self) -> torch.Tensor:
-        loss = self.compute_loss()
-        self.optimizer.zero_grad()
-        self.accelerator.backward(loss)
-        self.optimizer.step()
-        return loss
+        with self.accelerator.accumulate(self.model):
+            with self.accelerator.autocast():
+                loss = self.compute_loss()
+            self.optimizer.zero_grad()
+            self.accelerator.backward(loss)
+            self.optimizer.step()
+            return loss

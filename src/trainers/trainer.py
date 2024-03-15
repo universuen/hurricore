@@ -17,9 +17,6 @@ class Trainer:
         optimizer: Optimizer,
     ) -> None:
 
-        self.accelerator = Accelerator(split_batches=True)
-        model, optimizer, data_loader = self.accelerator.prepare(model, optimizer, data_loader)
-
         self.model = model
         self.data_loader = data_loader
         self.optimizer = optimizer

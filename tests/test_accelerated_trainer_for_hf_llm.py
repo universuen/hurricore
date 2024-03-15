@@ -16,11 +16,13 @@ from configs import LoggerConfig
 def main():
     tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
     model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
+    accelerator = Accelerator(mixed_precision='fp16', gradient_accumulation_steps=1)
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
     model.resize_token_embeddings(len(tokenizer))
 
-    dataset = ZhihuQADataset()
+    with accelerator.main_process_first():
+        dataset = ZhihuQADataset()
     data_loader = DataLoader(
         dataset=dataset,
         batch_size=32,
@@ -31,7 +33,7 @@ def main():
     )
     optimizer = torch.optim.AdamW(model.parameters(), 1e-4)
     logger = Logger('test', **LoggerConfig().to_dict())
-    accelerator = Accelerator()
+
     trainer = AcceleratedTrainerForHFLLM(model, data_loader, optimizer, logger, accelerator)
     trainer.run(epochs=1000)
 
