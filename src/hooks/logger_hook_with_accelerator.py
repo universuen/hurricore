@@ -1,5 +1,5 @@
-from logging import Logger
 import time
+from logging import Logger
 
 from torch.cuda import memory_cached
 
@@ -46,6 +46,9 @@ class LoggerHookWithAccelerator(LoggerHook):
                     f"Time left: {formatted_remaining_time} | "
                     f"Memory cached: {memory_cached() / 1024 ** 3:.2f}GB"
                 )
+                if hasattr(trainer.ctx, 'peek_results'):
+                    for q, a in trainer.ctx.peek_results:
+                        self.logger.info(f'Q:{q} A:{a}')
 
     def epoch_end(self, trainer: Trainer) -> None:
         if trainer.accelerator.is_main_process:

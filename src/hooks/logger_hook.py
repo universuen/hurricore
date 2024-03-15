@@ -1,5 +1,5 @@
-from logging import Logger
 import time
+from logging import Logger
 
 from torch.cuda import memory_cached
 

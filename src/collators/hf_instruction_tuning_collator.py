@@ -3,6 +3,8 @@ from logging import Logger
 import torch
 from transformers import PreTrainedTokenizer
 
+from src.utils import find_start_and_end_index
+
 
 class HFITCollator:
     def __init__(
@@ -54,7 +56,7 @@ class HFITCollator:
         labels = input_ids.clone()
         for i, (label, question_id) in enumerate(zip(labels, formatted_questions_ids)):
             question_id = question_id.squeeze()
-            start_idx, end_idx = self._find_start_and_end_index(label, question_id)
+            start_idx, end_idx = find_start_and_end_index(label, question_id)
             if start_idx == -1:
                 print(
                     f'Failed to match a question in a label!\n'
@@ -68,10 +70,3 @@ class HFITCollator:
             labels[i][start_idx:end_idx] = -100
 
         return input_ids, attention_masks, labels
-
-    @staticmethod
-    def _find_start_and_end_index(a: torch.Tensor, b: torch.Tensor) -> int:
-        for i in range(len(a) - len(b) + 1):
-            if torch.all(a[i:i + len(b)] == b):
-                return i, i + len(b)
-        return -1, -1
