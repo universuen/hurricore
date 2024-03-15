@@ -19,7 +19,7 @@ class LoggerHookWithAccelerator(LoggerHook):
             self.logger.info(
                 f"Training started with the following hyper parameters:\n"
                 f"\tEpochs: {self.epochs}\n"
-                f"\tTotal batch size {trainer.data_loader.total_batch_size}\n"
+                f"\tBatch size {trainer.data_loader.total_batch_size}\n"
                 f"\tLearning rate: {trainer.optimizer.defaults['lr']}"
             )
     
