@@ -1,4 +1,4 @@
-import context
+import path_setup
 
 from src.logger import Logger
 

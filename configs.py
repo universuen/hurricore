@@ -2,12 +2,21 @@ from __future__ import annotations
 
 import torch
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from pathlib import Path
 import logging
 
+def config_class(cls):
+    cls = dataclass(cls)
+    
+    def to_dict(self) -> dict:   
+        return asdict(self)
 
-@dataclass
+    setattr(cls, "to_dict", to_dict)
+    return cls
+
+
+@config_class
 class PathConfig:
     project: Path = Path(__file__).absolute().parent
     src: Path = project / 'src'
@@ -21,13 +30,13 @@ class PathConfig:
             path.mkdir(parents=True, exist_ok=True)
 
 
-@dataclass
+@config_class
 class LoggerConfig:
     level: int | str = logging.INFO
-    path: Path = PathConfig().logs
+    logs_dir: Path = PathConfig().logs
 
 
-@dataclass
+@config_class
 class OtherConfig:
     device: str = 'default'
 

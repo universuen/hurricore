@@ -1,30 +1,25 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
-from datasets import load_dataset
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
+from dataclasses import dataclass, fields
+from typing import Any
 
-dataset = load_dataset("wangrui6/Zhihu-KOL", split="train")
+def my_dataclass(cls):
+    # Apply the dataclass decorator to the class
+    cls = dataclass(cls)
+    
+    def to_dict(self) -> dict:
+        """Converts the dataclass instance to a dictionary."""
+        return {field.name: getattr(self, field.name) for field in fields(self)}
+    
+    # Add the to_dict method to the class
+    setattr(cls, "to_dict", to_dict)
+    
+    return cls
 
-model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
-tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+# Example usage
+@my_dataclass
+class MyClass:
+    name: str
+    value: int
 
-def formatting_prompts_func(example):
-    output_texts = []
-    for i in range(len(example['INSTRUCTION'])):
-        text = f"### Question: {example['INSTRUCTION'][i]}\n ### Answer: {example['RESPONSE'][i]}"
-        output_texts.append(text)
-    return output_texts
-
-response_template = " ### Answer:"
-collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
-
-trainer = SFTTrainer(
-    model,
-    args=TrainingArguments(per_gpu_train_batch_size=8, output_dir='/opt/tiger/haggs/'),
-    train_dataset=dataset,
-    formatting_func=formatting_prompts_func,
-    data_collator=collator,
-    max_seq_length=512,
-)
-
-trainer.train()
-
+# Testing the decorated class
+instance = MyClass(name="example", value=42)
+print(instance.to_dict())  # Should print: {'name': 'example', 'value': 42}

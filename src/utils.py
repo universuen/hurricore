@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from types import MethodType, FunctionType
-
 from accelerate import notebook_launcher
 
 
