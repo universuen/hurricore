@@ -16,7 +16,11 @@ from configs import LoggerConfig
 def main():
     tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
     model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
-    accelerator = Accelerator(mixed_precision='fp16', gradient_accumulation_steps=1)
+    accelerator = Accelerator(
+        # mixed_precision='fp16', 
+        gradient_accumulation_steps=4,
+        # split_batches=True,
+    )
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
     model.resize_token_embeddings(len(tokenizer))
@@ -25,7 +29,7 @@ def main():
         dataset = ZhihuQADataset()
     data_loader = DataLoader(
         dataset=dataset,
-        batch_size=32,
+        batch_size=8,
         collate_fn=HFITCollator(
             tokenizer=tokenizer, 
             max_len=512,

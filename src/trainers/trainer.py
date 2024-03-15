@@ -4,7 +4,6 @@ import torch
 from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-from accelerate import Accelerator
 
 from src.context import Context
 

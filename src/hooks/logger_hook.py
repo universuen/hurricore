@@ -17,6 +17,12 @@ class LoggerHook(Hook):
         assert hasattr(trainer.ctx, 'epochs')
         self.num_batches = len(trainer.data_loader)
         self.epochs = trainer.ctx.epochs
+        self.logger.info(
+            f"\tTraining started with the following hyper parameters:\n"
+            f"\tEpochs: {self.epochs}\n"
+            f"\tBatch size: {trainer.data_loader.batch_size}\n"
+            f"\tLearning rate: {trainer.optimizer.defaults['lr']}"
+        )
     
     def epoch_start(self, trainer: Trainer) -> None:
         assert hasattr(trainer.ctx, 'epoch')
