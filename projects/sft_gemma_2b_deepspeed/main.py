@@ -26,7 +26,7 @@ def main():
         gradient_accumulation_steps=4,
         deepspeed_plugin=DeepSpeedPlugin(
             gradient_accumulation_steps=4, 
-            zero_stage=3,
+            zero_stage=2,
             offload_optimizer_device='cpu',
             zero3_init_flag=False,
         )
@@ -46,7 +46,7 @@ def main():
             max_len=512,
         ).collate_fn,
     )
-    optimizer = torch.optim.AdamW(model.parameters(), 1e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), 1e-4)
     logger_config = LoggerConfig()
     logger = Logger('sft_gemma_2b_deepspeed', **logger_config.to_dict())
 
@@ -56,13 +56,13 @@ def main():
         optimizer=optimizer, 
         logger=logger, 
         accelerator=accelerator,
-        # FIXME: Can't peek results when using deepspeed
-        # peek_prompts=[
-        #     '如何看待明天下雨？',
-        #     '为什么太阳比地球大',
-        #     '你如何看待近期的股市？',
-        # ],
-        # tokenizer=tokenizer,
+        # FIXME: Peek not working on ZeRO-3 
+        peek_prompts=[
+            '如何看待明天下雨？',
+            '为什么太阳比地球大',
+            '你如何看待近期的股市？',
+        ],
+        tokenizer=tokenizer,
     )
     trainer.run(epochs=1000)
 
