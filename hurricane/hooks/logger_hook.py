@@ -9,9 +9,14 @@ from hurricane.utils import get_list_mean
 
 
 class LoggerHook(HookBase):
-    def __init__(self, logger: Logger) -> None:
+    def __init__(
+        self, 
+        logger: Logger,
+        log_interval: int = 1, 
+    ) -> None:
         super().__init__()
         self.logger = logger
+        self.log_interval = log_interval
     
     def training_start(self, trainer: Trainer) -> None:
         if trainer.accelerator.is_main_process:
@@ -34,7 +39,7 @@ class LoggerHook(HookBase):
             self.losses_per_batch.append(step_loss)
             idx = trainer.ctx.batch_idx + 1
             num_batches = len(trainer.data_loader)
-            if idx % 10 == 0 or idx == num_batches:
+            if idx % self.log_interval == 0 or idx == num_batches:
                 progress = (idx / num_batches)
                 elapsed_time = time.time() - self.start_time
                 remaining_time = (elapsed_time / idx) * (num_batches - idx)

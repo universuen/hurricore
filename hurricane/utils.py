@@ -25,3 +25,11 @@ def get_script_name() -> str:
     caller_frame_record = inspect.stack()[1]
     module_path = caller_frame_record.filename
     return Path(module_path).stem
+
+
+def is_deepspeed_zero3(accelerator) -> bool:
+    if accelerator.state.deepspeed_plugin is not None \
+    and accelerator.state.deepspeed_plugin.zero_stage == 3:
+        return True
+    return False
+    

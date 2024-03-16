@@ -20,10 +20,11 @@ def main():
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     accelerator = Accelerator(
-        gradient_accumulation_steps=4,
+        gradient_accumulation_steps=32,
+        split_batches=True,
         deepspeed_plugin=DeepSpeedPlugin(
-            gradient_accumulation_steps=4, 
-            zero_stage=2,
+            gradient_accumulation_steps=32, 
+            zero_stage=3,
             offload_optimizer_device='cpu',
             zero3_init_flag=False,
         )
@@ -37,7 +38,7 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
     data_loader = DataLoader(
         dataset=dataset,
-        batch_size=1,
+        batch_size=4,
         collate_fn=HFLLMITCollator(
             tokenizer=tokenizer, 
             max_len=512,
@@ -53,13 +54,13 @@ def main():
         optimizer=optimizer, 
         logger=logger, 
         accelerator=accelerator,
-        # FIXME: Peek causes time out on ZeRO-3 
         peek_prompts=[
             '如何看待明天下雨？',
             '为什么太阳比地球大',
             '你如何看待近期的股市？',
         ],
         tokenizer=tokenizer,
+        interval=32,
     )
     trainer.run(epochs=1000)
 

@@ -21,11 +21,12 @@ def main():
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
     accelerator = Accelerator(
-        gradient_accumulation_steps=4,
+        gradient_accumulation_steps=32,
+        split_batches=True,
     )
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b-it")
-        model = AutoModelForCausalLM.from_pretrained("google/gemma-2b-it")
+        tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b")
+        model = AutoModelForCausalLM.from_pretrained("google/gemma-2b")
         dataset = ZhihuQADataset()
 
     peft_config = LoraConfig(
@@ -42,7 +43,7 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
     data_loader = DataLoader(
         dataset=dataset,
-        batch_size=1,
+        batch_size=16,
         collate_fn=HFLLMITCollator(
             tokenizer=tokenizer, 
             max_len=512,
@@ -64,6 +65,7 @@ def main():
             '你如何看待近期的股市？',
         ],
         tokenizer=tokenizer,
+        interval=4,
     )
     trainer.run(epochs=1000)
 
