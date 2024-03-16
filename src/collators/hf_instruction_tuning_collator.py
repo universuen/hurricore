@@ -13,7 +13,6 @@ class HFITCollator:
         max_len=512, 
         logger: Logger=None
     ):  
-        super().__init__(self)
         self.tokenizer = tokenizer
         self.max_len = max_len
         self.logger = logger
