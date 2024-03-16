@@ -29,8 +29,8 @@ class HFLLMTrainer(Trainer):
             peek_prompts = []
             
         self.hooks = [
-            LoggerHook(logger, interval),
             HFLLMPeekHooK(peek_prompts, tokenizer, interval),
+            LoggerHook(logger, interval),
         ]
     
     def compute_loss(self) -> torch.Tensor:
