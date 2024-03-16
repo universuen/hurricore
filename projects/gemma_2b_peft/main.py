@@ -9,11 +9,13 @@ from accelerate import Accelerator
 from peft import get_peft_model, LoraConfig, TaskType
 
 from src.trainers.hf_llm_trainer import HFLLMTrainer
-from src.datasets.zhihu_qa_dataset import ZhihuQADataset
 from src.collators.hf_instruction_tuning_collator import HFITCollator
 from src.logger import Logger
 from src.utils import launch_for_parallel_training
 from configs import LoggerConfig
+
+from zhihu_qa_dataset import ZhihuQADataset
+
 
 def main():
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -65,5 +67,5 @@ def main():
     )
     trainer.run(epochs=1000)
 
-launch_for_parallel_training(main, num_processes=4, use_port='8000')
+launch_for_parallel_training(main, num_processes=1, use_port='8000')
 # main()

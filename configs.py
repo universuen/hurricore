@@ -21,7 +21,7 @@ class PathConfig:
     project: Path = Path(__file__).absolute().parent
     src: Path = project / 'src'
     data: Path = project / 'data'
-    scripts: Path = project / 'scripts'
+    projects: Path = project / 'projects'
     tests: Path = project / 'tests'
     logs: Path = data / 'logs'
 
