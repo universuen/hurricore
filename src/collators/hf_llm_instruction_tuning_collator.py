@@ -6,7 +6,7 @@ from transformers import PreTrainedTokenizer
 from src.utils import find_start_and_end_index
 
 
-class HFITCollator:
+class HFLLMITCollator:
     def __init__(
         self, 
         tokenizer: PreTrainedTokenizer, 
