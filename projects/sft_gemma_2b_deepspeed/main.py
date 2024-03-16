@@ -23,7 +23,7 @@ def main():
         gradient_accumulation_steps=4,
         deepspeed_plugin=DeepSpeedPlugin(
             gradient_accumulation_steps=4, 
-            zero_stage=3,
+            zero_stage=2,
             offload_optimizer_device='cpu',
             zero3_init_flag=False,
         )
@@ -53,7 +53,7 @@ def main():
         optimizer=optimizer, 
         logger=logger, 
         accelerator=accelerator,
-        # FIXME: Peek not working on ZeRO-3 
+        # FIXME: Peek causes time out on ZeRO-3 
         peek_prompts=[
             '如何看待明天下雨？',
             '为什么太阳比地球大',
