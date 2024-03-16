@@ -1,13 +1,11 @@
-from logging import Logger
-
 import torch
 from transformers import PreTrainedTokenizer
 
-from src.hooks.hook import Hook
+from src.hooks.hook_base import HookBase
 from src.trainers.trainer import Trainer
 
 
-class HFLLMValidationHooK(Hook):
+class HFLLMPeekHooK(HookBase):
     def __init__(self, prompts: list[str], tokenizer: PreTrainedTokenizer) -> None:
         super().__init__()
         self.prompts = prompts
