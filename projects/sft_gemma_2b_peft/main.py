@@ -22,7 +22,6 @@ def main():
 
     accelerator = Accelerator(
         gradient_accumulation_steps=4,
-        # deepspeed_plugin=DeepSpeedPlugin(gradient_accumulation_steps=4, zero_stage=3)
     )
     with accelerator.main_process_first():
         tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b-it")
