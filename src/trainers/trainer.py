@@ -24,6 +24,7 @@ class Trainer(TrainerBase):
         )
 
     def training_step(self) -> torch.Tensor:
+        self.model.train()
         with self.accelerator.accumulate(self.model):
             with self.accelerator.autocast():
                 loss = self.compute_loss()

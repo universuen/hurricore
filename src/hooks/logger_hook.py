@@ -1,7 +1,7 @@
 import time
 from logging import Logger
 
-from torch.cuda import memory_cached
+from torch.cuda import memory_reserved
 
 from src.hooks.hook_base import HookBase
 from src.trainers.trainer import Trainer
@@ -22,7 +22,7 @@ class LoggerHook(HookBase):
                 f"Training started with the following hyper parameters:\n"
                 f"\tEpochs: {self.epochs}\n"
                 f"\tBatch size {trainer.data_loader.total_batch_size}\n"
-                f"\tLearning rate: {trainer.optimizer.defaults['lr']}"
+                # f"\tLearning rate: {trainer.optimizer.defaults['lr']}"
             )
     
     def epoch_start(self, trainer: Trainer) -> None:
@@ -51,7 +51,7 @@ class LoggerHook(HookBase):
                     f"Loss: {step_loss:.5f} | "
                     f"Progress: {progress:.2%} | "
                     f"Time left: {formatted_remaining_time} | "
-                    f"Memory cached: {memory_cached() / 1024 ** 3:.2f}GB"
+                    f"Memory reserved: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
                 if hasattr(trainer.ctx, 'peek_results'):
                     for q, a in trainer.ctx.peek_results:
