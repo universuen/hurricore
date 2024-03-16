@@ -6,7 +6,7 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from src.trainers.trainer_base import TrainerBase
+from hurricane.trainers.trainer_base import TrainerBase
 
 
 class Trainer(TrainerBase):

@@ -1,6 +1,6 @@
 import path_setup
 
-from src.logger import Logger
+from hurricane.logger import Logger
 
 
 logger = Logger('test', 'INFO')

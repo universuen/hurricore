@@ -6,9 +6,9 @@ from torch.utils.data import DataLoader
 from accelerate import Accelerator
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
-from src.trainers.trainer import Trainer
-from src.hooks.logger_hook import LoggerHook
-from src.hooks.hf_llm_peek_hook import HFLLMPeekHooK
+from hurricane.trainers.trainer import Trainer
+from hurricane.hooks.logger_hook import LoggerHook
+from hurricane.hooks.hf_llm_peek_hook import HFLLMPeekHooK
 
 
 class HFLLMTrainer(Trainer):

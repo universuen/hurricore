@@ -18,11 +18,11 @@ def config_class(cls):
 
 @config_class
 class PathConfig:
-    project: Path = Path(__file__).absolute().parent
-    src: Path = project / 'src'
-    data: Path = project / 'data'
-    projects: Path = project / 'projects'
-    tests: Path = project / 'tests'
+    root: Path = Path(__file__).absolute().parent
+    hurricane: Path = root / 'hurricane'
+    data: Path = root / 'data'
+    projects: Path = root / 'projects'
+    tests: Path = root / 'tests'
     logs: Path = data / 'logs'
 
     def __post_init__(self) -> None:

@@ -3,9 +3,9 @@ from logging import Logger
 
 from torch.cuda import memory_reserved
 
-from src.hooks.hook_base import HookBase
-from src.trainers.trainer import Trainer
-from src.utils import get_list_mean
+from hurricane.hooks.hook_base import HookBase
+from hurricane.trainers.trainer import Trainer
+from hurricane.utils import get_list_mean
 
 
 class LoggerHook(HookBase):
@@ -18,12 +18,6 @@ class LoggerHook(HookBase):
             assert hasattr(trainer.ctx, 'epochs')
             self.num_batches = len(trainer.data_loader)
             self.epochs = trainer.ctx.epochs
-            # self.logger.info(
-            #     f"Training started with the following hyper parameters:\n"
-            #     f"\tEpochs: {self.epochs}\n"
-            #     f"\tBatch size {trainer.data_loader.total_batch_size}\n"
-            #     f"\tLearning rate: {trainer.optimizer.defaults['lr']}" 
-            # )
     
     def epoch_start(self, trainer: Trainer) -> None:
         if trainer.accelerator.is_main_process:

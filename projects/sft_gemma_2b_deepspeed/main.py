@@ -7,16 +7,13 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator, DeepSpeedPlugin
 
-from src.trainers.hf_llm_trainer import HFLLMTrainer
-from src.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
-from src.logger import Logger
-from src.utils import launch_for_parallel_training
+from hurricane.trainers.hf_llm_trainer import HFLLMTrainer
+from hurricane.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
+from hurricane.logger import Logger
+from hurricane.utils import launch_for_parallel_training
 from configs import LoggerConfig
 
 from zhihu_qa_dataset import ZhihuQADataset
-
-
-
 
 
 def main():

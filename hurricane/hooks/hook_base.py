@@ -1,4 +1,4 @@
-from src.trainers.trainer_base import TrainerBase
+from hurricane.trainers.trainer_base import TrainerBase
 
 class HookBase:
     def __init__(self) -> None:

@@ -1,6 +1,6 @@
 import path_setup
 
-from src.env import Env
+from hurricane.env import Env
 
 
 instance_a = Env()

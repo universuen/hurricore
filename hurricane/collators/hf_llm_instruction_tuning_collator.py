@@ -3,7 +3,7 @@ from logging import Logger
 import torch
 from transformers import PreTrainedTokenizer
 
-from src.utils import find_start_and_end_index
+from hurricane.utils import find_start_and_end_index
 
 
 class HFLLMITCollator:
