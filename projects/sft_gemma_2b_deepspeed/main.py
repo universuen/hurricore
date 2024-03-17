@@ -25,7 +25,7 @@ def main():
         split_batches=True,
         deepspeed_plugin=DeepSpeedPlugin(
             gradient_accumulation_steps=32, 
-            zero_stage=3,
+            zero_stage=2,
             offload_optimizer_device='cpu',
             zero3_init_flag=False,
         )
