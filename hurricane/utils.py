@@ -7,7 +7,7 @@ import torch
 from accelerate import notebook_launcher
 
 
-launch_for_parallel_training = notebook_launcher
+launch = notebook_launcher
 
 
 def get_list_mean(list_: list[int | float]) -> float:
@@ -32,4 +32,3 @@ def is_deepspeed_zero3(accelerator) -> bool:
     and accelerator.state.deepspeed_plugin.zero_stage == 3:
         return True
     return False
-    
