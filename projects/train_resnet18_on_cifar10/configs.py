@@ -6,7 +6,7 @@ from hurricane.common_configs import *
 
 
 class TrainingConfig(ConfigBase):
-    epochs = 100
+    epochs = 10
     lr = 1e-3
     batch_size = 128
     optimizer_type = AdamW
@@ -14,3 +14,7 @@ class TrainingConfig(ConfigBase):
 
 class UpdatedPathConfig(PathConfig):
     cifar10_dataset: Path = PathConfig.data / 'cifar10_dataset'
+
+
+class AcceleratorConfig(ConfigBase):
+    split_batches = True

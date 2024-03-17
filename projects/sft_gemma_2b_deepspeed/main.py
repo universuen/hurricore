@@ -17,23 +17,23 @@ from configs import *
 
 
 def main():
-    logger_config = LoggerConfig()
-    logger = Logger('sft_llama2_7b_deepspeed', **logger_config)
-    logger.info(logger_config)
-    
-    training_config = TrainingConfig()
-    logger.info(training_config)
-    
     accelerator_config = AcceleratorConfig()
-    logger.info(accelerator_config)
-    
+    logger_config = LoggerConfig()
+    training_config = TrainingConfig()
     peek_config = PeekConfig()
-    logger.info(peek_config)
     
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
-
     accelerator = Accelerator(**accelerator_config)
+    logger = Logger('sft_gemma_2b_deepspeed', **logger_config)
+
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+    if accelerator.is_main_process:
+        logger.info(accelerator_config)
+        logger.info(logger_config)
+        logger.info(training_config)
+        logger.info(peek_config)
+        logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
+    
     with accelerator.main_process_first():
         tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b")
         model = AutoModelForCausalLM.from_pretrained("google/gemma-2b")

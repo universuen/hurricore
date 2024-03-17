@@ -6,7 +6,7 @@ from accelerate import DeepSpeedPlugin
 from hurricane.common_configs import *
 
 
-gradient_accumulate_interval = 32
+gradient_accumulate_interval = 16
 
 
 class PeekConfig(ConfigBase):
