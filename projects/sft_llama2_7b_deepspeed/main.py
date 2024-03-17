@@ -32,8 +32,8 @@ def main():
         )
     )
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b")
-        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b")
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
         dataset = ZhihuQADataset()
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
@@ -46,7 +46,7 @@ def main():
             max_len=512,
         ).collate_fn,
     )
-    optimizer = torch.optim.AdamW(model.parameters(), 1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), 3e-4)
     logger_config = LoggerConfig()
     logger = Logger('sft_llama2_7b_deepspeed', **logger_config.to_dict())
 
