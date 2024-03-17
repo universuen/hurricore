@@ -24,7 +24,7 @@ def main():
         split_batches=True,
         deepspeed_plugin=DeepSpeedPlugin(
             gradient_accumulation_steps=32, 
-            zero_stage=3,
+            zero_stage=2,
             offload_optimizer_device='cpu',
             zero3_init_flag=False,
         )
@@ -56,7 +56,7 @@ def main():
         accelerator=accelerator,
         peek_prompts=[
             '如何看待明天下雨？',
-            '为什么太阳比地球大',
+            '为什么太阳比地球大？',
             '你如何看待近期的股市？',
         ],
         tokenizer=tokenizer,

@@ -61,7 +61,7 @@ def main():
         accelerator=accelerator,
         peek_prompts=[
             '如何看待明天下雨？',
-            '为什么太阳比地球大',
+            '为什么太阳比地球大？',
             '你如何看待近期的股市？',
         ],
         tokenizer=tokenizer,
