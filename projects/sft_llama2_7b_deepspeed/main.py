@@ -27,12 +27,13 @@ def main():
             gradient_accumulation_steps=32, 
             zero_stage=3,
             offload_optimizer_device='cpu',
+            # offload_param_device='cpu',
             zero3_init_flag=False,
         )
     )
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b")
-        model = AutoModelForCausalLM.from_pretrained("google/gemma-2b")
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b")
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b")
         dataset = ZhihuQADataset()
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
@@ -47,7 +48,7 @@ def main():
     )
     optimizer = torch.optim.AdamW(model.parameters(), 1e-4)
     logger_config = LoggerConfig()
-    logger = Logger('sft_gemma_2b_deepspeed', **logger_config.to_dict())
+    logger = Logger('sft_llama2_7b_deepspeed', **logger_config.to_dict())
 
     trainer = HFLLMTrainer(
         model=model, 
