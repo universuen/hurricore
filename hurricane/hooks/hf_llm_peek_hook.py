@@ -29,7 +29,18 @@ class HFLLMPeekHook(HookBase):
                 answers = []
                 with torch.no_grad():
                     for prompt in self.prompts:
-                        inputs = self.tokenizer(prompt, return_tensors="pt").to(original_model.device)
+                        formatted_prompt = self.tokenizer.apply_chat_template(
+                            conversation=[
+                                {"role": "user", "content": f"{prompt}"}
+                            ],
+                            tokenize=False,
+                            add_generation_prompt=True,
+                        )
+                        inputs = self.tokenizer(
+                            text=formatted_prompt, 
+                            add_special_tokens=False,
+                            return_tensors="pt",
+                        ).to(original_model.device)
                         outputs = original_model.generate(**inputs, max_new_tokens=100)
                         answer_ids = outputs[0][len(inputs.input_ids[0]):]
                         answer = self.tokenizer.decode(answer_ids, skip_special_tokens=True)
