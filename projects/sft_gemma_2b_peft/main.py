@@ -2,11 +2,11 @@ import path_setup
 
 import os
 
-import torch
+from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
-from peft import get_peft_model, LoraConfig, TaskType
+from peft import get_peft_model
 
 from hurricane.trainers.hf_llm_trainer import HFLLMTrainer
 from hurricane.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
@@ -53,7 +53,7 @@ def main():
             max_len=training_config.max_len,
         ).collate_fn,
     )
-    optimizer = training_config.optimizer_type(
+    optimizer = AdamW(
         params=model.parameters(),
         lr=training_config.lr,
     )

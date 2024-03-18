@@ -2,6 +2,7 @@ import path_setup
 
 import torch
 import torchvision
+from torch.optim import AdamW
 import torchvision.transforms as transforms
 import torch.nn as nn
 from torchvision.models import resnet18
@@ -50,7 +51,7 @@ def main():
     
     model = resnet18(weights=None)
     model.fc = nn.Linear(model.fc.in_features, 10)
-    optimizer = training_config.optimizer_type(
+    optimizer = AdamW(
         params=model.parameters(), 
         lr=training_config.lr,
     )

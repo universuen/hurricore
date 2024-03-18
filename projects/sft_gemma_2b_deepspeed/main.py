@@ -2,8 +2,8 @@ import path_setup
 
 import os
 
-import torch
 from torch.utils.data import DataLoader
+from torch.optim import AdamW
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
 
@@ -49,7 +49,7 @@ def main():
             max_len=training_config.max_len,
         ).collate_fn,
     )
-    optimizer = training_config.optimizer_type(
+    optimizer = AdamW(
         params=model.parameters(),
         lr=training_config.lr,
     )

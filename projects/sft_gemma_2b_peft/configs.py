@@ -22,7 +22,6 @@ class TrainingConfig(ConfigBase):
     epochs = 100
     lr = 3e-4
     batch_size = 16
-    optimizer_type = AdamW
     max_len = 512
 
 
