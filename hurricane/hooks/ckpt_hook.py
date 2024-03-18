@@ -32,7 +32,7 @@ class CKPTHook(HookBase):
 
         self.cnt = latest_step
         
-        if hasattr(trainer, 'logger'):
+        if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
             trainer.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
     
     
@@ -45,7 +45,7 @@ class CKPTHook(HookBase):
         ckpt_path = self.folder_path / f'ckpt_epoch_{self.cnt}'
         trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
         
-        if hasattr(trainer, 'logger'):
+        if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
             trainer.logger.info(f'Saved checkpoint at: {ckpt_path}')
 
         

@@ -68,5 +68,6 @@ class HFLLMITCollator:
                 )
                 continue
             labels[i][start_idx:end_idx] = -100
+        labels[labels == self.tokenizer.pad_token_id] = -100
 
         return input_ids, attention_masks, labels
