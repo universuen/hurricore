@@ -28,7 +28,6 @@ class TrainingConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval
-    mixed_precision = 'fp16'
     split_batches = True
     deepspeed_plugin=DeepSpeedPlugin(
         gradient_accumulation_steps = gradient_accumulate_interval, 
