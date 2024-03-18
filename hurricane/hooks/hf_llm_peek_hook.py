@@ -35,6 +35,6 @@ class HFLLMPeekHook(HookBase):
                         answer = self.tokenizer.decode(answer_ids, skip_special_tokens=True)
                         answers.append(answer)
                 peek_results = zip(self.prompts, answers)
-                if hasattr(trainer, 'logger'):
+                if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
                     for q, a in peek_results:
                         trainer.logger.info(f'Q:{q} A:{a}')
