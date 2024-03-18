@@ -28,16 +28,17 @@ class TrainerBase:
         epochs: int = 1,
     ) -> None:
         self.ctx.epochs = epochs
+        self.ctx.epoch = 0
         
         for hook in self.hooks:
             hook.training_start(self)
-        
-        for epoch in range(1, epochs + 1):
+            
+        for epoch in range(self.ctx.epoch + 1, epochs + 1):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:
                 hook.epoch_start(self)
-
+                
             for batch_idx, batch in enumerate(self.data_loader):
                 self.ctx.batch_idx = batch_idx
                 self.ctx.batch = batch

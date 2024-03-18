@@ -19,6 +19,7 @@ class LoggerHook(HookBase):
         self.log_interval = log_interval
     
     def training_start(self, trainer: Trainer) -> None:
+        trainer.logger = self.logger
         if trainer.accelerator.is_main_process:
             assert hasattr(trainer.ctx, 'epochs')
             self.num_batches = len(trainer.data_loader)
@@ -52,9 +53,6 @@ class LoggerHook(HookBase):
                     f"Time left: {formatted_remaining_time} | "
                     f"Memory reserved: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
-                if hasattr(trainer.ctx, 'peek_results'):
-                    for q, a in trainer.ctx.peek_results:
-                        self.logger.info(f'Q:{q} A:{a}')
 
     def epoch_end(self, trainer: Trainer) -> None:
         if trainer.accelerator.is_main_process:

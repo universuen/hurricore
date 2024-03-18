@@ -6,7 +6,7 @@ from hurricane.common_configs import *
 class TrainingConfig(ConfigBase):
     epochs = 10
     lr = 1e-3
-    batch_size = 128
+    batch_size = 1024
 
 
 class UpdatedPathConfig(PathConfig):
@@ -15,3 +15,8 @@ class UpdatedPathConfig(PathConfig):
 
 class AcceleratorConfig(ConfigBase):
     split_batches = True
+
+
+class CKPTConfig(ConfigBase):
+    interval = 1
+    folder_path = None# Path(__file__).resolve().parent / 'checkpoints'

@@ -33,3 +33,9 @@ class AcceleratorConfig(ConfigBase):
         offload_optimizer_device = 'cpu',
         zero3_init_flag = False,
     )
+
+
+class CKPTConfig(ConfigBase):
+    interval = 1
+    folder_path = Path(__file__).resolve().parent / 'checkpoints'
+    

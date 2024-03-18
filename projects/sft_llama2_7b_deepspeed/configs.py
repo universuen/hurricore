@@ -23,6 +23,7 @@ class TrainingConfig(ConfigBase):
     lr = 3e-4
     batch_size = 4
     max_len = 512
+    log_interval = gradient_accumulate_interval
 
 
 class AcceleratorConfig(ConfigBase):
@@ -36,3 +37,8 @@ class AcceleratorConfig(ConfigBase):
         # offload_param_device = 'cpu',
         zero3_init_flag = False,
     )
+
+class CKPTConfig(ConfigBase):
+    interval = 1
+    folder_path = Path(__file__).resolve().parent / 'checkpoints'
+    

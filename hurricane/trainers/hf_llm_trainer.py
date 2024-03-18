@@ -1,4 +1,5 @@
 from logging import Logger
+from pathlib import Path
 
 import torch
 from torch.optim import Optimizer
@@ -8,7 +9,8 @@ from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from hurricane.trainers.trainer import Trainer
 from hurricane.hooks.logger_hook import LoggerHook
-from hurricane.hooks.hf_llm_peek_hook import HFLLMPeekHooK
+from hurricane.hooks.hf_llm_peek_hook import HFLLMPeekHook
+from hurricane.hooks.ckpt_hook import CKPTHook
 
 
 class HFLLMTrainer(Trainer):
@@ -21,7 +23,10 @@ class HFLLMTrainer(Trainer):
         logger: Logger,
         peek_prompts: list[str] = None,
         tokenizer: PreTrainedTokenizerBase = None, 
-        interval: int = 1,
+        peek_interval: int = 1,
+        log_interval: int = 1,
+        ckpt_interval: int = 1,
+        ckpt_folder_path: Path = None,
     ) -> None:
         super().__init__(model, data_loader, optimizer, accelerator)
         
@@ -29,8 +34,9 @@ class HFLLMTrainer(Trainer):
             peek_prompts = []
             
         self.hooks = [
-            HFLLMPeekHooK(peek_prompts, tokenizer, interval),
-            LoggerHook(logger, interval),
+            CKPTHook(ckpt_interval, ckpt_folder_path),
+            HFLLMPeekHook(peek_prompts, tokenizer, peek_interval),
+            LoggerHook(logger, log_interval),
         ]
     
     def compute_loss(self) -> torch.Tensor:

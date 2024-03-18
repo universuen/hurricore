@@ -11,7 +11,7 @@ from accelerate import Accelerator
 from hurricane.logger import Logger
 from hurricane.utils import launch
 
-from configs import TrainingConfig, UpdatedPathConfig, LoggerConfig, AcceleratorConfig
+from configs import TrainingConfig, UpdatedPathConfig, LoggerConfig, AcceleratorConfig, CKPTConfig
 from resnet_trainer import ResNetTrainer
 
 
@@ -20,6 +20,7 @@ def main():
     logger_config = LoggerConfig()
     training_config = TrainingConfig()
     path_config = UpdatedPathConfig()
+    ckpt_config = CKPTConfig()
     
     accelerator = Accelerator(**accelerator_config)
     logger = Logger('train_resnet18_on_cifar10', **logger_config)
@@ -29,6 +30,7 @@ def main():
         logger.info(logger_config)
         logger.info(training_config)
         logger.info(path_config)
+        logger.info(ckpt_config)
     
     transform = transforms.Compose(
         [
@@ -62,9 +64,11 @@ def main():
         optimizer=optimizer,
         accelerator=accelerator,
         logger=logger,
+        ckpt_interval=ckpt_config.interval,
+        ckpt_folder_path=ckpt_config.folder_path,
     )
     trainer.run(epochs=training_config.epochs)
 
 
 if __name__ == '__main__':
-    launch(main, num_processes=4, use_port="8000")
+    launch(main, num_processes=1, use_port="8000")

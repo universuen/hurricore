@@ -23,6 +23,7 @@ def main():
     training_config = TrainingConfig()
     peek_config = PeekConfig()
     peft_config = PEFTConfig()
+    ckpt_config = CKPTConfig()
     
     accelerator = Accelerator(**accelerator_config)
     logger = Logger('sft_gemma_2b_peft', **logger_config)
@@ -35,6 +36,7 @@ def main():
         logger.info(training_config)
         logger.info(peek_config)
         logger.info(peft_config)
+        logger.info(ckpt_config)
         logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
 
     with accelerator.main_process_first():
@@ -66,7 +68,10 @@ def main():
         accelerator=accelerator,
         peek_prompts=peek_config.prompts,
         tokenizer=tokenizer,
-        interval=peek_config.interval,
+        peek_interval=peek_config.interval,
+        log_interval=training_config.log_interval,
+        ckpt_interval=ckpt_config.interval,
+        ckpt_folder_path=ckpt_config.folder_path,
     )
     trainer.run(epochs=training_config.epochs)
 

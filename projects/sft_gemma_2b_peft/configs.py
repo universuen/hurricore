@@ -39,3 +39,8 @@ class PEFTConfig(ConfigBase):
         lora_alpha=32, 
         lora_dropout=0.1
     )
+
+
+class CKPTConfig(ConfigBase):
+    interval = 1
+    folder_path = Path(__file__).resolve().parent / 'checkpoints'
