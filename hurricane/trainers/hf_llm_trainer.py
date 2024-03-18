@@ -25,7 +25,6 @@ class HFLLMTrainer(Trainer):
         tokenizer: PreTrainedTokenizerBase = None, 
         peek_interval: int = 1,
         log_interval: int = 1,
-        ckpt_interval: int = 1,
         ckpt_folder_path: Path = None,
     ) -> None:
         super().__init__(model, data_loader, optimizer, accelerator)
@@ -34,9 +33,9 @@ class HFLLMTrainer(Trainer):
             peek_prompts = []
             
         self.hooks = [
-            CKPTHook(ckpt_interval, ckpt_folder_path),
             HFLLMPeekHook(peek_prompts, tokenizer, peek_interval),
             LoggerHook(logger, log_interval),
+            CKPTHook(ckpt_folder_path),
         ]
     
     def compute_loss(self) -> torch.Tensor:

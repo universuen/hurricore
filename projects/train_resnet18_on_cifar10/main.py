@@ -64,7 +64,6 @@ def main():
         optimizer=optimizer,
         accelerator=accelerator,
         logger=logger,
-        ckpt_interval=ckpt_config.interval,
         ckpt_folder_path=ckpt_config.folder_path,
     )
     trainer.run(epochs=training_config.epochs)

@@ -70,7 +70,6 @@ def main():
         tokenizer=tokenizer,
         peek_interval=peek_config.interval,
         log_interval=training_config.log_interval,
-        ckpt_interval=ckpt_config.interval,
         ckpt_folder_path=ckpt_config.folder_path,
     )
     trainer.run(epochs=training_config.epochs)

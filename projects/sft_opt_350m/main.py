@@ -24,7 +24,7 @@ def main():
     ckpt_config = CKPTConfig()
     
     accelerator = Accelerator(**accelerator_config)
-    logger = Logger('sft_gemma_2b_deepspeed', **logger_config)
+    logger = Logger('sft_opt_350m', **logger_config)
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -37,8 +37,8 @@ def main():
         logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
     
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b")
-        model = AutoModelForCausalLM.from_pretrained("google/gemma-2b")
+        tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
+        model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
         dataset = ZhihuQADataset()
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})

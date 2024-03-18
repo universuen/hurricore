@@ -23,16 +23,17 @@ class ResNetTrainer(Trainer):
         optimizer: Optimizer, 
         accelerator: Accelerator,
         logger: Logger,
-        ckpt_interval: int = 1,
         ckpt_folder_path: Path = None
     ) -> None:
-        super().__init__(model, data_loader, optimizer, accelerator)
+        super().__init__(
+            model=model, 
+            data_loader=data_loader, 
+            optimizer=optimizer, 
+            accelerator=accelerator
+        )
         self.hooks = [
-            LoggerHook(logger),
-            CKPTHook(
-                interval=ckpt_interval,
-                folder_path=ckpt_folder_path,
-            ),
+            LoggerHook(logger=logger),
+            CKPTHook(folder_path=ckpt_folder_path),
         ]
         
     def compute_loss(self) -> Tensor:

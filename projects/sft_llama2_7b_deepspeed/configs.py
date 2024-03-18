@@ -39,6 +39,5 @@ class AcceleratorConfig(ConfigBase):
     )
 
 class CKPTConfig(ConfigBase):
-    interval = 1
     folder_path = Path(__file__).resolve().parent / 'checkpoints'
     
