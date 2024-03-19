@@ -45,7 +45,7 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
     data_loader = DataLoader(
         dataset=dataset,
-        batch_size=training_config.batch_size,
+        batch_size=training_config.batch_size_per_device,
         collate_fn=HFLLMITCollator(
             tokenizer=tokenizer, 
             max_len=training_config.max_len,
