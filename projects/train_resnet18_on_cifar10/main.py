@@ -42,7 +42,7 @@ def main():
     with accelerator.main_process_first():
         dataset = torchvision.datasets.CIFAR10(
             root=path_config.cifar10_dataset, 
-            train=False,
+            train=True,
             download=True, 
             transform=transform,
         )
