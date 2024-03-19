@@ -29,7 +29,6 @@ class LoggerHook(HookBase):
     
     def on_epoch_start(self, trainer: Trainer) -> None:
         if trainer.accelerator.is_main_process:
-            super().on_epoch_start(trainer)
             assert hasattr(trainer.ctx, 'epoch')
             self.losses_per_batch = []
             self.epoch = trainer.ctx.epoch
@@ -46,7 +45,10 @@ class LoggerHook(HookBase):
                 progress = (idx / num_batches)
                 elapsed_time = time.time() - self.start_time
                 remaining_time = (elapsed_time / idx) * (num_batches - idx)
-                formatted_remaining_time = time.strftime('%H:%M:%S', time.gmtime(remaining_time))
+                days, remainder = divmod(remaining_time, 86400) 
+                hours, remainder = divmod(remainder, 3600) 
+                minutes, seconds = divmod(remainder, 60) 
+                formatted_remaining_time = f"{int(days)}d {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
                 self.logger.info(
                     f"Epoch: {self.epoch}/{self.epochs} | "
                     f"Step: {idx}/{num_batches} | "
