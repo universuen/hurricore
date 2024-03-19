@@ -20,7 +20,6 @@ class PeekConfig(ConfigBase):
 class TrainingConfig(ConfigBase):
     epochs = 100
     lr = 5e-5
-    weight_decay = 0.0
     batch_size_per_device = 8
     max_len = 512
     log_interval = gradient_accumulate_interval
