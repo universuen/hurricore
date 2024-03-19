@@ -6,7 +6,7 @@ from hurricane.common_configs import *
 class TrainingConfig(ConfigBase):
     epochs = 10
     lr = 1e-3
-    batch_size = 1024
+    batch_size_per_device = 1024
 
 
 class UpdatedPathConfig(PathConfig):
@@ -14,7 +14,7 @@ class UpdatedPathConfig(PathConfig):
 
 
 class AcceleratorConfig(ConfigBase):
-    split_batches = True
+    gradient_accumulation_steps = 1
 
 
 class CKPTConfig(ConfigBase):

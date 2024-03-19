@@ -42,13 +42,13 @@ def main():
     with accelerator.main_process_first():
         dataset = torchvision.datasets.CIFAR10(
             root=path_config.cifar10_dataset, 
-            train=True,
+            train=False,
             download=True, 
             transform=transform,
         )
     data_loader = torch.utils.data.DataLoader(
         dataset, 
-        batch_size=training_config.batch_size,
+        batch_size=training_config.batch_size_per_device,
         shuffle=True
     )
     
@@ -58,9 +58,10 @@ def main():
         params=model.parameters(), 
         lr=training_config.lr,
     )
+    
     scheduler = CosineAnnealingWarmRestarts(
         optimizer=optimizer,
-        T_0=len(data_loader),
+        T_0=len(data_loader) // accelerator_config.gradient_accumulation_steps,
     )
     
     trainer = ResNetTrainer(

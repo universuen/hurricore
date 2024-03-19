@@ -61,9 +61,9 @@ def main():
         lr=training_config.lr,
     )
 
-    sechduler = CosineAnnealingWarmRestarts(
+    scheduler = CosineAnnealingWarmRestarts(
         optimizer=optimizer,
-        T_0=len(data_loader),
+        T_0=len(data_loader) // accelerator_config.gradient_accumulation_steps,
     )
     trainer = HFLLMTrainer(
         model=model, 
@@ -76,7 +76,7 @@ def main():
         peek_interval=peek_config.interval,
         log_interval=training_config.log_interval,
         ckpt_folder_path=ckpt_config.folder_path,
-        lr_scheduler=sechduler,
+        lr_scheduler=scheduler,
         lr_scheduler_mode='per_step',
     )
     trainer.run(epochs=training_config.epochs)
