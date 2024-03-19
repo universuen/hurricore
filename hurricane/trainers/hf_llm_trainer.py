@@ -3,6 +3,7 @@ from pathlib import Path
 
 import torch
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
@@ -11,6 +12,7 @@ from hurricane.trainers.trainer import Trainer
 from hurricane.hooks.logger_hook import LoggerHook
 from hurricane.hooks.hf_llm_peek_hook import HFLLMPeekHook
 from hurricane.hooks.ckpt_hook import CKPTHook
+from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook
 
 
 class HFLLMTrainer(Trainer):
@@ -20,12 +22,14 @@ class HFLLMTrainer(Trainer):
         data_loader: DataLoader, 
         optimizer: Optimizer,
         accelerator: Accelerator,
-        logger: Logger,
+        logger: Logger = None,
         peek_prompts: list[str] = None,
         tokenizer: PreTrainedTokenizerBase = None, 
         peek_interval: int = 1,
         log_interval: int = 1,
         ckpt_folder_path: Path = None,
+        lr_scheduler: LRScheduler = None,
+        lr_scheduler_mode: str = 'per_epoch',
     ) -> None:
         super().__init__(model, data_loader, optimizer, accelerator)
         
@@ -33,9 +37,20 @@ class HFLLMTrainer(Trainer):
             peek_prompts = []
             
         self.hooks = [
-            HFLLMPeekHook(peek_prompts, tokenizer, peek_interval),
-            LoggerHook(logger, log_interval),
-            CKPTHook(ckpt_folder_path),
+            HFLLMPeekHook(
+                prompts=peek_prompts, 
+                tokenizer=tokenizer, 
+                interval=peek_interval,
+            ),
+            LoggerHook(
+                logger=logger, 
+                interval=log_interval,
+            ),
+            CKPTHook(folder_path=ckpt_folder_path),
+            LRSchedulerHook(
+                lr_scheduler=lr_scheduler,
+                mode=lr_scheduler_mode,
+            ),
         ]
     
     def compute_loss(self) -> torch.Tensor:

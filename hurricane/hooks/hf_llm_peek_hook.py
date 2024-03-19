@@ -9,16 +9,18 @@ from hurricane.utils import is_deepspeed_zero3
 class HFLLMPeekHook(HookBase):
     def __init__(
         self, 
-        prompts: list[str], 
-        tokenizer: PreTrainedTokenizer,
+        prompts: list[str] = None, 
+        tokenizer: PreTrainedTokenizer = None,
         interval: int = 1,
     ) -> None:
         super().__init__()
+        if prompts is None:
+            prompts = []
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
     
-    def iteration_end(self, trainer: Trainer) -> None:
+    def on_step_end(self, trainer: Trainer) -> None:
         if trainer.accelerator.is_main_process \
         or is_deepspeed_zero3(trainer.accelerator):
             idx = trainer.ctx.batch_idx + 1

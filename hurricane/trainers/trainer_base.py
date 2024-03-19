@@ -31,31 +31,31 @@ class TrainerBase:
         self.ctx.epoch = 0
         
         for hook in self.hooks:
-            hook.training_start(self)
+            hook.on_training_start(self)
             
         for epoch in range(self.ctx.epoch + 1, epochs + 1):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:
-                hook.epoch_start(self)
+                hook.on_epoch_start(self)
                 
             for batch_idx, batch in enumerate(self.data_loader):
                 self.ctx.batch_idx = batch_idx
                 self.ctx.batch = batch
 
                 for hook in self.hooks:
-                    hook.iteration_start(self)
+                    hook.on_step_start(self)
 
                 self.ctx.step_loss = self.training_step()
 
                 for hook in self.hooks:
-                    hook.iteration_end(self)
+                    hook.on_step_end(self)
             
             for hook in self.hooks:
-                hook.epoch_end(self)
+                hook.on_epoch_end(self)
         
         for hook in self.hooks:
-            hook.training_end(self)
+            hook.on_training_end(self)
 
     def training_step(self) -> Tensor:
         self.model.train()

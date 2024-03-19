@@ -4,7 +4,7 @@ from hurricane.common_configs import *
 
 
 class TrainingConfig(ConfigBase):
-    epochs = 1
+    epochs = 10
     lr = 1e-3
     batch_size = 1024
 

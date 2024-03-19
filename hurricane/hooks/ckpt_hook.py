@@ -14,7 +14,7 @@ class CKPTHook(HookBase):
         self.folder_path = folder_path
         self.cnt = 0
     
-    def training_start(self, trainer: Trainer) -> None:
+    def on_training_start(self, trainer: Trainer) -> None:
         trainer.accelerator.register_for_checkpointing(trainer.ctx)
 
         if self.folder_path is None or not self.folder_path.is_dir():
@@ -36,7 +36,7 @@ class CKPTHook(HookBase):
             trainer.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
     
     
-    def epoch_end(self, trainer: Trainer) -> None:
+    def on_epoch_end(self, trainer: Trainer) -> None:
         if self.folder_path is None:
             return
         

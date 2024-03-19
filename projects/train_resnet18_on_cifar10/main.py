@@ -3,6 +3,7 @@ import path_setup
 import torch
 import torchvision
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 import torchvision.transforms as transforms
 import torch.nn as nn
 from torchvision.models import resnet18
@@ -57,6 +58,10 @@ def main():
         params=model.parameters(), 
         lr=training_config.lr,
     )
+    scheduler = CosineAnnealingWarmRestarts(
+        optimizer=optimizer,
+        T_0=len(data_loader),
+    )
     
     trainer = ResNetTrainer(
         model=model,
@@ -65,6 +70,8 @@ def main():
         accelerator=accelerator,
         logger=logger,
         ckpt_folder_path=ckpt_config.folder_path,
+        lr_scheduler=scheduler,
+        lr_scheduler_mode='per_step'
     )
     trainer.run(epochs=training_config.epochs)
 
