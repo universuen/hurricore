@@ -3,6 +3,7 @@ import path_setup
 import os
 
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
@@ -60,6 +61,10 @@ def main():
         lr=training_config.lr,
     )
 
+    sechduler = CosineAnnealingWarmRestarts(
+        optimizer=optimizer,
+        T_0=len(data_loader),
+    )
     trainer = HFLLMTrainer(
         model=model, 
         data_loader=data_loader, 
@@ -71,6 +76,8 @@ def main():
         peek_interval=peek_config.interval,
         log_interval=training_config.log_interval,
         ckpt_folder_path=ckpt_config.folder_path,
+        lr_scheduler=sechduler,
+        lr_scheduler_mode='per_step',
     )
     trainer.run(epochs=training_config.epochs)
 
