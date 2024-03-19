@@ -53,7 +53,8 @@ class LoggerHook(HookBase):
                     f"Loss: {step_loss:.5f} | "
                     f"Progress: {progress:.2%} | "
                     f"Time left: {formatted_remaining_time} | "
-                    f"Memory reserved: {memory_reserved() / 1024 ** 3:.2f}GB"
+                    f"Current lr: {[i['lr'] for i in trainer.optimizer.param_groups]} | "
+                    f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
 
     def on_epoch_end(self, trainer: Trainer) -> None:

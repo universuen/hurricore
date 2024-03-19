@@ -19,7 +19,7 @@ class LRSchedulerHook(HookBase):
     def on_training_start(self, trainer: Trainer) -> None:
         if self.lr_scheduler is None:
             return
-        
+        self.lr_scheduler = trainer.accelerator.prepare(self.lr_scheduler)
         trainer.accelerator.step_scheduler_with_optimizer = (self.mode == 'per_step')
         trainer.accelerator.register_for_checkpointing(self.lr_scheduler)
     
@@ -29,8 +29,6 @@ class LRSchedulerHook(HookBase):
             return
         
         self.lr_scheduler.step()
-        if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
-            trainer.logger.info(f'Current lr: {self.lr_scheduler.get_last_lr()}')
     
     
     def on_step_end(self, trainer: Trainer) -> None:
@@ -38,5 +36,3 @@ class LRSchedulerHook(HookBase):
             return
         
         self.lr_scheduler.step()
-        if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
-            trainer.logger.info(f'Current lr: {self.lr_scheduler.get_last_lr()}')

@@ -14,13 +14,14 @@ class HFLLMPeekHook(HookBase):
         interval: int = 1,
     ) -> None:
         super().__init__()
-        if prompts is None:
-            prompts = []
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
     
     def on_step_end(self, trainer: Trainer) -> None:
+        if None in (self.prompts, self.tokenizer):
+            return
+        
         if trainer.accelerator.is_main_process \
         or is_deepspeed_zero3(trainer.accelerator):
             idx = trainer.ctx.batch_idx + 1
