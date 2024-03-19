@@ -14,7 +14,7 @@ class PeekConfig(ConfigBase):
         '为什么太阳比地球大？',
         '你如何看待近期的股市？',
     ]
-    interval = gradient_accumulation_steps * 4
+    interval = gradient_accumulation_steps * 10
 
 
 class TrainingConfig(ConfigBase):
