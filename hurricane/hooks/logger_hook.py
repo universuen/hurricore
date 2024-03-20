@@ -1,11 +1,13 @@
 import time
 from logging import Logger
 
+import torch
 from torch.cuda import memory_reserved
 from torch.utils.tensorboard import SummaryWriter
 
 from hurricane.hooks.hook_base import HookBase
 from hurricane.trainers.trainer import Trainer
+from hurricane.trainers.trainer_base import TrainerBase
 from hurricane.utils import get_list_mean
 
 
@@ -20,7 +22,9 @@ class LoggerHook(HookBase):
         self.interval = interval
         if self.logger is None:
             return     
-        self.tb_writer = SummaryWriter(log_dir=self.logger.logs_dir)
+        tb_path = self.logger.logs_dir / 'tensorboard_data'
+        tb_path.mkdir(parents=True, exist_ok=True)
+        self.tb_writer = SummaryWriter(log_dir=tb_path)
     
     def on_training_start(self, trainer: Trainer) -> None:
         if self.logger is None:
@@ -29,6 +33,9 @@ class LoggerHook(HookBase):
         trainer.tb_writer = self.tb_writer
         if trainer.accelerator.is_main_process:
             self.num_batches = len(trainer.data_loader)
+            with torch.no_grad():
+                self.tb_writer.add_graph(trainer.model, next(iter(trainer.data_loader))[0])
+            self.tb_writer.flush()
     
     def on_epoch_start(self, trainer: Trainer) -> None:
         if self.logger is None:
@@ -72,6 +79,7 @@ class LoggerHook(HookBase):
                 self.tb_writer.add_scalar(f'Loss', step_loss, num_batches * (epoch - 1) + idx)
                 self.tb_writer.add_scalars(f'Learning rate', lr_dict, num_batches * (epoch - 1) + idx)
                 self.tb_writer.add_scalar(f'Memory used', memory_reserved() / 1024 ** 3, num_batches * (epoch - 1) + idx)
+                self.tb_writer.flush()
 
     def on_epoch_end(self, trainer: Trainer) -> None:
         if self.logger is None:
@@ -79,4 +87,6 @@ class LoggerHook(HookBase):
         if trainer.accelerator.is_main_process:
             avg_loss = get_list_mean(self.losses_per_batch)
             self.logger.info(f'Epoch {trainer.ctx.epoch} finished with average loss: {avg_loss}')
-            
+
+    def on_training_end(self, trainer: TrainerBase) -> None:
+        self.tb_writer.close()
