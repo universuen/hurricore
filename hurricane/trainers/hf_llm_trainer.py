@@ -23,6 +23,7 @@ class HFLLMTrainer(Trainer):
         data_loader: DataLoader, 
         optimizer: Optimizer,
         accelerator: Accelerator,
+        epochs: int = 100,
         logger: Logger = None,
         peek_prompts: list[str] = None,
         tokenizer: PreTrainedTokenizerBase = None, 
@@ -31,7 +32,7 @@ class HFLLMTrainer(Trainer):
         ckpt_folder_path: Path = None,
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
-        epochs: int = 100,
+        tensorboard_folder_path: Path = None,
     ) -> None:
         super().__init__(
             model=model, 
@@ -59,9 +60,11 @@ class HFLLMTrainer(Trainer):
                 mode=lr_scheduler_mode,
             ),
             CKPTHook(
-                folder_path=ckpt_folder_path
+                folder_path=ckpt_folder_path,
             ),
-            TensorBoardHook(),
+            TensorBoardHook(
+                folder_path=tensorboard_folder_path,
+            ),
         ]
     
     def compute_loss(self) -> torch.Tensor:
