@@ -34,7 +34,10 @@ class LoggerHook(HookBase):
         if trainer.accelerator.is_main_process:
             self.num_batches = len(trainer.data_loader)
             with torch.no_grad():
-                self.tb_writer.add_graph(trainer.model, next(iter(trainer.data_loader))[0])
+                self.tb_writer.add_graph(
+                    model=trainer.accelerator.unwrap_model(trainer.model), 
+                    input_to_model=next(iter(trainer.data_loader))[0],
+                )
             self.tb_writer.flush()
     
     def on_epoch_start(self, trainer: Trainer) -> None:

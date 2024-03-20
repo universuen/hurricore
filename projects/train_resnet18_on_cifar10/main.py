@@ -3,7 +3,7 @@ import path_setup
 import torch
 import torchvision
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 import torchvision.transforms as transforms
 import torch.nn as nn
 from torchvision.models import resnet18
@@ -54,12 +54,11 @@ def main():
         **optimizer_config,
     )
     
-    scheduler = CosineAnnealingWarmRestarts(
-        optimizer=optimizer,
-        T_0=len(data_loader) // accelerator_config.gradient_accumulation_steps,
-    )
-    
     trainer_config = TrainerConfig()
+    scheduler = CosineAnnealingLR(
+        optimizer=optimizer,
+        T_max=(len(data_loader) // accelerator_config.gradient_accumulation_steps) * trainer_config.epochs,
+    )
     trainer = ResNetTrainer(
         model=model,
         data_loader=data_loader,
@@ -74,4 +73,4 @@ def main():
 
 
 if __name__ == '__main__':
-    launch(main, num_processes=1, use_port="8000")
+    launch(main, num_processes=4, use_port="8001")

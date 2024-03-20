@@ -37,7 +37,7 @@ class DatasetConfig(ConfigBase):
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 1024
+    batch_size = 512
     shuffle = True
     num_workers = cpu_count()
 

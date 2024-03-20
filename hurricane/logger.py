@@ -13,12 +13,11 @@ class Logger(logging.Logger):
             logs_dir: Path = None,
     ) -> None:
         super().__init__(name, level=level)
-
+        self.logs_dir = logs_dir
         formatter = logging.Formatter(
             fmt='%(asctime)s [%(name)s] [%(levelname)s]: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
         )
-
         s_handler = logging.StreamHandler(stream=sys.stdout)
         s_handler.setFormatter(formatter)
         s_handler.setLevel(level)
