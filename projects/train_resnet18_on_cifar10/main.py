@@ -10,7 +10,7 @@ from torchvision.models import resnet18
 from accelerate import Accelerator
 
 from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs
+from hurricane.utils import launch, log_all_configs, get_current_date_time
 from configs import *
 from resnet_trainer import ResNetTrainer
 
@@ -18,7 +18,7 @@ from resnet_trainer import ResNetTrainer
 def main():
     
     logger_config = LoggerConfig()
-    logger = Logger('train_resnet18_on_cifar10', **logger_config)
+    logger = Logger(f'{get_current_date_time()}', **logger_config)
     log_all_configs(logger)
     
     accelerator_config = AcceleratorConfig()

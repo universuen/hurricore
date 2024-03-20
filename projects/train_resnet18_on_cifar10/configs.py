@@ -47,7 +47,7 @@ class LoggerConfig(ConfigBase):
 
 
 class AcceleratorConfig(ConfigBase):
-    ...
+    gradient_accumulation_steps = 1
 
 
 class CKPTConfig(ConfigBase):

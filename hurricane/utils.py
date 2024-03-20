@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 from logging import Logger
+from datetime import datetime
 
 import torch
 from accelerate import notebook_launcher
@@ -29,10 +29,10 @@ def find_start_and_end_index(a: torch.Tensor, b: torch.Tensor) -> int:
         return -1, -1
 
 
-def get_script_name() -> str:
-    caller_frame_record = inspect.stack()[1]
-    module_path = caller_frame_record.filename
-    return Path(module_path).stem
+def get_current_date_time() -> str:
+    current_date_time = datetime.now()
+    formatted_date_time = current_date_time.strftime("%Y_%m_%d_%H_%M_%S")
+    return formatted_date_time
 
 
 def is_deepspeed_zero3(accelerator) -> bool:

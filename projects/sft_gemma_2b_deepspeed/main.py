@@ -11,7 +11,7 @@ from accelerate import Accelerator
 from hurricane.trainers.hf_llm_trainer import HFLLMTrainer
 from hurricane.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
 from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs
+from hurricane.utils import launch, log_all_configs, get_current_date_time
 
 from zhihu_qa_dataset import ZhihuQADataset
 from configs import *
@@ -22,7 +22,7 @@ def main():
     accelerator = Accelerator(**accelerator_config)
 
     logger_config = LoggerConfig()
-    logger = Logger('sft_gemma_2b_deepspeed', **logger_config)
+    logger = Logger(f'{get_current_date_time()}', **logger_config)
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
