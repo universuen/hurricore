@@ -27,7 +27,7 @@ class Logger(logging.Logger):
         if logs_dir is not None:
             logs_dir.mkdir(exist_ok=True)
             log_file = logs_dir / f'{name}.log'
-            f_handler = logging.FileHandler(log_file, 'a')
+            f_handler = logging.FileHandler(log_file, 'w')
             f_handler.setFormatter(formatter)
             f_handler.setLevel(level)
             self.addHandler(f_handler)
