@@ -11,14 +11,15 @@ class CKPTHook(HookBase):
         folder_path: Path = None,
     ) -> None:
         super().__init__()
+        self.is_available = (folder_path is not None and folder_path.is_dir())
         self.folder_path = folder_path
         self.cnt = 0
     
     def on_training_start(self, trainer: Trainer) -> None:
-        trainer.accelerator.register_for_checkpointing(trainer.ctx)
-
-        if self.folder_path is None or not self.folder_path.is_dir():
+        if not self.is_available:
             return
+        
+        trainer.accelerator.register_for_checkpointing(trainer.ctx)
         
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_epoch_')]
         if not ckpt_dirs:
@@ -37,7 +38,7 @@ class CKPTHook(HookBase):
     
     
     def on_epoch_end(self, trainer: Trainer) -> None:
-        if self.folder_path is None:
+        if not self.is_available:
             return
         
         self.cnt += 1

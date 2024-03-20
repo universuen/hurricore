@@ -14,12 +14,13 @@ class HFLLMPeekHook(HookBase):
         interval: int = 1,
     ) -> None:
         super().__init__()
+        self.is_available = (None not in (prompts, tokenizer))
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
     
     def on_step_end(self, trainer: Trainer) -> None:
-        if None in (self.prompts, self.tokenizer):
+        if not self.is_available:
             return
         
         if trainer.accelerator.is_main_process \

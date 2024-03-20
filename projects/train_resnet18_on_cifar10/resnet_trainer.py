@@ -16,6 +16,7 @@ from hurricane.trainers.trainer import Trainer
 from hurricane.hooks.logger_hook import LoggerHook
 from hurricane.hooks.ckpt_hook import CKPTHook
 from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook
+from hurricane.hooks.tensor_board_hook import TensorBoardHook
 
 
 class ResNetTrainer(Trainer):
@@ -25,12 +26,12 @@ class ResNetTrainer(Trainer):
         data_loader: DataLoader, 
         optimizer: Optimizer, 
         accelerator: Accelerator,
-        logger: Logger,
+        logger: Logger = None,
+        epochs: int = 100,
         log_interval: int = 1,
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
         ckpt_folder_path: Path = None,
-        epochs: int = 100,
     ) -> None:
         super().__init__(
             model=model, 
@@ -48,7 +49,10 @@ class ResNetTrainer(Trainer):
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
-            CKPTHook(folder_path=ckpt_folder_path),
+            CKPTHook(
+                folder_path=ckpt_folder_path
+            ),
+            TensorBoardHook(),
         ]
         
     def compute_loss(self) -> Tensor:

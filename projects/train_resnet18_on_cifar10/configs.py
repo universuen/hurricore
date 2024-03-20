@@ -5,7 +5,9 @@ import logging
 from pathlib import Path
 
 from hurricane.config_base import ConfigBase
-from hurricane.utils import get_current_date_time
+
+
+config_name = 'default'
 
 
 class PathConfig(ConfigBase):
@@ -13,7 +15,7 @@ class PathConfig(ConfigBase):
     data = project / 'data'
     cifar10_dataset = data / 'cifar10_dataset'
     logs = data / 'logs'
-    checkpoints = data / 'checkpoints'
+    checkpoints = data / 'checkpoints' / config_name
 
     def __post_init__(self) -> None:
         for path in vars(self).values():
@@ -39,11 +41,11 @@ class DatasetConfig(ConfigBase):
 class DataLoaderConfig(ConfigBase):
     batch_size = 512
     shuffle = True
-    num_workers = cpu_count()
+    num_workers = 1  # cpu_count()
 
 
 class LoggerConfig(ConfigBase):
-    name = get_current_date_time()
+    name = config_name
     level = logging.INFO
     logs_dir = PathConfig().logs
 
@@ -51,6 +53,3 @@ class LoggerConfig(ConfigBase):
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = 1
 
-
-class CKPTConfig(ConfigBase):
-    folder_path = PathConfig().checkpoints
