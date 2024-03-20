@@ -60,11 +60,11 @@ def main():
         **optimizer_config,
     )
 
+    trainer_config = TrainerConfig()
     scheduler = CosineAnnealingLR(
         optimizer=optimizer,
         T_max=(len(data_loader) // accelerator_config.gradient_accumulation_steps) * trainer_config.epochs,
     )
-    trainer_config = TrainerConfig()
     trainer = HFLLMTrainer(
         model=model, 
         data_loader=data_loader, 

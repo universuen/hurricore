@@ -14,7 +14,7 @@ from hurricane.logger import Logger
 from hurricane.utils import launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.llama2_7b import *
+from configs.opt_350m import *
 
 
 def main():
@@ -55,12 +55,11 @@ def main():
         **optimizer_config,
     )
 
+    trainer_config = TrainerConfig()
     scheduler = CosineAnnealingLR(
         optimizer=optimizer,
         T_max=(len(data_loader) // accelerator_config.gradient_accumulation_steps) * trainer_config.epochs,
     )
-
-    trainer_config = TrainerConfig()
     trainer = HFLLMTrainer(
         model=model, 
         data_loader=data_loader, 

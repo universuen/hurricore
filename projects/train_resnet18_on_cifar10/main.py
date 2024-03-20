@@ -72,4 +72,4 @@ def main():
 
 
 if __name__ == '__main__':
-    launch(main, num_processes=1, use_port="8001")
+    launch(main, num_processes=4, use_port="8001")
