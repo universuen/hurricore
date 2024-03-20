@@ -32,7 +32,7 @@ class TrainerConfig(ConfigBase):
         '如何看待明天下雨？',
         '为什么太阳比地球大？',
         '你如何看待近期的股市？',
-    ],
+    ]
     peek_interval=gradient_accumulate_interval * 10
     log_interval=gradient_accumulate_interval
     ckpt_folder_path=PathConfig().checkpoints
