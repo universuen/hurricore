@@ -21,7 +21,6 @@ class LRSchedulerHook(HookBase):
             return
         self.lr_scheduler = trainer.accelerator.prepare(self.lr_scheduler)
         trainer.accelerator.step_scheduler_with_optimizer = (self.mode == 'per_step')
-        trainer.accelerator.register_for_checkpointing(self.lr_scheduler)
     
     
     def on_epoch_end(self, trainer: Trainer) -> None:
