@@ -16,7 +16,6 @@ from hurricane.utils import launch, log_all_configs
 from zhihu_qa_dataset import ZhihuQADataset
 from configs.opt_350m import *
 
-os.environ['CUDA_VISIBLE_DEVICES']="3,4,5,6"
 
 def main():
     accelerator_config = AcceleratorConfig()
