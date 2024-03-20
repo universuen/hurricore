@@ -69,9 +69,9 @@ class LoggerHook(HookBase):
                     f"Current lr: {lr_dict} | "
                     f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
-                self.tb_writer.add_scalar(f'Loss / Epoch {epoch}', step_loss, idx)
-                self.tb_writer.add_scalars(f'Learning rate / Epoch {epoch}', lr_dict, idx)
-                self.tb_writer.add_scalar(f'Memory used / Epoch {epoch}', memory_reserved() / 1024 ** 3, idx)
+                self.tb_writer.add_scalar(f'Loss', step_loss, num_batches * (epoch - 1) + idx)
+                self.tb_writer.add_scalars(f'Learning rate', lr_dict, num_batches * (epoch - 1) + idx)
+                self.tb_writer.add_scalar(f'Memory used', memory_reserved() / 1024 ** 3, num_batches * (epoch - 1) + idx)
 
     def on_epoch_end(self, trainer: Trainer) -> None:
         if self.logger is None:
