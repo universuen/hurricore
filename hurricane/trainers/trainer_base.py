@@ -15,25 +15,24 @@ class TrainerBase:
         model: nn.Module,
         data_loader: DataLoader,
         optimizer: Optimizer,
+        epochs: int = 100,
     ) -> None:
 
         self.model = model
         self.data_loader = data_loader
         self.optimizer = optimizer
         self.ctx = Context()
-        self.hooks = []
-
-    def run(
-        self, 
-        epochs: int = 1,
-    ) -> None:
         self.ctx.epochs = epochs
+        self.hooks = []
+    
+    def run(self) -> None:
+
         self.ctx.epoch = 0
         
         for hook in self.hooks:
             hook.on_training_start(self)
             
-        for epoch in range(self.ctx.epoch + 1, epochs + 1):
+        for epoch in range(self.ctx.epoch + 1, self.ctx.epochs + 1):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:

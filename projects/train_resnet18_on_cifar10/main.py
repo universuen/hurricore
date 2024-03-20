@@ -10,28 +10,19 @@ from torchvision.models import resnet18
 from accelerate import Accelerator
 
 from hurricane.logger import Logger
-from hurricane.utils import launch
-
-from configs import TrainingConfig, UpdatedPathConfig, LoggerConfig, AcceleratorConfig, CKPTConfig
+from hurricane.utils import launch, log_all_configs
+from configs import *
 from resnet_trainer import ResNetTrainer
 
 
 def main():
-    accelerator_config = AcceleratorConfig()
-    logger_config = LoggerConfig()
-    training_config = TrainingConfig()
-    path_config = UpdatedPathConfig()
-    ckpt_config = CKPTConfig()
     
-    accelerator = Accelerator(**accelerator_config)
+    logger_config = LoggerConfig()
     logger = Logger('train_resnet18_on_cifar10', **logger_config)
-
-    if accelerator.is_main_process:
-        logger.info(accelerator_config)
-        logger.info(logger_config)
-        logger.info(training_config)
-        logger.info(path_config)
-        logger.info(ckpt_config)
+    log_all_configs(logger)
+    
+    accelerator_config = AcceleratorConfig()
+    accelerator = Accelerator(**accelerator_config)
     
     transform = transforms.Compose(
         [
@@ -39,24 +30,28 @@ def main():
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
     )
+
     with accelerator.main_process_first():
+
+        dataset_config = DatasetConfig()
         dataset = torchvision.datasets.CIFAR10(
-            root=path_config.cifar10_dataset, 
-            train=True,
-            download=True, 
             transform=transform,
+            **dataset_config,
         )
+
+        model = resnet18(weights=None)
+        model.fc = nn.Linear(model.fc.in_features, 10)
+
+    data_loader_config = DataLoaderConfig()
     data_loader = torch.utils.data.DataLoader(
-        dataset, 
-        batch_size=training_config.batch_size_per_device,
-        shuffle=True
+        dataset=dataset, 
+        **data_loader_config,
     )
     
-    model = resnet18(weights=None)
-    model.fc = nn.Linear(model.fc.in_features, 10)
+    optimizer_config = OptimizerConfig()
     optimizer = AdamW(
         params=model.parameters(), 
-        lr=training_config.lr,
+        **optimizer_config,
     )
     
     scheduler = CosineAnnealingWarmRestarts(
@@ -64,17 +59,18 @@ def main():
         T_0=len(data_loader) // accelerator_config.gradient_accumulation_steps,
     )
     
+    trainer_config = TrainerConfig()
     trainer = ResNetTrainer(
         model=model,
         data_loader=data_loader,
         optimizer=optimizer,
         accelerator=accelerator,
         logger=logger,
-        ckpt_folder_path=ckpt_config.folder_path,
         lr_scheduler=scheduler,
-        lr_scheduler_mode='per_step'
+        lr_scheduler_mode='per_step',
+        **trainer_config,
     )
-    trainer.run(epochs=training_config.epochs)
+    trainer.run()
 
 
 if __name__ == '__main__':

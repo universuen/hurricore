@@ -27,15 +27,17 @@ class ResNetTrainer(Trainer):
         accelerator: Accelerator,
         logger: Logger,
         log_interval: int = 1,
-        ckpt_folder_path: Path = None,
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
+        ckpt_folder_path: Path = None,
+        epochs: int = 100,
     ) -> None:
         super().__init__(
             model=model, 
             data_loader=data_loader, 
             optimizer=optimizer, 
-            accelerator=accelerator
+            accelerator=accelerator,
+            epochs=epochs,
         )
         self.hooks = [
             LoggerHook(

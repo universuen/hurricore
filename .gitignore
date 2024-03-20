@@ -9,7 +9,7 @@ __pycache__/
 /venv/
 
 # space-intensive data
-/data/
+data/
 
 # general test file
 tests/playground.py

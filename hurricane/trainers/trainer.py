@@ -16,8 +16,14 @@ class Trainer(TrainerBase):
         data_loader: DataLoader, 
         optimizer: Optimizer,
         accelerator: Accelerator,
+        epochs: int = 100,
     ) -> None:
-        super().__init__(model, data_loader, optimizer)
+        super().__init__(
+            model=model, 
+            data_loader=data_loader, 
+            optimizer=optimizer,
+            epochs=epochs,
+        )
         self.accelerator = accelerator
         self.model, self.data_loader, self.optimizer = self.accelerator.prepare(
             self.model, self.data_loader, self.optimizer

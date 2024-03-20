@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import inspect
 from pathlib import Path
+from logging import Logger
 
 import torch
 from accelerate import notebook_launcher
 
+from hurricane.config_base import ConfigBase
+
 
 launch = notebook_launcher
+
+
+def log_all_configs(logger: Logger) -> None:
+    for subclass in ConfigBase.__subclasses__():
+        logger.info(subclass())
 
 
 def get_list_mean(list_: list[int | float]) -> float:

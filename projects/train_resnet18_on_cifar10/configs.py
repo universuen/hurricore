@@ -1,16 +1,49 @@
 import path_setup
 
-from hurricane.common_configs import *
+from os import cpu_count
+import logging
+from pathlib import Path
+
+from hurricane.config_base import ConfigBase
 
 
-class TrainingConfig(ConfigBase):
+class PathConfig(ConfigBase):
+    project = Path(__file__).parent
+    data = project / 'data'
+    cifar10_dataset = data / 'cifar10_dataset'
+    logs = data / 'logs'
+    checkpoints = data / 'checkpoints'
+
+    def __post_init__(self) -> None:
+        for path in vars(self).values():
+            path.mkdir(parents=True, exist_ok=True)
+
+
+class TrainerConfig(ConfigBase):
     epochs = 10
+    ckpt_folder_path=PathConfig().checkpoints
+    log_interval = 1
+
+
+class OptimizerConfig(ConfigBase):
     lr = 1e-3
-    batch_size_per_device = 1024
 
 
-class UpdatedPathConfig(PathConfig):
-    cifar10_dataset: Path = PathConfig.data / 'cifar10_dataset'
+class DatasetConfig(ConfigBase):
+    root=PathConfig().cifar10_dataset
+    train=True
+    download=True
+
+
+class DataLoaderConfig(ConfigBase):
+    batch_size = 1024
+    shuffle = True
+    num_workers = cpu_count()
+
+
+class LoggerConfig(ConfigBase):
+    level = logging.INFO
+    logs_dir = PathConfig().logs
 
 
 class AcceleratorConfig(ConfigBase):
@@ -18,4 +51,4 @@ class AcceleratorConfig(ConfigBase):
 
 
 class CKPTConfig(ConfigBase):
-    folder_path = Path(__file__).resolve().parent / 'checkpoints'
+    folder_path = PathConfig().checkpoints
