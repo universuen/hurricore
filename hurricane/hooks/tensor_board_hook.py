@@ -2,9 +2,9 @@ from pathlib import Path
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from peft.peft_model import PeftModel
 
 from hurricane.hooks.hook_base import HookBase
-from hurricane.hooks.logger_hook import LoggerHook
 from hurricane.trainers.trainer import Trainer
 
 
@@ -21,13 +21,7 @@ class TensorBoardHook(HookBase):
         if not self.is_available:
             return
         trainer.tb_writer = self.writer
-        if trainer.accelerator.is_main_process:
-            with torch.no_grad():
-                self.writer.add_graph(
-                    model=trainer.accelerator.unwrap_model(trainer.model), 
-                    input_to_model=next(iter(trainer.data_loader))[0],
-                )
-            self.writer.flush()
+        
     
     def on_step_end(self, trainer: Trainer) -> None:
         if not self.is_available:

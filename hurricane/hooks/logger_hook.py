@@ -24,6 +24,8 @@ class LoggerHook(HookBase):
         if not self.is_available:
             return
         trainer.logger = self.logger
+        if trainer.accelerator.is_main_process:
+            self.logger.info(f'Model structure:\n{trainer.accelerator.unwrap_model(trainer.model)}')
     
     def on_epoch_start(self, trainer: Trainer) -> None:
         if not self.is_available:

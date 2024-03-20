@@ -14,7 +14,7 @@ from hurricane.logger import Logger
 from hurricane.utils import launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.opt_350m import *
+from configs.llama2_7b import *
 
 
 def main():
