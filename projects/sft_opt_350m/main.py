@@ -39,12 +39,12 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
 
     data_loader_config = DataLoaderConfig()
-    hf_llm_collator_config = HFLLMITCollatorConfig()
+    collator_config = CollatorConfig()
     data_loader = DataLoader(
         dataset=dataset,
         collate_fn=HFLLMITCollator(
             tokenizer=tokenizer, 
-            **hf_llm_collator_config,
+            **collator_config,
         ).collate_fn,
         **data_loader_config,
     )
