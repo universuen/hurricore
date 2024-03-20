@@ -28,13 +28,4 @@ epochs = 500
 # Example optimizer
 optimizer = torch.optim.SGD([torch.zeros(1)], lr=initial_lr)
 
-# # StepLR Scheduler
-# step_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
-# plot_scheduler(step_scheduler, epochs, 'StepLR Scheduler')
-
-# Reset optimizer
-optimizer = torch.optim.SGD([torch.zeros(1)], lr=initial_lr)
-
-# CosineAnnealingLR Scheduler
-cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=100)
-plot_scheduler(cosine_scheduler, epochs, 'CosineAnnealingLR Scheduler')
+pass

@@ -2,6 +2,7 @@ import time
 from logging import Logger
 
 from torch.cuda import memory_reserved
+from torch.utils.tensorboard import SummaryWriter
 
 from hurricane.hooks.hook_base import HookBase
 from hurricane.trainers.trainer import Trainer
@@ -15,17 +16,23 @@ class LoggerHook(HookBase):
         interval: int = 1, 
     ) -> None:
         super().__init__()
-        if logger is None:
-            logger = Logger('default')
         self.logger = logger
         self.interval = interval
+        if self.logger is None:
+            return     
+        self.tb_writer = SummaryWriter(log_dir=self.logger.logs_dir)
     
     def on_training_start(self, trainer: Trainer) -> None:
+        if self.logger is None:
+            return
         trainer.logger = self.logger
+        trainer.tb_writer = self.tb_writer
         if trainer.accelerator.is_main_process:
             self.num_batches = len(trainer.data_loader)
     
     def on_epoch_start(self, trainer: Trainer) -> None:
+        if self.logger is None:
+            return
         if trainer.accelerator.is_main_process:
             assert hasattr(trainer.ctx, 'epoch')
             self.losses_per_batch = []
@@ -33,6 +40,8 @@ class LoggerHook(HookBase):
             self.start_time = time.time()
         
     def on_step_end(self, trainer: Trainer) -> None:
+        if self.logger is None:
+            return
         step_loss = trainer.accelerator.gather(trainer.ctx.step_loss).detach().mean().item()
         if trainer.accelerator.is_main_process:
             self.losses_per_batch.append(step_loss)
@@ -47,17 +56,26 @@ class LoggerHook(HookBase):
                 hours, remainder = divmod(remainder, 3600) 
                 minutes, seconds = divmod(remainder, 60) 
                 formatted_remaining_time = f"{int(days)}d {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
+                lr_dict = {
+                    f'param_group_{idx}': group['lr'] 
+                    for idx, group in enumerate(trainer.optimizer.param_groups)
+                }
                 self.logger.info(
                     f"Epoch: {epoch}/{trainer.epochs} | "
                     f"Step: {idx}/{num_batches} | "
                     f"Loss: {step_loss:.5f} | "
                     f"Progress: {progress:.2%} | "
                     f"Time left: {formatted_remaining_time} | "
-                    f"Current lr: {[i['lr'] for i in trainer.optimizer.param_groups]} | "
+                    f"Current lr: {lr_dict} | "
                     f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
+                self.tb_writer.add_scalar(f'Loss / Epoch {epoch}', step_loss, idx)
+                self.tb_writer.add_scalars(f'Learning rate / Epoch {epoch}', lr_dict, idx)
+                self.tb_writer.add_scalar(f'Memory used / Epoch {epoch}', memory_reserved() / 1024 ** 3, idx)
 
     def on_epoch_end(self, trainer: Trainer) -> None:
+        if self.logger is None:
+            return
         if trainer.accelerator.is_main_process:
             avg_loss = get_list_mean(self.losses_per_batch)
             self.logger.info(f'Epoch {trainer.ctx.epoch} finished with average loss: {avg_loss}')
