@@ -13,6 +13,7 @@ from hurricane.hooks.logger_hook import LoggerHook
 from hurricane.hooks.hf_llm_peek_hook import HFLLMPeekHook
 from hurricane.hooks.ckpt_hook import CKPTHook
 from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook
+from hurricane.hooks.tensor_board_hook import TensorBoardHook
 
 
 class HFLLMTrainer(Trainer):
@@ -57,7 +58,10 @@ class HFLLMTrainer(Trainer):
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
-            CKPTHook(folder_path=ckpt_folder_path),
+            CKPTHook(
+                folder_path=ckpt_folder_path
+            ),
+            TensorBoardHook(),
         ]
     
     def compute_loss(self) -> torch.Tensor:

@@ -11,10 +11,10 @@ from accelerate import Accelerator
 from hurricane.trainers.hf_llm_trainer import HFLLMTrainer
 from hurricane.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
 from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs, get_current_date_time
+from hurricane.utils import launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs import *
+from configs.opt_350m import *
 
 
 def main():
@@ -31,8 +31,8 @@ def main():
         logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
     
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("google/gemma-2b")
-        model = AutoModelForCausalLM.from_pretrained("google/gemma-2b")
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name)
         dataset = ZhihuQADataset()
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})

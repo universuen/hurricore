@@ -5,13 +5,14 @@ import logging
 from pathlib import Path
 
 from hurricane.config_base import ConfigBase
+from hurricane.utils import get_config_name
 
 
-config_name = 'default'
+config_name = get_config_name()
 
 
 class PathConfig(ConfigBase):
-    project = Path(__file__).parent
+    project = Path(__file__).parents[1]
     data = project / 'data'
     cifar10_dataset = data / 'cifar10_dataset'
     logs = data / 'logs'

@@ -7,14 +7,15 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
+from peft import get_peft_model
 
 from hurricane.trainers.hf_llm_trainer import HFLLMTrainer
 from hurricane.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
 from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs, get_current_date_time
+from hurricane.utils import launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs import *
+from configs.gemma_2b import *
 
 
 def main():
@@ -31,12 +32,16 @@ def main():
         logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
     
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForCausalLM.from_pretrained(model_name)
         dataset = ZhihuQADataset()
 
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
     model.resize_token_embeddings(len(tokenizer))
+
+    peft_config = PEFTConfig()
+    model = get_peft_model(model, **peft_config)
+    model.print_trainable_parameters()
 
     data_loader_config = DataLoaderConfig()
     collator_config = CollatorConfig()

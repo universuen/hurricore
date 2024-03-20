@@ -4,20 +4,21 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from peft import LoraConfig, TaskType
-
 from hurricane.config_base import ConfigBase
-from hurricane.utils import get_current_date_time
+from hurricane.utils import get_config_name
 
 
+model_name = "facebook/opt-350m"
+config_name = get_config_name()
 gradient_accumulate_interval = 8
 
 
 class PathConfig(ConfigBase):
-    project = Path(__file__).parent
+    project = Path(__file__).parents[1]
     data = project / 'data'
     logs = data / 'logs'
-    checkpoints = data / 'checkpoints'
+    checkpoints = data / 'checkpoints' / config_name
+    tensorboards = data / 'tensorboards' / config_name
 
     def __post_init__(self) -> None:
         for path in vars(self).values():
@@ -27,7 +28,7 @@ class PathConfig(ConfigBase):
 class TrainerConfig(ConfigBase):
     epochs = 100
     ckpt_folder_path=PathConfig().checkpoints
-    log_interval = 1
+    log_interval = gradient_accumulate_interval
     peek_prompts=[
         '如何看待明天下雨？',
         '为什么太阳比地球大？',
@@ -36,6 +37,7 @@ class TrainerConfig(ConfigBase):
     peek_interval=gradient_accumulate_interval * 10
     log_interval=gradient_accumulate_interval
     ckpt_folder_path=PathConfig().checkpoints
+    tensorboard_folder_path=PathConfig().tensorboards
 
 
 class OptimizerConfig(ConfigBase):
@@ -43,7 +45,7 @@ class OptimizerConfig(ConfigBase):
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 4
+    batch_size = 12
     shuffle = True
     num_workers = cpu_count()
 
@@ -53,7 +55,7 @@ class CollatorConfig(ConfigBase):
 
 
 class LoggerConfig(ConfigBase):
-    name = get_current_date_time()
+    name = config_name
     level = logging.INFO
     logs_dir = PathConfig().logs
 
@@ -61,12 +63,3 @@ class LoggerConfig(ConfigBase):
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval
 
-
-class PEFTConfig(ConfigBase):
-    peft_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM, 
-        inference_mode=False, 
-        r=8, 
-        lora_alpha=32, 
-        lora_dropout=0.1
-    )

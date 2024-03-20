@@ -11,12 +11,11 @@ from accelerate import Accelerator
 
 from hurricane.logger import Logger
 from hurricane.utils import launch, log_all_configs
-from configs import *
+from configs.default import *
 from resnet_trainer import ResNetTrainer
 
 
 def main():
-    
     logger_config = LoggerConfig()
     logger = Logger(**logger_config)
     log_all_configs(logger)
