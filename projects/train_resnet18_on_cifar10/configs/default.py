@@ -9,7 +9,7 @@ from hurricane.utils import get_config_name
 
 
 config_name = get_config_name()
-gradient_accumulate_interval = 1
+gradient_accumulate_interval = 2
 
 
 class PathConfig(ConfigBase):

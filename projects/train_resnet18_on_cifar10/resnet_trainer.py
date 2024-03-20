@@ -32,6 +32,8 @@ class ResNetTrainer(Trainer):
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
         ckpt_folder_path: Path = None,
+        tensorboard_folder_path: Path = None,
+        tensorboard_interval: int = 1,
     ) -> None:
         super().__init__(
             model=model, 
@@ -52,7 +54,10 @@ class ResNetTrainer(Trainer):
             CKPTHook(
                 folder_path=ckpt_folder_path
             ),
-            TensorBoardHook(),
+            TensorBoardHook(
+                folder_path=tensorboard_folder_path,
+                interval=tensorboard_interval,    
+            ),
         ]
         
     def compute_loss(self) -> Tensor:
