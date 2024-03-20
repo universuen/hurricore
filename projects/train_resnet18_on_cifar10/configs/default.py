@@ -9,6 +9,7 @@ from hurricane.utils import get_config_name
 
 
 config_name = get_config_name()
+gradient_accumulate_interval = 1
 
 
 class PathConfig(ConfigBase):
@@ -17,6 +18,7 @@ class PathConfig(ConfigBase):
     cifar10_dataset = data / 'cifar10_dataset'
     logs = data / 'logs'
     checkpoints = data / 'checkpoints' / config_name
+    tensorboards = data / 'tensorboards' / config_name
 
     def __post_init__(self) -> None:
         for path in vars(self).values():
@@ -26,7 +28,9 @@ class PathConfig(ConfigBase):
 class TrainerConfig(ConfigBase):
     epochs = 10
     ckpt_folder_path=PathConfig().checkpoints
-    log_interval = 1
+    log_interval = gradient_accumulate_interval
+    tensorboard_folder_path=PathConfig().tensorboards
+    tensorboard_interval=gradient_accumulate_interval
 
 
 class OptimizerConfig(ConfigBase):
@@ -52,5 +56,5 @@ class LoggerConfig(ConfigBase):
 
 
 class AcceleratorConfig(ConfigBase):
-    gradient_accumulation_steps = 1
+    gradient_accumulation_steps = gradient_accumulate_interval
 

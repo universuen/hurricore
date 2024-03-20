@@ -39,6 +39,7 @@ class TrainerConfig(ConfigBase):
     log_interval=gradient_accumulate_interval
     ckpt_folder_path=PathConfig().checkpoints
     tensorboard_folder_path=PathConfig().tensorboards
+    tensorboard_interval=gradient_accumulate_interval
 
 
 class OptimizerConfig(ConfigBase):
