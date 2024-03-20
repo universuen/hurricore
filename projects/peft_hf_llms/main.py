@@ -4,7 +4,7 @@ import os
 
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
 from peft import get_peft_model
@@ -60,11 +60,10 @@ def main():
         **optimizer_config,
     )
 
-    scheduler = CosineAnnealingWarmRestarts(
+    scheduler = CosineAnnealingLR(
         optimizer=optimizer,
-        T_0=len(data_loader) // accelerator_config.gradient_accumulation_steps,
+        T_max=(len(data_loader) // accelerator_config.gradient_accumulation_steps) * trainer_config.epochs,
     )
-
     trainer_config = TrainerConfig()
     trainer = HFLLMTrainer(
         model=model, 
