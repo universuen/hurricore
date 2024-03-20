@@ -18,7 +18,7 @@ from resnet_trainer import ResNetTrainer
 def main():
     
     logger_config = LoggerConfig()
-    logger = Logger(f'{get_current_date_time()}', **logger_config)
+    logger = Logger(**logger_config)
     log_all_configs(logger)
     
     accelerator_config = AcceleratorConfig()

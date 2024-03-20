@@ -23,7 +23,7 @@ def main():
     accelerator = Accelerator(**accelerator_config)
 
     logger_config = LoggerConfig()
-    logger = Logger(f'{get_current_date_time()}', **logger_config)
+    logger = Logger(**logger_config)
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
 

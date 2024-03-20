@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from hurricane.config_base import ConfigBase
+from hurricane.utils import get_current_date_time
 
 
 class PathConfig(ConfigBase):
@@ -42,6 +43,7 @@ class DataLoaderConfig(ConfigBase):
 
 
 class LoggerConfig(ConfigBase):
+    name = get_current_date_time()
     level = logging.INFO
     logs_dir = PathConfig().logs
 

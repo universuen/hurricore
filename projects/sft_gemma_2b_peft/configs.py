@@ -7,6 +7,7 @@ from pathlib import Path
 from peft import LoraConfig, TaskType
 
 from hurricane.config_base import ConfigBase
+from hurricane.utils import get_current_date_time
 
 
 gradient_accumulate_interval = 8
@@ -52,6 +53,7 @@ class CollatorConfig(ConfigBase):
 
 
 class LoggerConfig(ConfigBase):
+    name = get_current_date_time()
     level = logging.INFO
     logs_dir = PathConfig().logs
 
