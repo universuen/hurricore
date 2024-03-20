@@ -42,7 +42,7 @@ class OptimizerConfig(ConfigBase):
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 32
+    batch_size = 4
     shuffle = True
     num_workers = cpu_count()
 

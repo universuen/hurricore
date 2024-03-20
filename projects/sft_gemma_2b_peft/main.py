@@ -40,7 +40,8 @@ def main():
     model.resize_token_embeddings(len(tokenizer))
 
     peft_config = PEFTConfig()
-    get_peft_model(model, **peft_config)
+    model = get_peft_model(model, **peft_config)
+    model.print_trainable_parameters()
 
     data_loader_config = DataLoaderConfig()
     collator_config = CollatorConfig()
