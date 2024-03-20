@@ -30,8 +30,15 @@ class HFLLMTrainer(Trainer):
         ckpt_folder_path: Path = None,
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
+        epochs: int = 100,
     ) -> None:
-        super().__init__(model, data_loader, optimizer, accelerator)
+        super().__init__(
+            model=model, 
+            data_loader=data_loader, 
+            optimizer=optimizer, 
+            accelerator=accelerator,
+            epochs=epochs,
+        )
         
         if peek_prompts is None:
             peek_prompts = []
