@@ -53,11 +53,11 @@ class HFLLMTrainer(Trainer):
                 logger=logger, 
                 interval=log_interval,
             ),
-            CKPTHook(folder_path=ckpt_folder_path),
             LRSchedulerHook(
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
+            CKPTHook(folder_path=ckpt_folder_path),
         ]
     
     def compute_loss(self) -> torch.Tensor:

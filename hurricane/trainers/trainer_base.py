@@ -22,7 +22,7 @@ class TrainerBase:
         self.data_loader = data_loader
         self.optimizer = optimizer
         self.ctx = Context()
-        self.ctx.epochs = epochs
+        self.epochs = epochs
         self.hooks = []
     
     def run(self) -> None:
@@ -32,7 +32,7 @@ class TrainerBase:
         for hook in self.hooks:
             hook.on_training_start(self)
             
-        for epoch in range(self.ctx.epoch + 1, self.ctx.epochs + 1):
+        for epoch in range(self.ctx.epoch + 1, self.epochs + 1):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:
