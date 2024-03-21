@@ -16,13 +16,16 @@ class TensorBoardHook(HookBase):
         self.is_available = (folder_path is not None and folder_path.is_dir())
         if not self.is_available:
             return
-        self.writer = SummaryWriter(log_dir=folder_path)
+        self.log_dir = folder_path
         self.interval = interval
-                
-    
-    def on_training_start(self, trainer: Trainer) -> None:
+
+    def on_epoch_start(self, trainer: Trainer) -> None:
         if not self.is_available:
             return
+        self.writer = SummaryWriter(
+            log_dir=self.log_dir,
+            purge_step=(trainer.ctx.epoch - 1) * len(trainer.data_loader),
+        )
         trainer.tb_writer = self.writer
         
     def on_step_end(self, trainer: Trainer) -> None:
@@ -49,7 +52,7 @@ class TensorBoardHook(HookBase):
                         self.writer.add_histogram(f"Gradients/{layer_name}", value.grad, step)
             self.writer.flush()
     
-    def on_training_end(self, trainer: Trainer) -> None:
+    def on_epoch_end(self, trainer: Trainer) -> None:
         if not self.is_available:
             return
         self.writer.close()

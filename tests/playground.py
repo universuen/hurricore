@@ -1,31 +1,13 @@
-import torch
-import matplotlib.pyplot as plt
+class Writer:
+    def __init__(self, name: str) -> None:
+        self.name = name
 
-def plot_scheduler(scheduler, epochs, title):
-    """
-    Plots the learning rate schedule.
 
-    :param scheduler: Learning rate scheduler.
-    :param epochs: Total number of epochs.
-    :param title: Title for the plot.
-    """
-    lrs = []
-    for epoch in range(epochs):
-        scheduler.step()
-        lr = scheduler.get_last_lr()[0]
-        lrs.append(lr)
-    plt.plot(range(epochs), lrs)
-    plt.title(title)
-    plt.xlabel('Epoch')
-    plt.ylabel('Learning Rate')
-    plt.grid(True)
-    plt.show()
 
-# Parameters
-initial_lr = 1
-epochs = 500
-
-# Example optimizer
-optimizer = torch.optim.SGD([torch.zeros(1)], lr=initial_lr)
-
-pass
+w1 = Writer('writer1')
+w2 = w1
+print(w2.name)
+del w2
+w2 = Writer('writer2')
+print(w2.name)
+print(w1.name)

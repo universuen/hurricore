@@ -11,7 +11,7 @@ from accelerate import Accelerator
 
 from hurricane.logger import Logger
 from hurricane.utils import launch, log_all_configs
-from configs.default import *
+from configs.no_grad_accumulation import *
 from resnet_trainer import ResNetTrainer
 
 
@@ -72,4 +72,4 @@ def main():
 
 
 if __name__ == '__main__':
-    launch(main, num_processes=4, use_port="8001")
+    launch(main, num_processes=1, use_port="8001")

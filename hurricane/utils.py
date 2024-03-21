@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from datetime import datetime
 from pathlib import Path
 from logging import Logger
 
@@ -40,3 +41,8 @@ def is_deepspeed_zero3(accelerator) -> bool:
     and accelerator.state.deepspeed_plugin.zero_stage == 3:
         return True
     return False
+
+
+def get_time_stamp() -> str:
+    now = datetime.now()
+    return now.strftime("%Y%m%d-%H%M%S")

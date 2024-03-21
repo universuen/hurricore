@@ -60,12 +60,12 @@ class HFLLMTrainer(Trainer):
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
-            CKPTHook(
-                folder_path=ckpt_folder_path,
-            ),
             TensorBoardHook(
                 folder_path=tensorboard_folder_path,
                 interval=tensorboard_interval,
+            ),
+            CKPTHook(
+                folder_path=ckpt_folder_path,
             ),
         ]
     
