@@ -42,13 +42,13 @@ class LoggerHook(HookBase):
         step_loss = trainer.accelerator.gather(trainer.ctx.step_loss).detach().mean().item()
         if trainer.accelerator.is_main_process:
             self.losses_per_batch.append(step_loss)
-            idx = trainer.ctx.batch_idx + 1
+            idx = trainer.ctx.batch_idx
             epoch = trainer.ctx.epoch
             num_batches = len(trainer.data_loader)
-            if idx % self.interval == 0 or idx == num_batches:
+            if trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
                 progress = idx / num_batches
                 elapsed_time = time.time() - self.start_time
-                remaining_time = (elapsed_time / idx) * ((trainer.epochs - epoch + 1) * num_batches - idx)
+                remaining_time = elapsed_time / progress - elapsed_time
                 days, remainder = divmod(remaining_time, 86400) 
                 hours, remainder = divmod(remainder, 3600) 
                 minutes, seconds = divmod(remainder, 60) 

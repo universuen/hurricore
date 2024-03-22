@@ -27,18 +27,22 @@ class PathConfig(ConfigBase):
 
 class TrainerConfig(ConfigBase):
     epochs = 100
-    ckpt_folder_path=PathConfig().checkpoints
+    
     log_interval = gradient_accumulate_interval
-    peek_prompts=[
+    
+    peek_prompts = [
         '如何看待明天下雨？',
         '为什么太阳比地球大？',
         '你如何看待近期的股市？',
     ]
     peek_interval=gradient_accumulate_interval * 10
-    log_interval=gradient_accumulate_interval
-    ckpt_folder_path=PathConfig().checkpoints
-    tensorboard_folder_path=PathConfig().tensorboards
-    tensorboard_interval=gradient_accumulate_interval
+
+    tensorboard_folder_path = PathConfig().tensorboards
+    tensorboard_interval = gradient_accumulate_interval
+    
+    ckpt_folder_path = PathConfig().checkpoints
+    ckpt_interval = gradient_accumulate_interval * 1000
+    ckpt_seed = 42
     
 
 class OptimizerConfig(ConfigBase):

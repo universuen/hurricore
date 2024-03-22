@@ -18,41 +18,29 @@ class TensorBoardHook(HookBase):
             return
         self.log_dir = folder_path
         self.interval = interval
-
-    def on_epoch_start(self, trainer: Trainer) -> None:
-        if not self.is_available:
-            return
-        self.writer = SummaryWriter(
-            log_dir=self.log_dir,
-            purge_step=(trainer.ctx.epoch - 1) * len(trainer.data_loader),
-        )
-        trainer.tb_writer = self.writer
         
     def on_step_end(self, trainer: Trainer) -> None:
         if not self.is_available:
             return
         loss = trainer.accelerator.gather(trainer.ctx.step_loss).detach().mean().item()
-        idx = trainer.ctx.batch_idx + 1
-        if trainer.accelerator.is_main_process and idx % self.interval == 0:
-            num_batches = len(trainer.data_loader)
-            step = (trainer.ctx.epoch - 1) * num_batches + idx
-            self.writer.add_scalar('Loss/Training', loss, step)
-            self.writer.add_scalar('Learning Rate', trainer.optimizer.param_groups[0]['lr'], step)
-            self.writer.flush()
+        step = trainer.ctx.global_step
+        if trainer.accelerator.is_main_process and step % self.interval == 0:
+            with SummaryWriter(
+                log_dir=self.log_dir,
+                purge_step=step,
+            ) as writer:
+                writer.add_scalar('Loss/Training', loss, step)
+                writer.add_scalar('Learning Rate', trainer.optimizer.param_groups[0]['lr'], step)
     
     def on_epoch_end(self, trainer: Trainer) -> None:
         if not self.is_available:
             return
         if trainer.accelerator.is_main_process:
-            idx = trainer.ctx.batch_idx + 1
-            num_batches = len(trainer.data_loader)
-            step = (trainer.ctx.epoch - 1) * num_batches + idx
-            for layer_name, value in trainer.model.named_parameters():
-                    if value.grad is not None:
-                        self.writer.add_histogram(f"Gradients/{layer_name}", value.grad, step)
-            self.writer.flush()
-    
-    def on_epoch_end(self, trainer: Trainer) -> None:
-        if not self.is_available:
-            return
-        self.writer.close()
+            step = trainer.ctx.global_step
+            with SummaryWriter(
+                log_dir=self.log_dir,
+                purge_step=step,
+            ) as writer:
+                for layer_name, value in trainer.model.named_parameters():
+                        if value.grad is not None:
+                            writer.add_histogram(f"Gradients/{layer_name}", value.grad, step)

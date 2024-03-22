@@ -14,9 +14,9 @@ from torch.utils.data import DataLoader
 
 from hurricane.trainers.trainer import Trainer
 from hurricane.hooks.logger_hook import LoggerHook
-from hurricane.hooks.ckpt_hook import CKPTHook
 from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook
 from hurricane.hooks.tensor_board_hook import TensorBoardHook
+from hurricane.hooks.ckpt_hook import CKPTHook
 
 
 class ResNetTrainer(Trainer):
@@ -26,14 +26,20 @@ class ResNetTrainer(Trainer):
         data_loader: DataLoader, 
         optimizer: Optimizer, 
         accelerator: Accelerator,
-        logger: Logger = None,
         epochs: int = 100,
+        
+        logger: Logger = None,
         log_interval: int = 1,
+        
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
-        ckpt_folder_path: Path = None,
+        
         tensorboard_folder_path: Path = None,
         tensorboard_interval: int = 1,
+        
+        ckpt_folder_path: Path = None,
+        ckpt_interval: int = 100,
+        ckpt_seed: int = 42,
     ) -> None:
         super().__init__(
             model=model, 
@@ -56,11 +62,15 @@ class ResNetTrainer(Trainer):
                 interval=tensorboard_interval,    
             ),
             CKPTHook(
-                folder_path=ckpt_folder_path
+                folder_path=ckpt_folder_path,
+                interval=ckpt_interval,
+                seed=ckpt_seed,
             ),
         ]
         
     def compute_loss(self) -> Tensor:
+        from time import sleep
+        sleep(1)
         inputs, labels = self.ctx.batch
         outputs = self.model(inputs)
         loss = cross_entropy(outputs, labels)

@@ -9,7 +9,7 @@ from hurricane.utils import get_config_name
 
 
 config_name = get_config_name()
-gradient_accumulate_interval = 2
+gradient_accumulate_interval = 4
 
 
 class PathConfig(ConfigBase):
@@ -27,10 +27,12 @@ class PathConfig(ConfigBase):
 
 class TrainerConfig(ConfigBase):
     epochs = 10
-    ckpt_folder_path=PathConfig().checkpoints
     log_interval = gradient_accumulate_interval
     tensorboard_folder_path=PathConfig().tensorboards
     tensorboard_interval=gradient_accumulate_interval
+    ckpt_folder_path=PathConfig().checkpoints
+    ckpt_interval = gradient_accumulate_interval * 100
+    ckpt_seed = 42
 
 
 class OptimizerConfig(ConfigBase):

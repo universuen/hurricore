@@ -1,6 +1,3 @@
-from logging import Logger
-
-import torch
 from torch import Tensor
 from torch import nn
 from torch.optim import Optimizer
@@ -28,6 +25,8 @@ class TrainerBase:
     def run(self) -> None:
 
         self.ctx.epoch = 0
+        self.ctx.batch_idx = 0
+        self.ctx.global_step = 0
         
         for hook in self.hooks:
             hook.on_training_start(self)
@@ -37,8 +36,9 @@ class TrainerBase:
             
             for hook in self.hooks:
                 hook.on_epoch_start(self)
-                
-            for batch_idx, batch in enumerate(self.data_loader):
+            
+            for batch_idx, batch in enumerate(self.data_loader, 1):
+                self.ctx.global_step += 1
                 self.ctx.batch_idx = batch_idx
                 self.ctx.batch = batch
 

@@ -25,9 +25,9 @@ class HFLLMPeekHook(HookBase):
         
         if trainer.accelerator.is_main_process \
         or is_deepspeed_zero3(trainer.accelerator):
-            idx = trainer.ctx.batch_idx + 1
+            idx = trainer.ctx.batch_idx
             num_batches = len(trainer.data_loader)
-            if idx % self.interval == 0 or idx == num_batches:
+            if trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
                 original_model = trainer.accelerator.unwrap_model(trainer.model)
                 original_model.eval()
                 answers = []

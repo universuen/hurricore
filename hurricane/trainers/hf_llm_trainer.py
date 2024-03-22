@@ -19,21 +19,30 @@ from hurricane.hooks.tensor_board_hook import TensorBoardHook
 class HFLLMTrainer(Trainer):
     def __init__(
         self, 
+        
         model: PreTrainedModel, 
         data_loader: DataLoader, 
         optimizer: Optimizer,
         accelerator: Accelerator,
         epochs: int = 100,
+        
         logger: Logger = None,
+        log_interval: int = 1,
+        
         peek_prompts: list[str] = None,
         tokenizer: PreTrainedTokenizerBase = None, 
         peek_interval: int = 1,
-        log_interval: int = 1,
-        ckpt_folder_path: Path = None,
+        
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
+        
         tensorboard_folder_path: Path = None,
         tensorboard_interval: int = 1,
+        
+        ckpt_folder_path: Path = None,
+        ckpt_interval: int = 1000,
+        ckpt_seed: int = 42,
+        
     ) -> None:
         super().__init__(
             model=model, 
@@ -66,6 +75,8 @@ class HFLLMTrainer(Trainer):
             ),
             CKPTHook(
                 folder_path=ckpt_folder_path,
+                interval=ckpt_interval,
+                seed=ckpt_seed, 
             ),
         ]
     
