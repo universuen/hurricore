@@ -27,6 +27,7 @@ class ResNetTrainer(Trainer):
         optimizer: Optimizer, 
         accelerator: Accelerator,
         epochs: int = 100,
+        seed: int = 42,
         
         logger: Logger = None,
         log_interval: int = 1,
@@ -39,7 +40,7 @@ class ResNetTrainer(Trainer):
         
         ckpt_folder_path: Path = None,
         ckpt_interval: int = 100,
-        ckpt_seed: int = 42,
+        
     ) -> None:
         super().__init__(
             model=model, 
@@ -47,6 +48,7 @@ class ResNetTrainer(Trainer):
             optimizer=optimizer, 
             accelerator=accelerator,
             epochs=epochs,
+            seed=seed,
         )
         self.hooks = [
             LoggerHook(
@@ -64,7 +66,6 @@ class ResNetTrainer(Trainer):
             CKPTHook(
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
-                seed=ckpt_seed,
             ),
         ]
         

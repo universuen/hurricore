@@ -37,11 +37,15 @@ class TrainerBase:
             for hook in self.hooks:
                 hook.on_epoch_start(self)
             
-            for batch_idx, batch in enumerate(self.data_loader, 1):
+            for batch_idx, batch in enumerate(self.data_loader, self.ctx.batch_idx + 1):
                 self.ctx.global_step += 1
                 self.ctx.batch_idx = batch_idx
                 self.ctx.batch = batch
 
+                #########################
+                self.logger.error(batch[1][:10])
+                #########################
+                
                 for hook in self.hooks:
                     hook.on_step_start(self)
 
@@ -52,6 +56,8 @@ class TrainerBase:
             
             for hook in self.hooks:
                 hook.on_epoch_end(self)
+                
+            self.ctx.batch_idx = 0
         
         for hook in self.hooks:
             hook.on_training_end(self)

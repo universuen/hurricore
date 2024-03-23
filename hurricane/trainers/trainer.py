@@ -5,6 +5,7 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
+from accelerate.utils import set_seed
 
 from hurricane.trainers.trainer_base import TrainerBase
 
@@ -17,6 +18,7 @@ class Trainer(TrainerBase):
         optimizer: Optimizer,
         accelerator: Accelerator,
         epochs: int = 100,
+        seed: int = 42,
     ) -> None:
         super().__init__(
             model=model, 
@@ -24,6 +26,7 @@ class Trainer(TrainerBase):
             optimizer=optimizer,
             epochs=epochs,
         )
+        set_seed(seed)
         self.accelerator = accelerator
         self.model, self.data_loader, self.optimizer = self.accelerator.prepare(
             self.model, self.data_loader, self.optimizer

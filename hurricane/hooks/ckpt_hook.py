@@ -11,7 +11,6 @@ class CKPTHook(HookBase):
         self, 
         folder_path: Path = None,
         interval: int = 100,
-        seed: int = 42,
     ) -> None:
         super().__init__()
         self.is_available = (folder_path is not None and folder_path.is_dir())
@@ -19,11 +18,6 @@ class CKPTHook(HookBase):
             return
         self.folder_path = folder_path
         self.interval = interval
-        self.memory = {
-            'dataloader': None,
-            'batch_idx': 0,
-        }
-        self.seed = seed
         
     
     def on_training_start(self, trainer: Trainer) -> None:
@@ -32,10 +26,12 @@ class CKPTHook(HookBase):
         
         trainer.accelerator.register_for_checkpointing(trainer.ctx)
         
-        trainer.accelerator.dataloader_config.use_seedable_sampler = True
-        set_seed(self.seed)
-        trainer.data_loader._is_accelerate_prepared = False
-        trainer.data_loader = trainer.accelerator.prepare(trainer.data_loader)
+        if not trainer.accelerator.dataloader_config.use_seedable_sampler:
+            raise ValueError(
+                'For deterministic reproducibility, '
+                'CKPTHook requires use_seedable_sampler=True in DataLoaderConfiguration of Accelerator.\n'
+                'Try Accelerator(dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True))'
+            )
         
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
         if len(ckpt_dirs) == 0:
@@ -47,13 +43,10 @@ class CKPTHook(HookBase):
 
         trainer.accelerator.load_state(latest_ckpt_dir)
         
+        trainer.data_loader.skip_batches = trainer.ctx.batch_idx
+        
         trainer.ctx.epoch -= 1
-        self.memory['dataloader'] = trainer.data_loader
-        trainer.data_loader = trainer.accelerator.skip_first_batches(
-            dataloader=trainer.data_loader, 
-            num_batches=trainer.ctx.batch_idx,
-        )
-        self.memory['batch_idx'] = trainer.ctx.batch_idx
+        # trainer.data_loader.skip_batches = trainer.ctx.batch_idx
         if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
             trainer.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
     
@@ -64,7 +57,7 @@ class CKPTHook(HookBase):
         step = trainer.ctx.global_step
         if step % self.interval == 0:
             current_batch_idx = trainer.ctx.batch_idx
-            trainer.ctx.batch_idx = self.memory['batch_idx'] + current_batch_idx
+            trainer.ctx.batch_idx = trainer.data_loader.skip_batches + current_batch_idx
             ckpt_path = self.folder_path / f'ckpt_step_{step}'
             trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
             trainer.ctx.batch_idx = current_batch_idx
@@ -76,7 +69,4 @@ class CKPTHook(HookBase):
     def on_epoch_end(self, trainer: Trainer) -> None:
         if not self.is_available:
             return
-        self.memory['batch_idx'] = 0
-        if self.memory['dataloader'] is not None:
-            trainer.data_loader = self.memory['dataloader']
-            self.memory['dataloader'] = None
+        trainer.data_loader.skip_batches = 0

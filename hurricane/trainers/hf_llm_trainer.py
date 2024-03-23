@@ -25,6 +25,7 @@ class HFLLMTrainer(Trainer):
         optimizer: Optimizer,
         accelerator: Accelerator,
         epochs: int = 100,
+        seed: int = 42,
         
         logger: Logger = None,
         log_interval: int = 1,
@@ -41,7 +42,6 @@ class HFLLMTrainer(Trainer):
         
         ckpt_folder_path: Path = None,
         ckpt_interval: int = 1000,
-        ckpt_seed: int = 42,
         
     ) -> None:
         super().__init__(
@@ -50,6 +50,7 @@ class HFLLMTrainer(Trainer):
             optimizer=optimizer, 
             accelerator=accelerator,
             epochs=epochs,
+            seed=seed,
         )
         
         if peek_prompts is None:
@@ -76,7 +77,6 @@ class HFLLMTrainer(Trainer):
             CKPTHook(
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
-                seed=ckpt_seed, 
             ),
         ]
     
