@@ -46,7 +46,6 @@ def main():
         dataset = range(10)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
         dataloader = accelerator.prepare(dataloader)
-    
         
         if use_ckpt:
             print(f'{accelerator.process_index}: Resumed from checkpoint')

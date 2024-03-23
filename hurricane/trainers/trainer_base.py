@@ -41,10 +41,6 @@ class TrainerBase:
                 self.ctx.global_step += 1
                 self.ctx.batch_idx = batch_idx
                 self.ctx.batch = batch
-
-                #########################
-                self.logger.error(batch[1][:10])
-                #########################
                 
                 for hook in self.hooks:
                     hook.on_step_start(self)
