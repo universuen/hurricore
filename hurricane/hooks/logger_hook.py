@@ -11,11 +11,11 @@ from hurricane.utils import get_list_mean
 
 def _format_parameters(num_params):
     if num_params >= 1e9: 
-        return f'{num_params / 1e9:.2f}B'
+        return f'{num_params / 1e9:.2f} B'
     elif num_params >= 1e6: 
-        return f'{num_params / 1e6:.2f}M'
+        return f'{num_params / 1e6:.2f} M'
     elif num_params >= 1e3: 
-        return f'{num_params / 1e3:.2f}K'
+        return f'{num_params / 1e3:.2f} K'
     else: 
         return str(num_params)
 
