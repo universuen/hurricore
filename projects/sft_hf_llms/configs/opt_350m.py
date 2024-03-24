@@ -25,7 +25,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 100
+    epochs = 10
     
     log_interval = gradient_accumulate_interval
     

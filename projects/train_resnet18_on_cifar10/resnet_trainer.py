@@ -70,8 +70,6 @@ class ResNetTrainer(Trainer):
         ]
         
     def compute_loss(self) -> Tensor:
-        from time import sleep
-        sleep(1)
         inputs, labels = self.ctx.batch
         outputs = self.model(inputs)
         loss = cross_entropy(outputs, labels)

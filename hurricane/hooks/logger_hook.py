@@ -59,6 +59,7 @@ class LoggerHook(HookBase):
             return
         self.step += 1
         idx = trainer.ctx.batch_idx
+        num_batches = len(trainer.data_loader)
         if trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
             step_loss = trainer.accelerator.gather(trainer.ctx.step_loss).detach().mean().item()
             if trainer.accelerator.is_main_process:
