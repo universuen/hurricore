@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 from peft import LoraConfig, TaskType
+from accelerate import DataLoaderConfiguration
 
 from hurricane.config_base import ConfigBase
 from hurricane.utils import get_config_name
@@ -68,6 +69,7 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval
+    dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True)
 
 
 class PEFTConfig(ConfigBase):

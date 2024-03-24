@@ -2,7 +2,7 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from accelerate import DeepSpeedPlugin
+from accelerate import DeepSpeedPlugin, DataLoaderConfiguration
 
 from hurricane.config_base import ConfigBase
 from hurricane.utils import get_config_name
@@ -74,4 +74,4 @@ class AcceleratorConfig(ConfigBase):
         # offload_param_device = 'cpu',
         zero3_init_flag = False,
     )
-
+    dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True)

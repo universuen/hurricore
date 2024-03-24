@@ -11,7 +11,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizerBase
 from hurricane.trainers.trainer import Trainer
 from hurricane.hooks.logger_hook import LoggerHook
 from hurricane.hooks.hf_llm_peek_hook import HFLLMPeekHook
-from hurricane.hooks.ckpt_hook import CKPTHook
+from hurricane.hooks.checkpoint_hook import CheckpointHook
 from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook
 from hurricane.hooks.tensor_board_hook import TensorBoardHook
 
@@ -74,7 +74,7 @@ class HFLLMTrainer(Trainer):
                 folder_path=tensorboard_folder_path,
                 interval=tensorboard_interval,
             ),
-            CKPTHook(
+            CheckpointHook(
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
             ),

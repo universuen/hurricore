@@ -1,12 +1,10 @@
 from pathlib import Path
 
-from accelerate.utils import set_seed
-
 from hurricane.hooks.hook_base import HookBase
 from hurricane.trainers.trainer import Trainer
 
 
-class CKPTHook(HookBase):
+class CheckpointHook(HookBase):
     def __init__(
         self, 
         folder_path: Path = None,
@@ -28,10 +26,17 @@ class CKPTHook(HookBase):
         
         if not trainer.accelerator.dataloader_config.use_seedable_sampler:
             raise ValueError(
-                'For deterministic reproducibility, '
-                'CKPTHook requires use_seedable_sampler=True in DataLoaderConfiguration of Accelerator.\n'
-                'Try Accelerator(dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True))'
+                """
+                For deterministic reproducibility, 
+                CheckpointHook requires `use_seedable_sampler=True` in `DataLoaderConfiguration` of `Accelerator`.
+                Try: `Accelerator(dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True))`
+                """
             )
+        
+        # TODO: Remove this when the issue is fixed in Accelerate `prepare_dataloader()`#####################
+        if hasattr(trainer.dataloader.batch_sampler, 'batch_sampler'):
+            trainer.dataloader.batch_sampler.batch_sampler.sampler = trainer.dataloader.batch_sampler.sampler
+        #####################################################################################################
         
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
         if len(ckpt_dirs) == 0:
@@ -43,6 +48,7 @@ class CKPTHook(HookBase):
 
         trainer.accelerator.load_state(latest_ckpt_dir)
         
+        trainer.data_loader.set_epoch(trainer.ctx.epoch - 1)
         trainer.data_loader.skip_batches = trainer.ctx.batch_idx
         
         trainer.ctx.epoch -= 1
