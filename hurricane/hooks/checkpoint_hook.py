@@ -34,8 +34,8 @@ class CheckpointHook(HookBase):
             )
         
         # TODO: Remove this when the issue is fixed in Accelerate `prepare_dataloader()`#####################
-        if hasattr(trainer.dataloader.batch_sampler, 'batch_sampler'):
-            trainer.dataloader.batch_sampler.batch_sampler.sampler = trainer.dataloader.batch_sampler.sampler
+        if hasattr(trainer.data_loader.batch_sampler, 'batch_sampler'):
+            trainer.data_loader.batch_sampler.batch_sampler.sampler = trainer.data_loader.batch_sampler.sampler
         #####################################################################################################
         
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]

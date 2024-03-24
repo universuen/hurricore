@@ -14,7 +14,8 @@ def main():
         dataset = range(10)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
         dataloader = accelerator.prepare(dataloader)
-        
+        if hasattr(dataloader.batch_sampler, 'batch_sampler'):
+            dataloader.batch_sampler.batch_sampler.sampler = dataloader.batch_sampler.sampler
 
             
         if use_ckpt:
@@ -33,5 +34,5 @@ def main():
                     print(f'{accelerator.process_index}: Batch {idx}: {batch}')
 
 
-notebook_launcher(main, num_processes=2)
+notebook_launcher(main, num_processes=2, use_port='8000')
 
