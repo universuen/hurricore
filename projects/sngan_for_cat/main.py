@@ -1,7 +1,7 @@
 import _path_setup
 
 from torch.utils.data import DataLoader
-from torch.optim import AdamW
+from torch.optim import RMSprop
 from accelerate import Accelerator
 
 from hurricane.utils import launch, log_all_configs
@@ -25,8 +25,8 @@ def main():
         dataset = CatDataset(**DatasetConfig())
     data_loader = DataLoader(dataset, **DataLoaderConfig())
     
-    g_optimizer = AdamW(model.generator.parameters(), **GeneratorOptimizerConfig()) 
-    d_optimizer = AdamW(model.discriminator.parameters(), **DiscriminatorOptimizerConfig())
+    g_optimizer = RMSprop(model.generator.parameters(), **GeneratorOptimizerConfig()) 
+    d_optimizer = RMSprop(model.discriminator.parameters(), **DiscriminatorOptimizerConfig())
     
     trainer = SNGANTrainer(
         model=model, 

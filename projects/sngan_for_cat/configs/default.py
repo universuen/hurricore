@@ -48,7 +48,7 @@ class TrainerConfig(ConfigBase):
     tensor_board_interval = gradient_accumulation_steps
     
     image_peek_folder_path = PathConfig().data / 'peek_results'
-    image_peek_interval = gradient_accumulation_steps * 10
+    image_peek_interval = gradient_accumulation_steps * 30
     
     checkpoint_folder_path = PathConfig().checkpoints
     checkpoint_interval = gradient_accumulation_steps * 1000

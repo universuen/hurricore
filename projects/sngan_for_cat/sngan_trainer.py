@@ -77,11 +77,10 @@ class SNGANTrainer(Trainer):
         with self.accelerator.accumulate(self.model):
             
             batch_size = self.ctx.batch.shape[0]
-            
+
             for _ in range(self.d_loop_per_step):
-                self.d_optimizer.zero_grad()
                 with self.accelerator.autocast():
-                    fake_images = self.model.generator.generate(batch_size)
+                    fake_images = self.model.generator.generate(batch_size).detach()
                     real_images = self.ctx.batch
                     real_scores = self.model.discriminator(real_images)
                     fake_scores = self.model.discriminator(fake_images)
@@ -90,9 +89,10 @@ class SNGANTrainer(Trainer):
                     d_loss = (avg_fake_score - avg_real_score) / 2
                 self.accelerator.backward(d_loss)
                 if self.accelerator.sync_gradients:
-                    self.accelerator.clip_grad_norm_(self.model.discriminator.parameters(), 1)
+                    self.accelerator.clip_grad_value_(self.model.discriminator.parameters(), 1)
                 self.d_optimizer.step()
-    
+                self.d_optimizer.zero_grad()
+            
             for _ in range(self.g_loop_per_step):
                 with self.accelerator.autocast():
                     fake_images = self.model.generator.generate(batch_size)
@@ -101,11 +101,9 @@ class SNGANTrainer(Trainer):
                     g_loss = -avg_fake_score
                 self.accelerator.backward(g_loss)
                 if self.accelerator.sync_gradients:
-                    self.accelerator.clip_grad_norm_(self.model.generator.parameters(), 1)
+                    self.accelerator.clip_grad_value_(self.model.generator.parameters(), 1)
                 self.g_optimizer.step()
                 self.g_optimizer.zero_grad()
-            
-            
             
             self.ctx.g_step_loss = g_loss
             self.ctx.d_step_loss = d_loss
