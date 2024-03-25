@@ -51,7 +51,6 @@ class CheckpointHook(HookBase):
         self.trainer.data_loader.skip_batches = self.trainer.ctx.batch_idx
         
         self.trainer.ctx.epoch -= 1
-        # self.trainer.data_loader.skip_batches = self.trainer.ctx.batch_idx
         if hasattr(self.trainer, 'logger') and self.trainer.accelerator.is_main_process:
             self.trainer.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
     
@@ -60,7 +59,13 @@ class CheckpointHook(HookBase):
         if not self.is_available:
             return
         step = self.trainer.ctx.global_step
-        if step % self.interval == 0:
+        
+        conditions = [
+            step % self.interval == 0,
+            self.trainer.ctx.epoch == self.trainer.epochs,
+            self.trainer.ctx.batch_idx == len(self.trainer.data_loader),
+        ]
+        if conditions[0] or (conditions[1] and conditions[2]):
             current_batch_idx = self.trainer.ctx.batch_idx
             self.trainer.ctx.batch_idx = self.trainer.data_loader.skip_batches + current_batch_idx
             ckpt_path = self.folder_path / f'ckpt_step_{step}'

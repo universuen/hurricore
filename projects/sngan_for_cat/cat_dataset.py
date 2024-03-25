@@ -16,7 +16,7 @@ class CatDataset(Dataset):
     ) -> None:
         super().__init__()
         self.path = Path(path)
-        self.img_paths = path.rglob('*cat*.jpg')
+        self.img_paths = list(path.rglob('*cat*.jpg'))
         self.transform = Compose([
             Resize((512, 512)),
             ToTensor(),
@@ -24,7 +24,7 @@ class CatDataset(Dataset):
         ]) if transform is None else transform
     
     def __len__(self) -> int:
-        return len(self.data)
+        return len(self.img_paths)
     
     def __getitem__(self, index: int) -> torch.Tensor:
         image = Image.open(self.img_paths[index])

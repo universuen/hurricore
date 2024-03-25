@@ -30,6 +30,11 @@ class Generator(nn.Module):
             z = layer(z) 
         return z
 
+    def generate(self, n: int) -> Tensor:
+        device = next(self.parameters()).device
+        z = torch.randn(n, self.z_dim, 1, 1).to(device)
+        return self(z)
+    
 
 class Discriminator(nn.Module):
     def __init__(self) -> None:
@@ -64,13 +69,3 @@ class SNGAN(nn.Module):
         self.z_dim = z_dim
         self.generator = Generator(z_dim)
         self.discriminator = Discriminator()
-
-    def forward(self, images: torch.Tensor) -> tuple[Tensor, Tensor]:
-        batch_size = images.shape[0]
-        z = torch.randn(batch_size, self.z_dim, 1, 1)
-        generated_images = self.generator(z)
-        real_scores = self.discriminator(images)
-        fake_scores = self.discriminator(generated_images)
-        g_loss = -fake_scores
-        d_loss = -real_scores + fake_scores
-        return g_loss, d_loss

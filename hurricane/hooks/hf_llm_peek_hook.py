@@ -24,8 +24,11 @@ class HFLLMPeekHook(HookBase):
         if not self.is_available:
             return
         
-        if self.trainer.accelerator.is_main_process \
-        or is_deepspeed_zero3(self.trainer.accelerator):
+        conditions = (
+            self.trainer.accelerator.is_main_process,
+            is_deepspeed_zero3(self.trainer.accelerator),
+        )
+        if any(conditions):
             idx = self.trainer.ctx.batch_idx
             num_batches = len(self.trainer.data_loader)
             if self.trainer.ctx.global_step % self.interval == 0 or idx == num_batches:

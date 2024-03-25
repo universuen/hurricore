@@ -14,7 +14,6 @@ from configs.default import *
 
 
 def main():
-    
     logger = Logger(**LoggerConfig())
     log_all_configs(logger)
     
@@ -23,11 +22,11 @@ def main():
     model = SNGAN(**SNGANConfig())
     
     with accelerator.main_process_first():
-        dataset = CatDataset()
+        dataset = CatDataset(**DatasetConfig())
     data_loader = DataLoader(dataset, **DataLoaderConfig())
     
-    g_optimizer = AdamW(model.generator.parameters())
-    d_optimizer = AdamW(model.discriminator.parameters())
+    g_optimizer = AdamW(model.generator.parameters(), **GeneratorOptimizerConfig()) 
+    d_optimizer = AdamW(model.discriminator.parameters(), **DiscriminatorOptimizerConfig())
     
     trainer = SNGANTrainer(
         model=model, 

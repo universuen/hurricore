@@ -52,22 +52,22 @@ class ResNetTrainer(Trainer):
         )
         self.hooks = [
             LoggerHook(
-                self,
+                trainer=self,
                 logger=logger,
                 interval=log_interval,
             ),
             LRSchedulerHook(
-                self,
+                trainer=self,
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
             TensorBoardHook(
-                self,
+                trainer=self,
                 folder_path=tensor_board_folder_path,
                 interval=tensor_board_interval,    
             ),
             CheckpointHook(
-                self,
+                trainer=self,
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
             ),

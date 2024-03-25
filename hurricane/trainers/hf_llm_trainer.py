@@ -58,23 +58,28 @@ class HFLLMTrainer(Trainer):
             
         self.hooks = [
             HFLLMPeekHook(
+                trainer=self,
                 prompts=peek_prompts, 
                 tokenizer=tokenizer, 
                 interval=peek_interval,
             ),
             LoggerHook(
+                trainer=self,
                 logger=logger, 
                 interval=log_interval,
             ),
             LRSchedulerHook(
+                trainer=self,
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
             TensorBoardHook(
+                trainer=self,
                 folder_path=tensor_board_folder_path,
                 interval=tensor_board_interval,
             ),
             CheckpointHook(
+                trainer=self,
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
             ),
