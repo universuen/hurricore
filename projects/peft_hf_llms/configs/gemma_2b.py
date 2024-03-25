@@ -1,4 +1,4 @@
-import path_setup
+import _path_setup
 
 from os import cpu_count
 import logging
@@ -20,7 +20,7 @@ class PathConfig(ConfigBase):
     data = project / 'data'
     logs = data / 'logs'
     checkpoints = data / 'checkpoints' / config_name
-    tensorboards = data / 'tensorboards' / config_name
+    tensor_boards = data / 'tensor_boards' / config_name
 
     def __post_init__(self) -> None:
         for path in vars(self).values():
@@ -40,8 +40,8 @@ class TrainerConfig(ConfigBase):
     ]
     peek_interval=gradient_accumulate_interval * 10
 
-    tensorboard_folder_path = PathConfig().tensorboards
-    tensorboard_interval = gradient_accumulate_interval
+    tensor_board_folder_path = PathConfig().tensor_boards
+    tensor_board_interval = gradient_accumulate_interval
     
     ckpt_folder_path = PathConfig().checkpoints
     ckpt_interval = gradient_accumulate_interval * 1000

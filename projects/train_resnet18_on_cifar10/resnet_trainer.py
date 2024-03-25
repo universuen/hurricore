@@ -1,4 +1,4 @@
-import path_setup
+import _path_setup
 
 from logging import Logger
 from pathlib import Path
@@ -35,8 +35,8 @@ class ResNetTrainer(Trainer):
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
         
-        tensorboard_folder_path: Path = None,
-        tensorboard_interval: int = 1,
+        tensor_board_folder_path: Path = None,
+        tensor_board_interval: int = 1,
         
         ckpt_folder_path: Path = None,
         ckpt_interval: int = 100,
@@ -52,18 +52,22 @@ class ResNetTrainer(Trainer):
         )
         self.hooks = [
             LoggerHook(
+                self,
                 logger=logger,
                 interval=log_interval,
             ),
             LRSchedulerHook(
+                self,
                 lr_scheduler=lr_scheduler,
                 mode=lr_scheduler_mode,
             ),
             TensorBoardHook(
-                folder_path=tensorboard_folder_path,
-                interval=tensorboard_interval,    
+                self,
+                folder_path=tensor_board_folder_path,
+                interval=tensor_board_interval,    
             ),
             CheckpointHook(
+                self,
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
             ),

@@ -1,4 +1,4 @@
-import path_setup
+import  _path_setup
 
 from hurricane.logger import Logger
 

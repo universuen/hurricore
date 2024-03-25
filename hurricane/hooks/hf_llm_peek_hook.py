@@ -2,33 +2,34 @@ import torch
 from transformers import PreTrainedTokenizer
 
 from hurricane.hooks.hook_base import HookBase
-from hurricane.trainers.trainer import Trainer
+from hurricane.trainers.trainer_base import TrainerBase
 from hurricane.utils import is_deepspeed_zero3
 
 
 class HFLLMPeekHook(HookBase):
     def __init__(
         self, 
+        trainer: TrainerBase,
         prompts: list[str] = None, 
         tokenizer: PreTrainedTokenizer = None,
         interval: int = 1,
     ) -> None:
-        super().__init__()
+        super().__init__(trainer)
         self.is_available = (None not in (prompts, tokenizer))
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
     
-    def on_step_end(self, trainer: Trainer) -> None:
+    def on_step_end(self) -> None:
         if not self.is_available:
             return
         
-        if trainer.accelerator.is_main_process \
-        or is_deepspeed_zero3(trainer.accelerator):
-            idx = trainer.ctx.batch_idx
-            num_batches = len(trainer.data_loader)
-            if trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
-                original_model = trainer.accelerator.unwrap_model(trainer.model)
+        if self.trainer.accelerator.is_main_process \
+        or is_deepspeed_zero3(self.trainer.accelerator):
+            idx = self.trainer.ctx.batch_idx
+            num_batches = len(self.trainer.data_loader)
+            if self.trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
+                original_model = self.trainer.accelerator.unwrap_model(self.trainer.model)
                 original_model.eval()
                 answers = []
                 with torch.no_grad():
@@ -50,6 +51,6 @@ class HFLLMPeekHook(HookBase):
                         answer = self.tokenizer.decode(answer_ids, skip_special_tokens=True)
                         answers.append(answer)
                 peek_results = zip(self.prompts, answers)
-                if hasattr(trainer, 'logger') and trainer.accelerator.is_main_process:
+                if hasattr(self.trainer, 'logger') and self.trainer.accelerator.is_main_process:
                     for q, a in peek_results:
-                        trainer.logger.info(f'Q:{q} A:{a}')
+                        self.trainer.logger.info(f'Q:{q} A:{a}')

@@ -37,8 +37,8 @@ class HFLLMTrainer(Trainer):
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
         
-        tensorboard_folder_path: Path = None,
-        tensorboard_interval: int = 1,
+        tensor_board_folder_path: Path = None,
+        tensor_board_interval: int = 1,
         
         ckpt_folder_path: Path = None,
         ckpt_interval: int = 1000,
@@ -71,8 +71,8 @@ class HFLLMTrainer(Trainer):
                 mode=lr_scheduler_mode,
             ),
             TensorBoardHook(
-                folder_path=tensorboard_folder_path,
-                interval=tensorboard_interval,
+                folder_path=tensor_board_folder_path,
+                interval=tensor_board_interval,
             ),
             CheckpointHook(
                 folder_path=ckpt_folder_path,

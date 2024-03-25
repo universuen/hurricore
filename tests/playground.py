@@ -15,5 +15,4 @@ def main():
     dataloader = accelerator.prepare(dataloader)
     print(type(dataloader.batch_sampler.batch_sampler.sampler))
 
-notebook_launcher(main, num_processes=2, use_port='8000')
-
+main()

@@ -29,13 +29,13 @@ class TrainerBase:
         self.ctx.global_step = 0
         
         for hook in self.hooks:
-            hook.on_training_start(self)
+            hook.on_training_start()
             
         for epoch in range(self.ctx.epoch + 1, self.epochs + 1):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:
-                hook.on_epoch_start(self)
+                hook.on_epoch_start()
             
             for batch_idx, batch in enumerate(self.data_loader, self.ctx.batch_idx + 1):
                 self.ctx.global_step += 1
@@ -43,20 +43,20 @@ class TrainerBase:
                 self.ctx.batch = batch
                 
                 for hook in self.hooks:
-                    hook.on_step_start(self)
+                    hook.on_step_start()
 
                 self.ctx.step_loss = self.training_step()
 
                 for hook in self.hooks:
-                    hook.on_step_end(self)
+                    hook.on_step_end()
             
             for hook in self.hooks:
-                hook.on_epoch_end(self)
+                hook.on_epoch_end()
                 
             self.ctx.batch_idx = 0
         
         for hook in self.hooks:
-            hook.on_training_end(self)
+            hook.on_training_end()
 
     def training_step(self) -> Tensor:
         self.model.train()
