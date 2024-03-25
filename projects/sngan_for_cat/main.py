@@ -15,9 +15,9 @@ from configs.default import *
 
 def main():
     logger = Logger(**LoggerConfig())
-    log_all_configs(logger)
-    
     accelerator = Accelerator(**AcceleratorConfig())
+    if accelerator.is_main_process:
+        log_all_configs(logger)
     
     model = SNGAN(**SNGANConfig())
     
