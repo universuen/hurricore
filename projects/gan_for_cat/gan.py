@@ -1,6 +1,19 @@
 import torch
 from torch import nn, Tensor
+from torch.nn import init
 from torch.nn.utils import spectral_norm
+
+def _init_weights(m):
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('Linear') != -1:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+        if m.bias is not None:
+            init.constant_(m.bias.data, 0)
+    elif classname.find('BatchNorm') != -1:
+        init.normal_(m.weight.data, 1.0, 0.02)
+        init.constant_(m.bias.data, 0)
 
 
 class Generator(nn.Module):
@@ -10,7 +23,7 @@ class Generator(nn.Module):
         self.initial_layer = nn.Sequential(
             nn.ConvTranspose2d(z_dim, 512, 4, 1, 0, bias=False),
             nn.BatchNorm2d(512),
-            nn.ReLU(True)
+            nn.LeakyReLU(0.2, inplace=True)
         )
         features_sizes = [512, 256, 128, 64, 32, 16, 8, 3]
         self.layers = nn.ModuleList()
@@ -18,7 +31,7 @@ class Generator(nn.Module):
             layer = nn.Sequential(
                 nn.ConvTranspose2d(in_size, out_size, 4, 2, 1, bias=False),
                 nn.BatchNorm2d(out_size) if out_size != 3 else nn.Identity(), 
-                nn.ReLU(True) if out_size != 3 else nn.Sigmoid()  
+                nn.LeakyReLU(0.2, inplace=True) if out_size != 3 else nn.Sigmoid()  
             )
             self.layers.append(layer)
         
@@ -39,20 +52,24 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self) -> None:
         super().__init__()
-        features_sizes = [3, 8, 16, 32, 64, 128, 512, 1024]
+        features_sizes = [3, 8, 16, 32, 64, 128, 512]
         self.layers = nn.ModuleList()
         for in_size, out_size in zip(features_sizes[:-1], features_sizes[1:]):
             self.layers.append(
                 nn.Sequential(
                     spectral_norm(nn.Conv2d(in_size, out_size, 4, 2, 1, bias=False)),
-                    nn.BatchNorm2d(out_size),
+                    nn.GroupNorm(max(out_size // 16, 2), out_size),
                     nn.LeakyReLU(0.2, inplace=True)
                 )
             )
         
         self.final_layer = nn.Sequential(
-            spectral_norm(nn.Conv2d(1024, 1, 4, 1, 0, bias=False)),
             nn.Flatten(),
+            nn.Linear(512 * 8 * 8, 256),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(256, 64),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(64, 1),
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -63,9 +80,11 @@ class Discriminator(nn.Module):
         return output
 
 
-class SNGAN(nn.Module):
+class GAN(nn.Module):
     def __init__(self, z_dim: int) -> None:
         super().__init__()
         self.z_dim = z_dim
         self.generator = Generator(z_dim)
         self.discriminator = Discriminator()
+        self.generator.apply(_init_weights)
+        self.discriminator.apply(_init_weights)

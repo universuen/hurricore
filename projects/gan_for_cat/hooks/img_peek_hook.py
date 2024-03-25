@@ -27,9 +27,10 @@ class ImgPeekHook(HookBase):
     def on_training_start(self) -> None:
         if not self.is_available:
             return
-        self.folder_path.mkdir(parents=True, exist_ok=True)
-        for f in self.folder_path.iterdir():
-            f.unlink()
+        if self.trainer.accelerator.is_main_process:
+            self.folder_path.mkdir(parents=True, exist_ok=True)
+            for f in self.folder_path.iterdir():
+                f.unlink()
         
     def on_step_end(self):
         conditions = (

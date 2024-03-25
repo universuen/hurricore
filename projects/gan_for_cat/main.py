@@ -8,8 +8,8 @@ from hurricane.utils import launch, log_all_configs
 from hurricane.logger import Logger
 
 from cat_dataset import CatDataset
-from sngan import SNGAN
-from sngan_trainer import SNGANTrainer
+from projects.gan_for_cat.gan import GAN
+from projects.gan_for_cat.gan_trainer import GANTrainer
 from configs.default import *
 
 
@@ -19,7 +19,7 @@ def main():
     if accelerator.is_main_process:
         log_all_configs(logger)
     
-    model = SNGAN(**SNGANConfig())
+    model = GAN(**GANConfig())
     
     with accelerator.main_process_first():
         dataset = CatDataset(**DatasetConfig())
@@ -28,7 +28,7 @@ def main():
     g_optimizer = RMSprop(model.generator.parameters(), **GeneratorOptimizerConfig()) 
     d_optimizer = RMSprop(model.discriminator.parameters(), **DiscriminatorOptimizerConfig())
     
-    trainer = SNGANTrainer(
+    trainer = GANTrainer(
         model=model, 
         data_loader=data_loader, 
         g_optimizer=g_optimizer, 

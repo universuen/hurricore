@@ -4,7 +4,7 @@ from hurricane.hooks.logger_hook import LoggerHook
 from hurricane.utils import get_list_mean
 
 
-class SNGANLoggerHook(LoggerHook):
+class GANLoggerHook(LoggerHook):
     def on_step_end(self) -> None:
         if not self.is_available:
             return

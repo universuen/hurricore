@@ -3,7 +3,7 @@ from torch.utils.tensorboard import SummaryWriter
 from hurricane.hooks.tensor_board_hook import TensorBoardHook
 
 
-class SNGANTensorBoardHook(TensorBoardHook):
+class GANTensorBoardHook(TensorBoardHook):
     def on_step_end(self) -> None:
         if not self.is_available:
             return

@@ -8,23 +8,45 @@ from accelerate import Accelerator
 from hurricane.trainers.trainer import Trainer
 from hurricane.hooks.checkpoint_hook import CheckpointHook
 
-from hooks.sngan_logger_hook import SNGANLoggerHook
-from hooks.sngan_tensor_baord_hook import SNGANTensorBoardHook
+from hooks.gan_logger_hook import GANLoggerHook
+from hooks.gan_tensor_baord_hook import GANTensorBoardHook
 from hooks.img_peek_hook import ImgPeekHook
-from sngan import SNGAN
+from projects.gan_for_cat.gan import GAN
 
 
-class SNGANTrainer(Trainer):
+def _compute_gradient_penalty(discriminator, real_samples, fake_samples):
+    alpha = torch.rand(real_samples.size(0), 1, 1, 1).to(real_samples.device)
+    interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+    d_interpolates = discriminator(interpolates)
+    fake = torch.ones(d_interpolates.size()).to(real_samples.device)
+    gradients = torch.autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+    gradients = gradients.view(gradients.size(0), -1)
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gradient_penalty
+
+
+class GANTrainer(Trainer):
     def __init__(
         self, 
-        model: SNGAN,
+        model: GAN,
         data_loader: DataLoader, 
         g_optimizer: Optimizer,
         d_optimizer: Optimizer,
         accelerator: Accelerator, 
         epochs: int = 100,
+        
         g_loop_per_step: int = 1,
         d_loop_per_step: int = 1,
+        
+        lambda_gp: int = 10,
+        
         seed: int = 42,
         
         logger: Logger = None,
@@ -41,15 +63,16 @@ class SNGANTrainer(Trainer):
         
     ) -> None:
         super().__init__(model, data_loader, None, accelerator, epochs, seed)
+        assert self.accelerator.num_processes == 1, 'Not support multi-processes yet.'
         self.g_loop_per_step = g_loop_per_step
         self.d_loop_per_step = d_loop_per_step
-        
+        self.lambda_gp = lambda_gp
         g_optimizer, d_optimizer = accelerator.prepare(g_optimizer, d_optimizer)
         self.g_optimizer = g_optimizer
         self.d_optimizer = d_optimizer
 
         self.hooks = [
-            SNGANLoggerHook(
+            GANLoggerHook(
                 trainer=self,
                 logger=logger,
                 interval=log_interval,
@@ -59,7 +82,7 @@ class SNGANTrainer(Trainer):
                 folder_path=image_peek_folder_path,
                 interval=image_peek_interval,
             ),
-            SNGANTensorBoardHook(
+            GANTensorBoardHook(
                 trainer=self,
                 folder_path=tensor_board_folder_path,
                 interval=tensor_board_interval,
@@ -84,14 +107,8 @@ class SNGANTrainer(Trainer):
                     real_images = self.ctx.batch
                     real_scores = self.model.discriminator(real_images)
                     fake_scores = self.model.discriminator(fake_images)
-                    avg_real_score = real_scores.mean()
-                    avg_fake_score = fake_scores.mean()
-                    d_loss = (avg_fake_score - avg_real_score) / 2
-                self.accelerator.backward(d_loss)
-                if self.accelerator.sync_gradients:
-                    self.accelerator.clip_grad_value_(self.model.discriminator.parameters(), 1)
-                self.d_optimizer.step()
-                self.d_optimizer.zero_grad()
+                    gradient_penalty = _compute_gradient_penalty(self.model.discriminator, real_images, fake_images)
+                    d_loss = (fake_scores.mean() - real_scores.mean()) + self.lambda_gp * gradient_penalty
             
             for _ in range(self.g_loop_per_step):
                 with self.accelerator.autocast():
@@ -100,8 +117,6 @@ class SNGANTrainer(Trainer):
                     avg_fake_score = fake_scores.mean()
                     g_loss = -avg_fake_score
                 self.accelerator.backward(g_loss)
-                if self.accelerator.sync_gradients:
-                    self.accelerator.clip_grad_value_(self.model.generator.parameters(), 1)
                 self.g_optimizer.step()
                 self.g_optimizer.zero_grad()
             
