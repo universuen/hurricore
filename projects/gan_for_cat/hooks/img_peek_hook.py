@@ -22,7 +22,8 @@ class ImgPeekHook(HookBase):
         self.folder_path = folder_path
         self.peek_interval = interval
         model = self.trainer.accelerator.unwrap_model(self.trainer.model)
-        self.z = torch.randn(4, model.z_dim, 1, 1, device=self.trainer.accelerator.device)
+        z = torch.randn(4, model.z_dim, 1, 1, device=self.trainer.accelerator.device)
+        trainer.ctx.z = z
 
     def on_training_start(self) -> None:
         if not self.is_available:
@@ -40,7 +41,7 @@ class ImgPeekHook(HookBase):
         )
         if any(conditions[:2]) and conditions[2]:
             model = self.trainer.accelerator.unwrap_model(self.trainer.model)
-            images = model.generator(self.z)
+            images = model.generator(self.trainer.ctx.z)
             image_grid = make_grid(images, nrow=2)
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
             save_image(image_grid, filename)

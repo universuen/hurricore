@@ -39,4 +39,4 @@ def main():
     )
     trainer.run()
 
-launch(main, num_processes=1)
+launch(main, num_processes=4)

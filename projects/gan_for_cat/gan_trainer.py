@@ -63,14 +63,19 @@ class GANTrainer(Trainer):
         
     ) -> None:
         super().__init__(model, data_loader, None, accelerator, epochs, seed)
-        assert self.accelerator.num_processes == 1, 'Not support multi-processes yet.'
+        
         self.g_loop_per_step = g_loop_per_step
         self.d_loop_per_step = d_loop_per_step
         self.lambda_gp = lambda_gp
+        g_model, d_model = accelerator.prepare(model.generator, model.discriminator)
+        self.g_model = g_model
+        self.d_model = d_model
         g_optimizer, d_optimizer = accelerator.prepare(g_optimizer, d_optimizer)
         self.g_optimizer = g_optimizer
         self.d_optimizer = d_optimizer
 
+        self.z_dim = model.z_dim
+        
         self.hooks = [
             GANLoggerHook(
                 trainer=self,
@@ -103,17 +108,22 @@ class GANTrainer(Trainer):
 
             for _ in range(self.d_loop_per_step):
                 with self.accelerator.autocast():
-                    fake_images = self.model.generator.generate(batch_size).detach()
+                    z = torch.randn(batch_size, self.z_dim, 1, 1).to(self.ctx.batch.device)
+                    fake_images = self.g_model(z).detach()
                     real_images = self.ctx.batch
-                    real_scores = self.model.discriminator(real_images)
-                    fake_scores = self.model.discriminator(fake_images)
-                    gradient_penalty = _compute_gradient_penalty(self.model.discriminator, real_images, fake_images)
+                    real_scores = self.d_model(real_images)
+                    fake_scores = self.d_model(fake_images)
+                    gradient_penalty = _compute_gradient_penalty(self.d_model, real_images, fake_images)
                     d_loss = (fake_scores.mean() - real_scores.mean()) + self.lambda_gp * gradient_penalty
+                self.accelerator.backward(d_loss)
+                self.d_optimizer.step()
+                self.d_optimizer.zero_grad()
             
             for _ in range(self.g_loop_per_step):
                 with self.accelerator.autocast():
-                    fake_images = self.model.generator.generate(batch_size)
-                    fake_scores = self.model.discriminator(fake_images)
+                    z = torch.randn(batch_size, self.z_dim, 1, 1).to(self.ctx.batch.device)
+                    fake_images = self.g_model(z)
+                    fake_scores = self.d_model(fake_images)
                     avg_fake_score = fake_scores.mean()
                     g_loss = -avg_fake_score
                 self.accelerator.backward(g_loss)
