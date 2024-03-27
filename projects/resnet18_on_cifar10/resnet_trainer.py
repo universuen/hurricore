@@ -12,11 +12,13 @@ from torch.optim.lr_scheduler import LRScheduler
 
 from torch.utils.data import DataLoader
 
-from hurricane.trainers.trainer import Trainer
-from hurricane.hooks.logger_hook import LoggerHook
-from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook
-from hurricane.hooks.tensor_board_hook import TensorBoardHook
-from hurricane.hooks.checkpoint_hook import CheckpointHook
+from hurricane.trainers import Trainer
+from hurricane.hooks import (
+    LoggerHook, 
+    LRSchedulerHook, 
+    TensorBoardHook, 
+    CheckpointHook,
+)
 
 
 class ResNetTrainer(Trainer):
@@ -27,7 +29,7 @@ class ResNetTrainer(Trainer):
         optimizer: Optimizer, 
         accelerator: Accelerator,
         epochs: int = 100,
-        seed: int = 42,
+        ckpt_seed: int = 42,
         
         logger: Logger = None,
         log_interval: int = 1,
@@ -48,7 +50,6 @@ class ResNetTrainer(Trainer):
             optimizer=optimizer, 
             accelerator=accelerator,
             epochs=epochs,
-            seed=seed,
         )
         self.hooks = [
             LoggerHook(
@@ -70,6 +71,7 @@ class ResNetTrainer(Trainer):
                 trainer=self,
                 folder_path=ckpt_folder_path,
                 interval=ckpt_interval,
+                seed=ckpt_seed,
             ),
         ]
         

@@ -14,7 +14,7 @@ from hurricane.logger import Logger
 from hurricane.utils import launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.opt_350m import *
+from configs.gemma_2b import *
 
 
 def main():
@@ -73,4 +73,4 @@ def main():
     )
     trainer.run()
 
-launch(main, num_processes=4, use_port='8001')
+launch(main, num_processes=4, use_port='8002')

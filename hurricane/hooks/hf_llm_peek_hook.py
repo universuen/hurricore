@@ -1,7 +1,7 @@
 import torch
 from transformers import PreTrainedTokenizer
 
-from hurricane.hooks.hook_base import HookBase
+from hurricane.hooks import HookBase, LoggerHook
 from hurricane.trainers.trainer_base import TrainerBase
 from hurricane.utils import is_deepspeed_zero3
 
@@ -15,15 +15,28 @@ class HFLLMPeekHook(HookBase):
         interval: int = 1,
     ) -> None:
         super().__init__(trainer)
+        # check validity
         self.is_available = (None not in (prompts, tokenizer))
+        # setup self
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
     
-    def on_step_end(self) -> None:
+    def on_training_start(self) -> None:
+        # check validity
         if not self.is_available:
             return
-        
+        # collect logger
+        logger_hook = self.trainer.get_hook(LoggerHook)
+        if logger_hook is not None:
+            self.logger = logger_hook.logger
+            self.log_interval = logger_hook.interval
+    
+    def on_step_end(self) -> None:
+        # check validity
+        if not self.is_available:
+            return
+        # peek model results
         conditions = (
             self.trainer.accelerator.is_main_process,
             is_deepspeed_zero3(self.trainer.accelerator),
@@ -54,6 +67,7 @@ class HFLLMPeekHook(HookBase):
                         answer = self.tokenizer.decode(answer_ids, skip_special_tokens=True)
                         answers.append(answer)
                 peek_results = zip(self.prompts, answers)
-                if hasattr(self.trainer, 'logger') and self.trainer.accelerator.is_main_process:
+                # log the results
+                if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
                     for q, a in peek_results:
-                        self.trainer.logger.info(f'Q:{q} A:{a}')
+                        self.logger.info(f'Prompt: {q}\nAnswer: {a}')

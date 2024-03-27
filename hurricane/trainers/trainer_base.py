@@ -68,3 +68,9 @@ class TrainerBase:
     
     def compute_loss(self) -> Tensor:
         raise NotImplementedError
+
+    def get_hook(self, hook_type):
+        for hook in self.hooks:
+            if isinstance(hook, hook_type):
+                return hook
+        return None

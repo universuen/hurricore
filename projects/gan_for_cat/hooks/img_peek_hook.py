@@ -40,8 +40,7 @@ class ImgPeekHook(HookBase):
             self.trainer.ctx.global_step % self.peek_interval == 0
         )
         if any(conditions[:2]) and conditions[2]:
-            model = self.trainer.accelerator.unwrap_model(self.trainer.model)
-            images = model.generator(self.trainer.ctx.z)
+            images = self.trainer.g_model(self.trainer.ctx.z.to(self.trainer.accelerator.device))
             image_grid = make_grid(images, nrow=2)
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
             save_image(image_grid, filename)

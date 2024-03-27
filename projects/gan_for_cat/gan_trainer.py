@@ -101,7 +101,7 @@ class GANTrainer(Trainer):
 
     def training_step(self) -> torch.Tensor:
         self.model.train()
-        
+        self.logger.error(self.ctx.batch_idx, self.ctx.batch.mean())
         with self.accelerator.accumulate(self.model):
             
             batch_size = self.ctx.batch.shape[0]

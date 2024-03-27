@@ -1,7 +1,10 @@
 from pathlib import Path
 
-from hurricane.hooks.hook_base import HookBase
-from hurricane.trainers.trainer_base import TrainerBase
+import torch
+from torch.utils.data import RandomSampler
+
+from hurricane.hooks import HookBase, LoggerHook
+from hurricane.trainers import TrainerBase
 
 
 class CheckpointHook(HookBase):
@@ -10,49 +13,78 @@ class CheckpointHook(HookBase):
         trainer: TrainerBase,
         folder_path: Path = None,
         interval: int = 100,
+        seed: int = 42,
     ) -> None:
         super().__init__(trainer)
-        self.is_available = (folder_path is not None and folder_path.is_dir())
+        # check validity
+        conditions = (
+            interval > 0,
+            folder_path is not None and folder_path.is_dir(),
+            hasattr(trainer, 'accelerator'),
+        )
+        self.is_available = all(conditions)
         if not self.is_available:
             return
+        self.msg_queue = []
+        if isinstance(trainer.originals['data_loader'].sampler, RandomSampler):
+            # reprepare dataloader with seedable sampler
+            torch.manual_seed(seed)
+            if trainer.accelerator.dataloader_config.use_seedable_sampler is False:
+                self.msg_queue.append(
+                    (
+                        'warning', 
+                        'To ensure reproducibility, the dataloader is reprepared with seedable sampler.\n'
+                        'To avoid this, set `accelerator.dataloader_config.use_seedable_sampler=True`.'
+                    )
+                )
+            trainer.accelerator.dataloader_config.use_seedable_sampler = True
+            trainer.data_loader = trainer.accelerator.prepare(trainer.originals['data_loader'])
+            
+            # TODO: Remove this when the issue is fixed in Accelerate `prepare_dataloader()`#####################
+            try:
+                if hasattr(self.trainer.data_loader.batch_sampler, 'batch_sampler'):
+                    self.trainer.data_loader.batch_sampler.batch_sampler.sampler = self.trainer.data_loader.batch_sampler.sampler
+            except AttributeError:
+                self.msg_queue.append(
+                    (
+                        'error', 
+                        'Failed to fix the issue in Accelerate `prepare_dataloader()`.'
+                    )
+                )
+            ##################################################################################################### 
+        
+        trainer.accelerator.register_for_checkpointing(trainer.ctx)
+        # setup self
         self.folder_path = folder_path
         self.interval = interval
         
-    
     def on_training_start(self) -> None:
         if not self.is_available:
             return
-        self.trainer.accelerator.register_for_checkpointing(self.trainer.ctx)
-        if not self.trainer.accelerator.dataloader_config.use_seedable_sampler:
-            raise ValueError(
-                """
-                For deterministic reproducibility, 
-                CheckpointHook requires `use_seedable_sampler=True` in `DataLoaderConfiguration` of `Accelerator`.
-                Try: `Accelerator(dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True))`
-                """
-            )
-        
-        # TODO: Remove this when the issue is fixed in Accelerate `prepare_dataloader()`#####################
-        if hasattr(self.trainer.data_loader.batch_sampler, 'batch_sampler'):
-            self.trainer.data_loader.batch_sampler.batch_sampler.sampler = self.trainer.data_loader.batch_sampler.sampler
-        #####################################################################################################
-        
+        # collect logger
+        logger_hook = self.trainer.get_hook(LoggerHook)
+        if logger_hook is not None:
+            self.logger = logger_hook.logger
+            # process message queue
+            for msg_type, msg in self.msg_queue:
+                getattr(self.logger, msg_type)(msg)
+        # check available checkpoint
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
         if len(ckpt_dirs) == 0:
             return 
-        
+        # load latest checkpoint
         steps = [int(d.name.split('_')[-1]) for d in ckpt_dirs]
         latest_step = max(steps)
         latest_ckpt_dir = self.folder_path / f'ckpt_step_{latest_step}'
-
         self.trainer.accelerator.load_state(latest_ckpt_dir)
-        
+        # recover dataloader state
         self.trainer.data_loader.set_epoch(self.trainer.ctx.epoch - 1)
         self.trainer.data_loader.skip_batches = self.trainer.ctx.batch_idx
-        
+        # recover context state
         self.trainer.ctx.epoch -= 1
-        if hasattr(self.trainer, 'logger') and self.trainer.accelerator.is_main_process:
-            self.trainer.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
+        # log
+        if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
+            self.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
     
     
     def on_step_end(self) -> None:
@@ -72,9 +104,8 @@ class CheckpointHook(HookBase):
             self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
             self.trainer.ctx.batch_idx = current_batch_idx
             
-            if hasattr(self.trainer, 'logger') and self.trainer.accelerator.is_main_process:
-                self.trainer.logger.info(f'Saved checkpoint at: {ckpt_path}')
-
+            if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
+                self.logger.info(f'Saved checkpoint at: {ckpt_path}')
 
     def on_epoch_end(self) -> None:
         if not self.is_available:

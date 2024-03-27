@@ -35,7 +35,7 @@ class AcceleratorConfig(ConfigBase):
 class DataLoaderConfig(ConfigBase):
     batch_size = 256
     num_workers = cpu_count()
-    shuffle = True
+    shuffle = False
 
 class TrainerConfig(ConfigBase):
     epochs = 5000
@@ -49,10 +49,10 @@ class TrainerConfig(ConfigBase):
     tensor_board_interval = gradient_accumulation_steps
     
     image_peek_folder_path = PathConfig().data / 'peek_results'
-    image_peek_interval = gradient_accumulation_steps * 50
+    image_peek_interval = gradient_accumulation_steps * 10
     
     checkpoint_folder_path = PathConfig().checkpoints
-    checkpoint_interval = gradient_accumulation_steps * 1000
+    checkpoint_interval = gradient_accumulation_steps * 3
 
 class DatasetConfig(ConfigBase):
     path = PathConfig().dataset_path

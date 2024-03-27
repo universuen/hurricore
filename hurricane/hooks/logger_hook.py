@@ -3,8 +3,8 @@ from logging import Logger
 
 from torch.cuda import memory_reserved
 
-from hurricane.hooks.hook_base import HookBase
-from hurricane.trainers.trainer_base import TrainerBase
+from hurricane.hooks import HookBase
+from hurricane.trainers import TrainerBase
 from hurricane.utils import get_list_mean
 
 
@@ -27,19 +27,20 @@ class LoggerHook(HookBase):
         interval: int = 1, 
     ) -> None:
         super().__init__(trainer)
+        # check validity
         self.is_available = (logger is not None)
         if not self.is_available:
             return
+        # setup self
         self.logger = logger
         self.interval = interval
         self.step = 0
-        self.trainer.logger = self.logger
     
     def on_training_start(self) -> None:
         if not self.is_available:
             return
         if self.trainer.accelerator.is_main_process:
-            model = self.trainer.accelerator.unwrap_model(self.trainer.model)
+            model = self.trainer.originals['model']
             total_params = sum(p.numel() for p in model.parameters())
             trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -87,15 +88,12 @@ class LoggerHook(HookBase):
                     f"Loss: {step_loss:.5f} | "
                     f"Progress: {progress:.2%} | "
                     f"Time left: {remaining_time} | "
-                    f"LR: {self.trainer.optimizer.param_groups[0]['lr']} | "
                     f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
                 
-
     def on_epoch_end(self) -> None:
         if not self.is_available:
             return
         if self.trainer.accelerator.is_main_process:
             avg_loss = get_list_mean(self.losses_per_batch)
             self.logger.info(f'Epoch {self.trainer.ctx.epoch} finished with average loss: {avg_loss}')
-

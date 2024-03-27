@@ -41,6 +41,7 @@ class TrainerConfig(ConfigBase):
     
     ckpt_folder_path = PathConfig().checkpoints
     ckpt_interval = gradient_accumulate_interval * 1000
+    ckpt_seed = 42
 
 
 class OptimizerConfig(ConfigBase):
@@ -67,8 +68,7 @@ class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval
     deepspeed_plugin=DeepSpeedPlugin(
         gradient_accumulation_steps = gradient_accumulation_steps, 
-        zero_stage = 2,
+        zero_stage = 3,
         offload_optimizer_device = 'cpu',
         zero3_init_flag = False,
     )
-    dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True)

@@ -42,6 +42,7 @@ class TrainerConfig(ConfigBase):
     
     ckpt_folder_path = PathConfig().checkpoints
     ckpt_interval = gradient_accumulate_interval * 1000
+    ckpt_seed = 42
     
 
 class OptimizerConfig(ConfigBase):

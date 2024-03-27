@@ -39,4 +39,4 @@ def main():
     )
     trainer.run()
 
-launch(main, num_processes=4)
+launch(main, num_processes=2, use_port='8000')

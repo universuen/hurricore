@@ -27,13 +27,15 @@ class PathConfig(ConfigBase):
 
 class TrainerConfig(ConfigBase):
     epochs = 10
-    seed = 42
     
     log_interval = gradient_accumulate_interval
+    
     tensor_board_folder_path=PathConfig().tensor_boards
     tensor_board_interval=gradient_accumulate_interval
+    
     ckpt_folder_path=PathConfig().checkpoints
     ckpt_interval = gradient_accumulate_interval * 10
+    ckpt_seed = 42
     
 
 
@@ -61,4 +63,3 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval
-    dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True)
