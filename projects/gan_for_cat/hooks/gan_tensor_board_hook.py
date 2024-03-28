@@ -11,16 +11,8 @@ class GANTensorBoardHook(TensorBoardHook):
             d_step_loss = self.trainer.accelerator.gather(self.trainer.ctx.d_step_loss).detach().mean().item()
             if self.trainer.accelerator.is_main_process:
                 writer = self.get_temp_writer()
-                writer.add_scalars(
-                    main_tag='Loss/Training', 
-                    tag_scalar_dict={'Generator': g_step_loss, 'Discriminator': d_step_loss}, 
-                    global_step=step
-                )
-                writer.add_scalars(
-                    main_tag='Learning Rate', 
-                    tag_scalar_dict={
-                        'Generator': self.trainer.g_optimizer.param_groups[0]['lr'], 
-                        'Discriminator': self.trainer.d_optimizer.param_groups[0]['lr']
-                    }, 
-                    global_step=step
-                )
+                writer.add_scalar('Loss/Generator', g_step_loss, step)
+                writer.add_scalar('Loss/Discriminator', d_step_loss, step)
+                writer.add_scalar('Learning Rate/Generator', self.trainer.g_optimizer.param_groups[0]['lr'], step)
+                writer.add_scalar('Learning Rate/Discriminator', self.trainer.d_optimizer.param_groups[0]['lr'], step)
+                writer.close()
