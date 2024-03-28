@@ -28,19 +28,17 @@ class LoggerHook(HookBase):
     ) -> None:
         super().__init__(trainer)
         # check validity
-        self.is_available = (logger is not None)
-        if not self.is_available:
-            return
+        assert interval > 0, 'Log interval must be greater than 0.'
+        assert logger is not None, 'Invalid logger.'
+        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup self
         self.logger = logger
         self.interval = interval
         self.step = 0
     
     def on_training_start(self) -> None:
-        if not self.is_available:
-            return
         if self.trainer.accelerator.is_main_process:
-            model = self.trainer.originals['model']
+            model = self.trainer.originals.model
             total_params = sum(p.numel() for p in model.parameters())
             trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -48,9 +46,7 @@ class LoggerHook(HookBase):
             self.logger.info(f'Total parameters: {_format_parameters(total_params)}')
             self.logger.info(f'Trainable parameters: {_format_parameters(trainable_params)}')
     
-    def on_epoch_start(self) -> None:
-        if not self.is_available:
-            return
+    def on_epoch_start(self) -> None: 
         if self.trainer.accelerator.is_main_process:
             assert hasattr(self.trainer.ctx, 'epoch')
             self.losses_per_batch = []
@@ -67,8 +63,6 @@ class LoggerHook(HookBase):
         return formatted_remaining_time
         
     def on_step_end(self) -> None:
-        if not self.is_available:
-            return
         self.step += 1
         idx = self.trainer.ctx.batch_idx
         num_batches = len(self.trainer.data_loader)
@@ -91,9 +85,7 @@ class LoggerHook(HookBase):
                     f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
                 
-    def on_epoch_end(self) -> None:
-        if not self.is_available:
-            return
+    def on_epoch_end(self) -> None: 
         if self.trainer.accelerator.is_main_process:
             avg_loss = get_list_mean(self.losses_per_batch)
             self.logger.info(f'Epoch {self.trainer.ctx.epoch} finished with average loss: {avg_loss}')

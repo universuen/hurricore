@@ -17,16 +17,11 @@ class CheckpointHook(HookBase):
     ) -> None:
         super().__init__(trainer)
         # check validity
-        conditions = (
-            interval > 0,
-            folder_path is not None and folder_path.is_dir(),
-            hasattr(trainer, 'accelerator'),
-        )
-        self.is_available = all(conditions)
-        if not self.is_available:
-            return
+        assert interval > 0, 'Checkpoint interval must be greater than 0.'
+        assert folder_path is not None and folder_path.is_dir(), 'Invalid checkpoint folder path.'
+        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         self.msg_queue = []
-        if isinstance(trainer.originals['data_loader'].sampler, RandomSampler):
+        if isinstance(trainer.originals.data_loader.sampler, RandomSampler):
             # reprepare dataloader with seedable sampler
             torch.manual_seed(seed)
             if trainer.accelerator.dataloader_config.use_seedable_sampler is False:
@@ -38,7 +33,7 @@ class CheckpointHook(HookBase):
                     )
                 )
             trainer.accelerator.dataloader_config.use_seedable_sampler = True
-            trainer.data_loader = trainer.accelerator.prepare(trainer.originals['data_loader'])
+            trainer.data_loader = trainer.accelerator.prepare(trainer.originals.data_loader)
             
             # TODO: Remove this when the issue is fixed in Accelerate `prepare_dataloader()`#####################
             try:
@@ -59,14 +54,13 @@ class CheckpointHook(HookBase):
         self.interval = interval
         
     def on_training_start(self) -> None:
-        if not self.is_available:
-            return
         # collect logger
         logger_hook = self.trainer.get_hook(LoggerHook)
         if logger_hook is not None:
             self.logger = logger_hook.logger
             # process message queue
-            for msg_type, msg in self.msg_queue:
+            while len(self.msg_queue) > 0:
+                msg_type, msg = self.msg_queue.pop(0)
                 getattr(self.logger, msg_type)(msg)
         # check available checkpoint
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
@@ -88,10 +82,7 @@ class CheckpointHook(HookBase):
     
     
     def on_step_end(self) -> None:
-        if not self.is_available:
-            return
         step = self.trainer.ctx.global_step
-        
         conditions = [
             step % self.interval == 0,
             self.trainer.ctx.epoch == self.trainer.epochs,

@@ -16,16 +16,16 @@ class HFLLMPeekHook(HookBase):
     ) -> None:
         super().__init__(trainer)
         # check validity
-        self.is_available = (None not in (prompts, tokenizer))
+        assert interval > 0, 'Peek interval must be greater than 0.'
+        assert prompts is not None and len(prompts) > 0, 'Invalid prompts.'
+        assert tokenizer is not None, 'Invalid tokenizer.'
+        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup self
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
     
     def on_training_start(self) -> None:
-        # check validity
-        if not self.is_available:
-            return
         # collect logger
         logger_hook = self.trainer.get_hook(LoggerHook)
         if logger_hook is not None:
@@ -33,9 +33,6 @@ class HFLLMPeekHook(HookBase):
             self.log_interval = logger_hook.interval
     
     def on_step_end(self) -> None:
-        # check validity
-        if not self.is_available:
-            return
         # peek model results
         conditions = (
             self.trainer.accelerator.is_main_process,
@@ -45,7 +42,7 @@ class HFLLMPeekHook(HookBase):
             idx = self.trainer.ctx.batch_idx
             num_batches = len(self.trainer.data_loader)
             if self.trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
-                original_model = self.trainer.accelerator.unwrap_model(self.trainer.model)
+                original_model = self.trainer.originals.model
                 original_model.eval()
                 answers = []
                 with torch.no_grad():

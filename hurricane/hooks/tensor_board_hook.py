@@ -15,9 +15,9 @@ class TensorBoardHook(HookBase):
     ) -> None:
         super().__init__(trainer)
         # check validity
-        self.is_available = (folder_path is not None and folder_path.is_dir())
-        if not self.is_available:
-            return
+        assert interval > 0, 'TensorBoard interval must be greater than 0.'
+        assert folder_path is not None and folder_path.is_dir(), 'Invalid TensorBoard folder path.'
+        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup self
         self.interval = interval
         self.folder_path = folder_path
@@ -30,8 +30,6 @@ class TensorBoardHook(HookBase):
         )      
             
     def on_step_end(self) -> None:
-        if not self.is_available:
-            return
         step = self.trainer.ctx.global_step
         if step % self.interval == 0:
             loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
@@ -41,8 +39,6 @@ class TensorBoardHook(HookBase):
                 writer.close()
                    
     def on_epoch_end(self) -> None:
-        if not self.is_available:
-            return
         if self.trainer.accelerator.is_main_process:
             writer = self.get_temp_writer()
             step = self.trainer.ctx.global_step

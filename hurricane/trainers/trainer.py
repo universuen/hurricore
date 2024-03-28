@@ -5,9 +5,9 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
-from accelerate.utils import set_seed
 
-from hurricane.trainers.trainer_base import TrainerBase
+from hurricane.trainers import TrainerBase
+from hurricane.context import Context
 
 
 class Trainer(TrainerBase):
@@ -25,11 +25,12 @@ class Trainer(TrainerBase):
             optimizer=optimizer,
             epochs=epochs,
         )
-        self.originals = {
-            'model': model,
-            'data_loader': data_loader,
-            'optimizer': optimizer,
-        }
+        # backup original objects
+        self.originals = Context()
+        self.originals.model = model
+        self.originals.data_loader = data_loader
+        self.originals.optimizer = optimizer
+        # setup accelerator
         self.accelerator = accelerator
         self.model, self.data_loader, self.optimizer = self.accelerator.prepare(
             self.model, self.data_loader, self.optimizer

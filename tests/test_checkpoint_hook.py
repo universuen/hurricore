@@ -61,7 +61,7 @@ def test_model_parameters_are_identical():
     origianl_parameters = torch.cat(
         [
             param.data.clone().flatten()
-            for param in trainer.originals['model'].parameters()
+            for param in trainer.originals.model.parameters()
         ]
     )
     # run training
@@ -70,7 +70,7 @@ def test_model_parameters_are_identical():
     updated_parameters = torch.cat(
         [
             param.data.clone().flatten()
-            for param in trainer.originals['model'].parameters()
+            for param in trainer.originals.model.parameters()
         ]
     )
     # should be different
@@ -83,7 +83,7 @@ def test_model_parameters_are_identical():
     reloaded_parameters = torch.cat(
         [
             param.data.clone().flatten()
-            for param in trainer.originals['model'].parameters()
+            for param in trainer.originals.model.parameters()
         ]
     )
     # should be different
@@ -94,7 +94,7 @@ def test_model_parameters_are_identical():
     checkpoint_parameters = torch.cat(
         [
             param.data.clone().flatten()
-            for param in trainer.originals['model'].parameters()
+            for param in trainer.originals.model.parameters()
         ]
     )
     # should be identical

@@ -13,12 +13,11 @@ class LRSchedulerHook(HookBase):
     ) -> None:
         super().__init__(trainer)
         # check validity
-        assert mode in ('per_epoch', 'per_step')
-        self.is_available = (lr_scheduler is not None)
-        if not self.is_available:
-            return
+        assert mode in ['per_epoch', 'per_step'], 'Invalid mode.'
+        assert lr_scheduler is not None, 'Invalid learning rate scheduler.'
+        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup trainer
-        trainer.originals['lr_scheduler'] = lr_scheduler
+        trainer.originals.lr_scheduler = lr_scheduler
         trainer.accelerator.step_scheduler_with_optimizer = (mode == 'per_step')
         self.msg_queue = [
             (
@@ -31,9 +30,6 @@ class LRSchedulerHook(HookBase):
         self.lr_scheduler = trainer.accelerator.prepare(lr_scheduler)
     
     def on_training_start(self) -> None:
-        # check validity
-        if not self.is_available:
-            return
         # collect logger
         logger_hook = self.trainer.get_hook(LoggerHook)
         if logger_hook is not None:
@@ -46,7 +42,7 @@ class LRSchedulerHook(HookBase):
             self.tb_interval = tb_hook.interval
             
     def on_epoch_end(self) -> None:
-        if not self.is_available or self.mode != 'per_epoch':
+        if self.mode != 'per_epoch':
             return
         self.lr_scheduler.step()
         # log learning rate
@@ -72,10 +68,9 @@ class LRSchedulerHook(HookBase):
             tb_writer.close()
     
     def on_step_end(self) -> None:
-        if not self.is_available or self.mode != 'per_step':
+        if self.mode != 'per_step':
             return
         self.lr_scheduler.step()
-        
         # log the learning rate
         conditions = (
             hasattr(self, 'logger'),
@@ -85,7 +80,6 @@ class LRSchedulerHook(HookBase):
         )
         if all(conditions) is True:
             self.logger.info(f'Learning rate: {self.lr_scheduler.get_last_lr()}')
-        
         # log the learning rate to tensorboard
         conditions = (
             hasattr(self, 'get_temp_tb_writer'),
