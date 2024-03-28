@@ -27,9 +27,8 @@ class CheckpointHook(HookBase):
             if trainer.accelerator.dataloader_config.use_seedable_sampler is False:
                 self.msg_queue.append(
                     (
-                        'warning', 
-                        'To ensure reproducibility, the dataloader is reprepared with seedable sampler.\n'
-                        'To avoid this, set `accelerator.dataloader_config.use_seedable_sampler=True`.'
+                        'info', 
+                        'To ensure reproducibility, the dataloader is reprepared with seedable sampler.'
                     )
                 )
             trainer.accelerator.dataloader_config.use_seedable_sampler = True
@@ -90,16 +89,10 @@ class CheckpointHook(HookBase):
             self.trainer.ctx.batch_idx == len(self.trainer.data_loader),
         ]
         if conditions[0] or (conditions[1] and conditions[2]):
-            current_batch_idx = self.trainer.ctx.batch_idx
-            self.trainer.ctx.batch_idx = self.trainer.data_loader.skip_batches + current_batch_idx
             ckpt_path = self.folder_path / f'ckpt_step_{step}'
             self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
-            self.trainer.ctx.batch_idx = current_batch_idx
-            
             if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
                 self.logger.info(f'Saved checkpoint at: {ckpt_path}')
 
     def on_epoch_end(self) -> None:
-        if not self.is_available:
-            return
         self.trainer.data_loader.skip_batches = 0

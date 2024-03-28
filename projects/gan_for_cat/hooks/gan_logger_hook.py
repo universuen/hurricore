@@ -6,8 +6,6 @@ from hurricane.utils import get_list_mean
 
 class GANLoggerHook(LoggerHook):
     def on_step_end(self) -> None:
-        if not self.is_available:
-            return
         self.step += 1
         idx = self.trainer.ctx.batch_idx
         num_batches = len(self.trainer.data_loader)
@@ -29,14 +27,15 @@ class GANLoggerHook(LoggerHook):
                     f"Discriminator loss: {d_step_loss:.5f} |"
                     f"Progress: {progress:.2%} | "
                     f"Time left: {remaining_time} | "
-                    f"Generator LR: {self.trainer.g_optimizer.param_groups[0]['lr']} | "
-                    f"Discriminator LR: {self.trainer.d_optimizer.param_groups[0]['lr']} | "
                     f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
                 )
 
     def on_epoch_end(self) -> None:
         if self.trainer.accelerator.is_main_process:
-            g_losses, d_losses = list(zip(*self.losses_per_batch))
-            avg_g_loss = get_list_mean(g_losses)
-            avg_d_loss = get_list_mean(d_losses)
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch} finished with average generator loss: {avg_g_loss} and average discriminator loss: {avg_d_loss}')
+            try:
+                g_losses, d_losses = list(zip(*self.losses_per_batch))
+                avg_g_loss = get_list_mean(g_losses)
+                avg_d_loss = get_list_mean(d_losses)
+                self.logger.info(f'Epoch {self.trainer.ctx.epoch} finished with average generator loss: {avg_g_loss} and average discriminator loss: {avg_d_loss}')
+            except ValueError as e:
+                self.logger.error(e)

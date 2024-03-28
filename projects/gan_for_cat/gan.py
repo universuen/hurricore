@@ -70,7 +70,7 @@ class Discriminator(nn.Module):
             nn.Linear(256, 64),
             nn.LeakyReLU(0.1, inplace=True),
             nn.Linear(64, 1),
-            # nn.Sigmoid(),
+            nn.Sigmoid(),
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:

@@ -16,22 +16,13 @@ class ImgPeekHook(HookBase):
         interval: int,
     ):
         super().__init__(trainer)
-        self.is_available = (folder_path is not None)
-        if not self.is_available:
-            return
+        assert interval > 0, 'Image peek interval must be greater than 0.'
+        assert folder_path is not None and folder_path.is_dir(), 'Invalid image peek folder path.'
+        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         self.folder_path = folder_path
         self.peek_interval = interval
-        model = self.trainer.accelerator.unwrap_model(self.trainer.model)
-        z = torch.randn(4, model.z_dim, 1, 1, device=self.trainer.accelerator.device)
+        z = torch.randn(4, trainer.originals.model.z_dim, 1, 1)
         trainer.ctx.z = z
-
-    def on_training_start(self) -> None:
-        if not self.is_available:
-            return
-        if self.trainer.accelerator.is_main_process:
-            self.folder_path.mkdir(parents=True, exist_ok=True)
-            for f in self.folder_path.iterdir():
-                f.unlink()
         
     def on_step_end(self):
         conditions = (
@@ -40,6 +31,7 @@ class ImgPeekHook(HookBase):
             self.trainer.ctx.global_step % self.peek_interval == 0
         )
         if any(conditions[:2]) and conditions[2]:
+            self.trainer.g_model.eval()
             images = self.trainer.g_model(self.trainer.ctx.z.to(self.trainer.accelerator.device))
             image_grid = make_grid(images, nrow=2)
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"

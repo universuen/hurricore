@@ -39,9 +39,9 @@ class Trainer(TrainerBase):
     def training_step(self) -> torch.Tensor:
         self.model.train()
         with self.accelerator.accumulate(self.model):
+            self.optimizer.zero_grad()
             with self.accelerator.autocast():
                 loss = self.compute_loss()
-            self.optimizer.zero_grad()
             self.accelerator.backward(loss)
             self.optimizer.step()
             return loss

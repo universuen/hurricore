@@ -60,10 +60,10 @@ class TrainerBase:
 
     def training_step(self) -> Tensor:
         self.model.train()
+        self.optimizer.zero_grad()
         loss = self.compute_loss()
         loss.backward()
         self.optimizer.step()
-        self.optimizer.zero_grad()
         return loss
     
     def compute_loss(self) -> Tensor:

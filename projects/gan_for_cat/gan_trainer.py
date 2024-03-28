@@ -5,13 +5,13 @@ from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricane.trainers.trainer import Trainer
-from hurricane.hooks.checkpoint_hook import CheckpointHook
+from hurricane.trainers import Trainer
+from hurricane.hooks import CheckpointHook
 
 from hooks.gan_logger_hook import GANLoggerHook
-from hooks.gan_tensor_baord_hook import GANTensorBoardHook
+from hooks.gan_tensor_board_hook import GANTensorBoardHook
 from hooks.img_peek_hook import ImgPeekHook
-from projects.gan_for_cat.gan import GAN
+from gan import GAN
 
 
 def _compute_gradient_penalty(discriminator, real_samples, fake_samples):
@@ -47,8 +47,6 @@ class GANTrainer(Trainer):
         
         lambda_gp: int = 10,
         
-        seed: int = 42,
-        
         logger: Logger = None,
         log_interval: int = 1,
         
@@ -60,16 +58,16 @@ class GANTrainer(Trainer):
         
         checkpoint_folder_path: str = None,
         checkpoint_interval: int = 1000,
+        checkpoint_seed: int = 42,
         
     ) -> None:
-        super().__init__(model, data_loader, None, accelerator, epochs, seed)
+        super().__init__(model, data_loader, None, accelerator, epochs)
         
         self.g_loop_per_step = g_loop_per_step
         self.d_loop_per_step = d_loop_per_step
         self.lambda_gp = lambda_gp
-        g_model, d_model = accelerator.prepare(model.generator, model.discriminator)
-        self.g_model = g_model
-        self.d_model = d_model
+        self.g_model = model.generator
+        self.d_model = model.discriminator
         g_optimizer, d_optimizer = accelerator.prepare(g_optimizer, d_optimizer)
         self.g_optimizer = g_optimizer
         self.d_optimizer = d_optimizer
@@ -96,20 +94,19 @@ class GANTrainer(Trainer):
                 trainer=self,
                 folder_path=checkpoint_folder_path,
                 interval=checkpoint_interval,
+                seed=checkpoint_seed,
             ),
         ]
 
     def training_step(self) -> torch.Tensor:
         self.model.train()
-        self.logger.error(self.ctx.batch_idx, self.ctx.batch.mean())
         with self.accelerator.accumulate(self.model):
-            
             batch_size = self.ctx.batch.shape[0]
-
+            # train the discriminator
             for _ in range(self.d_loop_per_step):
+                self.d_optimizer.zero_grad()
                 with self.accelerator.autocast():
-                    z = torch.randn(batch_size, self.z_dim, 1, 1).to(self.ctx.batch.device)
-                    fake_images = self.g_model(z).detach()
+                    fake_images = self.g_model.generate(batch_size).detach()
                     real_images = self.ctx.batch
                     real_scores = self.d_model(real_images)
                     fake_scores = self.d_model(fake_images)
@@ -117,20 +114,18 @@ class GANTrainer(Trainer):
                     d_loss = (fake_scores.mean() - real_scores.mean()) + self.lambda_gp * gradient_penalty
                 self.accelerator.backward(d_loss)
                 self.d_optimizer.step()
-                self.d_optimizer.zero_grad()
-            
+            # train the generator
             for _ in range(self.g_loop_per_step):
+                self.g_optimizer.zero_grad()
                 with self.accelerator.autocast():
-                    z = torch.randn(batch_size, self.z_dim, 1, 1).to(self.ctx.batch.device)
-                    fake_images = self.g_model(z)
+                    fake_images = self.g_model.generate(batch_size)
                     fake_scores = self.d_model(fake_images)
                     avg_fake_score = fake_scores.mean()
                     g_loss = -avg_fake_score
                 self.accelerator.backward(g_loss)
                 self.g_optimizer.step()
-                self.g_optimizer.zero_grad()
-            
+            # save the losses
             self.ctx.g_step_loss = g_loss
             self.ctx.d_step_loss = d_loss
-            
+            # return dummy loss
             return torch.tensor([0])
