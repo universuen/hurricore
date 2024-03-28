@@ -111,7 +111,7 @@ class GANTrainer(Trainer):
                     real_scores = self.d_model(real_images)
                     fake_scores = self.d_model(fake_images)
                     gradient_penalty = _compute_gradient_penalty(self.d_model, real_images, fake_images)
-                    d_loss = (fake_scores.mean() - real_scores.mean()) + self.lambda_gp * gradient_penalty
+                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2 + self.lambda_gp * gradient_penalty
                 self.accelerator.backward(d_loss)
                 self.d_optimizer.step()
             # train the generator

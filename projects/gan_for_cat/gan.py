@@ -66,11 +66,12 @@ class Discriminator(nn.Module):
         self.final_layer = nn.Sequential(
             nn.Flatten(),
             nn.Linear(512 * 8 * 8, 256),
+            nn.BatchNorm1d(256),
             nn.LeakyReLU(0.1, inplace=True),
             nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
             nn.LeakyReLU(0.1, inplace=True),
             nn.Linear(64, 1),
-            nn.Sigmoid(),
         )
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:

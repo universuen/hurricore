@@ -58,9 +58,10 @@ class CheckpointHook(HookBase):
         if logger_hook is not None:
             self.logger = logger_hook.logger
             # process message queue
-            while len(self.msg_queue) > 0:
-                msg_type, msg = self.msg_queue.pop(0)
-                getattr(self.logger, msg_type)(msg)
+            if self.trainer.accelerator.is_main_process:
+                while len(self.msg_queue) > 0:
+                    msg_type, msg = self.msg_queue.pop(0)
+                    getattr(self.logger, msg_type)(msg)
             del self.msg_queue
         # check available checkpoint
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
