@@ -14,9 +14,7 @@ class GANLoggerHook(LoggerHook):
             d_step_loss = self.trainer.accelerator.gather(self.trainer.ctx.d_step_loss).detach().mean().item()
             if self.trainer.accelerator.is_main_process:
                 self.losses_per_batch.append((g_step_loss, d_step_loss))
-                idx = self.trainer.ctx.batch_idx
                 epoch = self.trainer.ctx.epoch
-                num_batches = len(self.trainer.data_loader)
                 progress = idx / num_batches
                 remaining_time = self._get_remaining_time(num_batches, idx)
                 
