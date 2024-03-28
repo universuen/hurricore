@@ -34,7 +34,6 @@ class LoggerHook(HookBase):
         # setup self
         self.logger = logger
         self.interval = interval
-        self.step = 0
     
     def on_training_start(self) -> None:
         if self.trainer.accelerator.is_main_process:
@@ -46,12 +45,14 @@ class LoggerHook(HookBase):
             self.logger.info(f'Total parameters: {_format_parameters(total_params)}')
             self.logger.info(f'Trainable parameters: {_format_parameters(trainable_params)}')
     
-    def on_epoch_start(self) -> None: 
+    def on_epoch_start(self) -> None:
+        self.step = 0
         if self.trainer.accelerator.is_main_process:
             assert hasattr(self.trainer.ctx, 'epoch')
             self.losses_per_batch = []
             self.logger.info(f'Epoch {self.trainer.ctx.epoch} started')
             self.start_time = time.time()
+            
     
     def _get_remaining_time(self, num_batches, idx):
         elapsed_time = time.time() - self.start_time
