@@ -62,6 +62,7 @@ class CheckpointHook(HookBase):
             while len(self.msg_queue) > 0:
                 msg_type, msg = self.msg_queue.pop(0)
                 getattr(self.logger, msg_type)(msg)
+            del self.msg_queue
         # check available checkpoint
         ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
         if len(ckpt_dirs) == 0:

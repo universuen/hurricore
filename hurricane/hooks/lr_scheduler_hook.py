@@ -35,6 +35,11 @@ class LRSchedulerHook(HookBase):
         if logger_hook is not None:
             self.logger = logger_hook.logger
             self.log_interval = logger_hook.interval
+            # process message queue
+            while len(self.msg_queue) > 0:
+                msg_type, msg = self.msg_queue.pop(0)
+                getattr(self.logger, msg_type)(msg)
+            del self.msg_queue
         # collect tensor board writer
         tb_hook = self.trainer.get_hook(TensorBoardHook)
         if tb_hook is not None:
