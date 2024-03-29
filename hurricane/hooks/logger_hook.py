@@ -37,20 +37,18 @@ class LoggerHook(HookBase):
     
     def on_training_start(self) -> None:
         if self.trainer.accelerator.is_main_process:
-            model = self.trainer.originals.model
-            total_params = sum(p.numel() for p in model.parameters())
-            trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-            self.logger.info(f'Model structure:\n{model}')
-            self.logger.info(f'Total parameters: {_format_parameters(total_params)}')
-            self.logger.info(f'Trainable parameters: {_format_parameters(trainable_params)}')
+            for idx, model in enumerate(self.trainer.models):
+                total_params = sum(p.numel() for p in model.parameters())
+                trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+                self.logger.info(f'Model {idx} structure:\n{model}')
+                self.logger.info(f'Model {idx} total parameters: {_format_parameters(total_params)}')
+                self.logger.info(f'Model {idx} trainable parameters: {_format_parameters(trainable_params)}')
     
     def on_epoch_start(self) -> None:
         self.step = 0
         if self.trainer.accelerator.is_main_process:
-            assert hasattr(self.trainer.ctx, 'epoch')
             self.losses_per_batch = []
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch} started')
+            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} started')
             self.start_time = time.time()
             
     
@@ -65,13 +63,13 @@ class LoggerHook(HookBase):
         
     def on_step_end(self) -> None:
         self.step += 1
-        idx = self.trainer.ctx.batch_idx
-        num_batches = len(self.trainer.data_loader)
-        if self.trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
+        idx = self.trainer.ctx.batches_idx + 1
+        num_batches = len(self.trainer.data_loaders[0])
+        if (self.trainer.ctx.global_step + 1) % self.interval == 0 or idx == num_batches:
             step_loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
             if self.trainer.accelerator.is_main_process:
                 self.losses_per_batch.append(step_loss)
-                epoch = self.trainer.ctx.epoch
+                epoch = self.trainer.ctx.epoch + 1
                 progress = idx / num_batches
                 remaining_time = self._get_remaining_time(num_batches, idx)
                 
@@ -87,4 +85,4 @@ class LoggerHook(HookBase):
     def on_epoch_end(self) -> None: 
         if self.trainer.accelerator.is_main_process:
             avg_loss = get_list_mean(self.losses_per_batch)
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch} finished with average loss: {avg_loss}')
+            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss}')

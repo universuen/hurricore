@@ -45,9 +45,9 @@ class ResNetTrainer(Trainer):
         
     ) -> None:
         super().__init__(
-            model=model, 
-            data_loader=data_loader, 
-            optimizer=optimizer, 
+            models=[model], 
+            data_loaders=[data_loader], 
+            optimizers=[optimizer], 
             accelerator=accelerator,
             epochs=epochs,
         )
@@ -59,7 +59,7 @@ class ResNetTrainer(Trainer):
             ),
             LRSchedulerHook(
                 trainer=self,
-                lr_scheduler=lr_scheduler,
+                lr_schedulers=[lr_scheduler],
                 mode=lr_scheduler_mode,
             ),
             TensorBoardHook(
@@ -76,7 +76,8 @@ class ResNetTrainer(Trainer):
         ]
         
     def compute_loss(self) -> Tensor:
-        inputs, labels = self.ctx.batch
-        outputs = self.model(inputs)
+        inputs, labels = self.ctx.batches[0]
+        model = self.models[0]
+        outputs = model(inputs)
         loss = cross_entropy(outputs, labels)
         return loss

@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from torch import Tensor
 from torch import nn
 from torch.optim import Optimizer
@@ -9,38 +11,42 @@ from hurricane.context import Context
 class TrainerBase:
     def __init__(
         self, 
-        model: nn.Module,
-        data_loader: DataLoader,
-        optimizer: Optimizer,
+        models: list[nn.Module],
+        optimizers: list[Optimizer],
+        data_loaders: list[DataLoader],
         epochs: int = 100,
     ) -> None:
 
-        self.model = model
-        self.data_loader = data_loader
-        self.optimizer = optimizer
+        self.models = models
+        self.optimizers = optimizers
+        self.data_loaders = data_loaders
         self.ctx = Context()
         self.epochs = epochs
         self.hooks = []
+        
+        assert len(set([len(dl) for dl in data_loaders])) == 1, 'All data loaders must have the same length.'
     
     def run(self) -> None:
 
         self.ctx.epoch = 0
-        self.ctx.batch_idx = 0
+        self.ctx.batches_idx = 0
         self.ctx.global_step = 0
         
         for hook in self.hooks:
             hook.on_training_start()
             
-        for epoch in range(self.ctx.epoch + 1, self.epochs + 1):
+        for epoch in range(self.ctx.epoch, self.epochs):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:
                 hook.on_epoch_start()
             
-            for batch_idx, batch in enumerate(self.data_loader, self.ctx.batch_idx + 1):
-                self.ctx.global_step += 1
-                self.ctx.batch_idx = batch_idx
-                self.ctx.batch = batch
+            for batches_idx, batches in enumerate(
+                iterable=zip(*self.data_loaders), 
+                start=self.ctx.batches_idx
+            ):
+                self.ctx.batches_idx = batches_idx
+                self.ctx.batches = batches
                 
                 for hook in self.hooks:
                     hook.on_step_start()
@@ -49,21 +55,31 @@ class TrainerBase:
 
                 for hook in self.hooks:
                     hook.on_step_end()
+                
+                self.ctx.global_step += 1
             
             for hook in self.hooks:
                 hook.on_epoch_end()
                 
-            self.ctx.batch_idx = 0
+            self.ctx.batches_idx = 0
         
         for hook in self.hooks:
             hook.on_training_end()
-
+        
     def training_step(self) -> Tensor:
-        self.model.train()
-        self.optimizer.zero_grad()
+        
+        for model in self.models:
+            model.train()
+            
+        for optimizer in self.optimizers:
+            optimizer.zero_grad()
+  
         loss = self.compute_loss()
         loss.backward()
-        self.optimizer.step()
+        
+        for optimizer in self.optimizers:
+            optimizer.step()
+        
         return loss
     
     def compute_loss(self) -> Tensor:

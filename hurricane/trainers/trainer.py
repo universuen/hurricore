@@ -13,35 +13,42 @@ from hurricane.context import Context
 class Trainer(TrainerBase):
     def __init__(
         self, 
-        model: nn.Module, 
-        data_loader: DataLoader, 
-        optimizer: Optimizer,
+        models: list[nn.Module],
+        optimizers: list[Optimizer],
+        data_loaders: list[DataLoader],
         accelerator: Accelerator,
         epochs: int = 100,
     ) -> None:
         super().__init__(
-            model=model, 
-            data_loader=data_loader, 
-            optimizer=optimizer,
+            models=models, 
+            data_loaders=data_loaders, 
+            optimizers=optimizers,
             epochs=epochs,
         )
         # backup original objects
         self.originals = Context()
-        self.originals.model = model
-        self.originals.data_loader = data_loader
-        self.originals.optimizer = optimizer
+        self.originals.models = models
+        self.originals.data_loaders = data_loaders
+        self.originals.optimizers = optimizers
         # setup accelerator
         self.accelerator = accelerator
-        self.model, self.data_loader, self.optimizer = self.accelerator.prepare(
-            self.model, self.data_loader, self.optimizer
-        )
+        self.models = [self.accelerator.prepare(model) for model in models]
+        self.optimizers = [self.accelerator.prepare(optimizer) for optimizer in optimizers]
+        self.data_loaders = [self.accelerator.prepare(data_loader) for data_loader in data_loaders]
 
     def training_step(self) -> torch.Tensor:
-        self.model.train()
-        with self.accelerator.accumulate(self.model):
-            self.optimizer.zero_grad()
+        for model in self.models:
+            model.train()
+        with self.accelerator.accumulate(*self.models):
+            
+            for optimizer in self.optimizers:
+                optimizer.zero_grad()
+            
             with self.accelerator.autocast():
                 loss = self.compute_loss()
             self.accelerator.backward(loss)
-            self.optimizer.step()
+            
+            for optimizer in self.optimizers:
+                optimizer.step()
+            
             return loss

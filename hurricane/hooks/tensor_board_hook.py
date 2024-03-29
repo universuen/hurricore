@@ -1,9 +1,11 @@
 from pathlib import Path
 
 from torch.utils.tensorboard import SummaryWriter
+from tensorboard.compat.proto.event_pb2 import Event, SessionLog
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
+from hurricane.utils import auto_name
 
 
 class TensorBoardHook(HookBase):
@@ -21,29 +23,31 @@ class TensorBoardHook(HookBase):
         # setup self
         self.interval = interval
         self.folder_path = folder_path
+        self.writer = SummaryWriter(log_dir=self.folder_path)
     
-    def get_temp_writer(self):
-        # use temperary writer to avoid step conflict
-        return SummaryWriter(
-            log_dir=self.folder_path,
-            purge_step=self.trainer.ctx.global_step,
-        )      
-            
     def on_step_end(self) -> None:
-        step = self.trainer.ctx.global_step
-        if step % self.interval == 0:
+        step = self.trainer.ctx.global_step 
+        if (step + 1) % self.interval == 0:
             loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
             if self.trainer.accelerator.is_main_process:
-                writer = self.get_temp_writer()
-                writer.add_scalar('Loss/Training', loss, step)
-                writer.close()
+                self.writer.add_scalar('Loss/Training', loss, step)
+                self.writer.flush()
                    
     def on_epoch_end(self) -> None:
         if self.trainer.accelerator.is_main_process:
-            writer = self.get_temp_writer()
             step = self.trainer.ctx.global_step
-            for layer_name, param in self.trainer.model.named_parameters():
-                if param.grad is not None:
-                    writer.add_histogram(f"Parameters/{layer_name}", param, step)
-                    writer.add_histogram(f"Gradients/{layer_name}", param.grad, step)
-            writer.close()
+            models = self.trainer.originals.models
+            for model_name, model in zip(auto_name(models), models):
+                for layer_name, param in model.named_parameters():
+                    if param.grad is not None:
+                        self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
+                        self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
+            self.writer.flush()
+
+    def on_training_end(self) -> None:
+        self.writer.close()
+    
+    def recover_from_checkpoint(self) -> None:
+        self.writer.purge_step = self.trainer.ctx.global_step
+        self.writer.close()
+        pass

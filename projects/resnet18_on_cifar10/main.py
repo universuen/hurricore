@@ -18,35 +18,28 @@ from resnet_trainer import ResNetTrainer
 def main():
     logger = Logger(**LoggerConfig())
     log_all_configs(logger)
-    
     accelerator = Accelerator(**AcceleratorConfig())
-    
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ]
     )
-
     with accelerator.main_process_first():
         dataset = torchvision.datasets.CIFAR10(
             transform=transform,
             **DatasetConfig(),
         )
-
         model = resnet18(weights=None)
         model.fc = nn.Linear(model.fc.in_features, 10)
-
     data_loader = torch.utils.data.DataLoader(
         dataset=dataset, 
         **DataLoaderConfig(),
     )
-    
     optimizer = AdamW(
         params=model.parameters(), 
         **OptimizerConfig(),
     )
-    
     scheduler = CosineAnnealingLR(
         optimizer=optimizer,
         T_max=(len(data_loader) // AcceleratorConfig().gradient_accumulation_steps) * TrainerConfig().epochs,
@@ -65,4 +58,4 @@ def main():
 
 
 if __name__ == '__main__':
-    launch(main, num_processes=2, use_port="8002")
+    launch(main, num_processes=1, use_port="8002")

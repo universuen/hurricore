@@ -4,6 +4,7 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 from logging import Logger
+from typing import Iterable
 
 import torch
 from accelerate import notebook_launcher
@@ -46,3 +47,17 @@ def is_deepspeed_zero3(accelerator) -> bool:
 def get_time_stamp() -> str:
     now = datetime.now()
     return now.strftime("%Y%m%d-%H%M%S")
+
+
+def auto_name(iterable: Iterable) -> list[str]:
+    names = []
+    names_cnt = {}
+    for i in iterable:
+        name = i.__class__.__name__
+        if name in names_cnt:
+            names_cnt[name] += 1
+            name = f'{name}_{names_cnt[name]}'
+        else:
+            names_cnt[name] = 0
+        names.append(name)
+    return names

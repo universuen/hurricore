@@ -45,9 +45,9 @@ class HFLLMTrainer(Trainer):
         
     ) -> None:
         super().__init__(
-            model=model, 
-            data_loader=data_loader, 
-            optimizer=optimizer, 
+            models=[model], 
+            optimizers=[optimizer], 
+            data_loaders=[data_loader], 
             accelerator=accelerator,
             epochs=epochs,
         )
@@ -69,7 +69,7 @@ class HFLLMTrainer(Trainer):
             ),
             LRSchedulerHook(
                 trainer=self,
-                lr_scheduler=lr_scheduler,
+                lr_schedulers=[lr_scheduler],
                 mode=lr_scheduler_mode,
             ),
             TensorBoardHook(
@@ -86,8 +86,9 @@ class HFLLMTrainer(Trainer):
         ]
     
     def compute_loss(self) -> torch.Tensor:
-        input_ids, attention_masks, labels = self.ctx.batch
-        loss = self.model(
+        input_ids, attention_masks, labels = self.ctx.batches[0]
+        model = self.models[0]
+        loss = model(
             input_ids=input_ids,
             attention_mask=attention_masks,
             labels=labels,
