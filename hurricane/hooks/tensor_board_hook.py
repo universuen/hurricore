@@ -25,7 +25,6 @@ class TensorBoardHook(HookBase):
         self.folder_path = folder_path
         self.writer = SummaryWriter(
             log_dir=self.folder_path,
-            purge_step=0,
         )
     
     def on_step_end(self) -> None:
@@ -53,4 +52,3 @@ class TensorBoardHook(HookBase):
     def recover_from_checkpoint(self) -> None:
         self.writer.purge_step = self.trainer.ctx.global_step
         self.writer.close()
-        pass

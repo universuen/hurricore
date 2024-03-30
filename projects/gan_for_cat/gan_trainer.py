@@ -121,11 +121,13 @@ class GANTrainer(Trainer):
                     # compute scores
                     real_scores = d_model(real_images)
                     fake_scores = d_model(fake_images)
-                    # get gradient penalty
-                    # gradient_penalty = _compute_gradient_penalty(d_model, real_images, fake_images)
                     # compute loss
-                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2 # + self.lambda_gp * gradient_penalty
+                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2
                 self.accelerator.backward(d_loss)
+                # clip parameters
+                with torch.no_grad():
+                    for p in d_model.parameters():
+                        p.grad.data.clamp_(-0.1, 0.1)
                 d_optimizer.step()
             # train generator
             for _ in range(self.g_loop_per_step):

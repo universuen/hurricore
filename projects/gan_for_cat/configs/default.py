@@ -35,12 +35,12 @@ class LoggerConfig(ConfigBase):
 
 class GeneratorConfig(ConfigBase):
     z_dim = 1024
-    hidden_dim = 256
+    hidden_dim = 128
     image_size = 256
 
 
 class DiscriminatorConfig(ConfigBase):
-    hidden_dim = 256
+    hidden_dim = 128
     image_size = 256
 
 
@@ -49,7 +49,7 @@ class AcceleratorConfig(ConfigBase):
     
     
 class DataLoaderConfig(ConfigBase):
-    batch_size = 16
+    batch_size = 32
     num_workers = cpu_count()
     shuffle = True
 
