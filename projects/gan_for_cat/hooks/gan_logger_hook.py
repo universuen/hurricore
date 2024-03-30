@@ -43,6 +43,6 @@ class GANLoggerHook(LoggerHook):
         if self.trainer.accelerator.is_main_process:
             avg_g_loss = get_list_mean(self.g_step_losses)
             avg_d_loss = get_list_mean(self.d_step_losses)
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch} finished')
+            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished')
             self.logger.info(f'Average G loss: {avg_g_loss:.5f}')
             self.logger.info(f'Average D loss: {avg_d_loss:.5f}')
