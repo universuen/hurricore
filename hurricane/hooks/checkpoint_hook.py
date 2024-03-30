@@ -20,7 +20,7 @@ class CheckpointHook(HookBase):
         assert folder_path is not None and folder_path.is_dir(), 'Invalid checkpoint folder path.'
         assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         self.msg_queue = []
-        # reprepare dataloader with seedable sampler if necessary
+        # re-prepare dataloader with seedable sampler if necessary
         if trainer.accelerator.dataloader_config.use_seedable_sampler is False:
             torch.manual_seed(seed)
             self.msg_queue.append(
@@ -55,6 +55,7 @@ class CheckpointHook(HookBase):
         self.folder_path = folder_path
         self.interval = interval
     
+    
     def _collect_logger(self) -> None:
         logger_hook = self.trainer.get_hook(LoggerHook)
         if logger_hook is not None:
@@ -65,6 +66,7 @@ class CheckpointHook(HookBase):
                     msg_type, msg = self.msg_queue.pop(0)
                     getattr(self.logger, msg_type)(msg)
             del self.msg_queue
+    
     
     def on_training_start(self) -> None:
         # collect logger
@@ -93,20 +95,24 @@ class CheckpointHook(HookBase):
         if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
             self.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
     
+    
     def on_step_end(self) -> None:
         step = self.trainer.ctx.global_step + 1
-        conditions = [
-            step % self.interval == 0,
-            self.trainer.ctx.epoch + 1 == self.trainer.epochs,
-            self.trainer.ctx.batches_idx + 1 == len(self.trainer.data_loaders[0]),
-        ]
-        if conditions[0] or all(conditions[1:]):
+        if step % self.interval == 0:
             ckpt_path = self.folder_path / f'ckpt_step_{step}'
             self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
             if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
                 self.logger.info(f'Saved checkpoint at: {ckpt_path}')
 
+
     def on_epoch_end(self) -> None:
         for dl in self.trainer.data_loaders:
             dl.skip_batches = 0
 
+
+    def on_training_end(self) -> None:
+        step = self.trainer.ctx.global_step + 1
+        ckpt_path = self.folder_path / f'ckpt_step_{step}'
+        self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
+        if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
+            self.logger.info(f'Saved checkpoint at: {ckpt_path}')

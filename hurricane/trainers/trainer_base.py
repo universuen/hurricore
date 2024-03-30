@@ -1,4 +1,5 @@
 from typing import Iterable
+from itertools import zip_longest
 
 from torch import Tensor
 from torch import nn
@@ -26,6 +27,7 @@ class TrainerBase:
         
         assert len(set([len(dl) for dl in data_loaders])) == 1, 'All data loaders must have the same length.'
     
+    
     def run(self) -> None:
 
         self.ctx.epoch = 0
@@ -42,7 +44,7 @@ class TrainerBase:
                 hook.on_epoch_start()
             
             for batches_idx, batches in enumerate(
-                iterable=zip(*self.data_loaders), 
+                iterable=self.build_iterator(), 
                 start=self.ctx.batches_idx
             ):
                 self.ctx.batches_idx = batches_idx
@@ -65,7 +67,13 @@ class TrainerBase:
         
         for hook in self.hooks:
             hook.on_training_end()
-        
+    
+    
+    def build_iterator(self) -> Iterable:
+        self.ctx.num_batches = max([len(dl) for dl in self.data_loaders])
+        return zip_longest(*self.data_loaders, fillvalue=None)
+    
+    
     def training_step(self) -> Tensor:
         
         for model in self.models:
@@ -82,9 +90,11 @@ class TrainerBase:
         
         return loss
     
+    
     def compute_loss(self) -> Tensor:
         raise NotImplementedError
 
+    
     def get_hook(self, hook_type):
         for hook in self.hooks:
             if isinstance(hook, hook_type):
