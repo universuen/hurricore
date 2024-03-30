@@ -1,7 +1,9 @@
 from typing import Any, Dict, Iterator
 
-class ConfigBase:
+
+class ConfigBase(Dict):
     def __init__(self, **kwargs: Any) -> None:
+        super().__init__()
         for name, value in self.__class__.__dict__.items():
             if not name.startswith("__") and not callable(value):
                 setattr(self, name, value)
@@ -23,3 +25,9 @@ class ConfigBase:
 
     def keys(self) -> Dict[str, Any].keys:
         return self.__dict__.keys()
+
+    def values(self) -> Dict[str, Any].values:
+        return self.__dict__.values()
+
+    def items(self) -> Dict[str, Any].items:
+        return self.__dict__.items()
