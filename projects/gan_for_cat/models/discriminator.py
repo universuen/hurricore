@@ -16,6 +16,17 @@ class _ResBlock(nn.Module):
         return x + self.block(x)
 
 
+def init_weights(layer: nn.Module):
+    layer_name = layer.__class__.__name__
+    if 'Conv' in layer_name:
+        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+    elif layer_name == 'Linear':
+        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+    elif 'Norm' in layer_name:
+        nn.init.normal_(layer.weight.data, 1.0, 0.02)
+        nn.init.constant_(layer.bias.data, 0)
+
+
 class Discriminator(nn.Module):
     def __init__(
         self, 
@@ -35,15 +46,16 @@ class Discriminator(nn.Module):
         self.layers = nn.ModuleList()
         for _ in range(num_down_samples):
             self.layers.append(_ResBlock(hidden_dim, image_size))
-            self.layers.append(nn.AvgPool2d(2))
+            self.layers.append(nn.Conv2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1, bias=False))
             image_size //= 2
         self.final_layer = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(hidden_dim * 4 * 4, 32),
-            nn.LayerNorm(32),
+            nn.Linear(hidden_dim * 4 * 4, 16),
+            nn.LayerNorm(16),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Linear(32, 1),
+            nn.Linear(16, 1),
         )
+        self.apply(init_weights)
     
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         x = self.preprocess_layer(z)

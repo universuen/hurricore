@@ -40,7 +40,7 @@ class GeneratorConfig(ConfigBase):
 
 
 class DiscriminatorConfig(ConfigBase):
-    hidden_dim = 128
+    hidden_dim = 64
     image_size = 256
 
 
@@ -66,7 +66,7 @@ class TrainerConfig(ConfigBase):
     tensor_board_interval = gradient_accumulation_interval
     
     image_peek_folder_path = PathConfig().peek_images
-    image_peek_interval = gradient_accumulation_interval * 10
+    image_peek_interval = gradient_accumulation_interval * 1
     
     checkpoint_folder_path = PathConfig().checkpoints
     checkpoint_interval = gradient_accumulation_interval * 1000

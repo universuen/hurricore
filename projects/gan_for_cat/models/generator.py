@@ -17,6 +17,17 @@ class _ResBlock(nn.Module):
         return x + self.block(x)
 
 
+def init_weights(layer: nn.Module):
+    layer_name = layer.__class__.__name__
+    if 'Conv' in layer_name:
+        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+    elif layer_name == 'Linear':
+        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+    elif 'Norm' in layer_name:
+        nn.init.normal_(layer.weight.data, 1.0, 0.02)
+        nn.init.constant_(layer.bias.data, 0)
+
+
 class Generator(nn.Module):
     def __init__(
         self, 
@@ -36,16 +47,20 @@ class Generator(nn.Module):
         self.layers = nn.ModuleList(
             [
                 _ResBlock(hidden_dim),
-                nn.Upsample(scale_factor=2),
+                nn.ConvTranspose2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1, bias=False),
             ] * num_up_samples
         )
         self.final_layer = nn.Sequential(
-            nn.Conv2d(hidden_dim, 32, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(32),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(32, 3, kernel_size=3, stride=1, padding=1),
+            _ResBlock(hidden_dim),
+            _ResBlock(hidden_dim),
+            _ResBlock(hidden_dim),
+            _ResBlock(hidden_dim),
+            _ResBlock(hidden_dim),
+            _ResBlock(hidden_dim),
+            nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1),
             nn.Sigmoid()
         )
+        self.apply(init_weights)
     
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         x = self.preprocess_layer(z)
