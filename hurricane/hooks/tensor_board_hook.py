@@ -23,7 +23,10 @@ class TensorBoardHook(HookBase):
         # setup self
         self.interval = interval
         self.folder_path = folder_path
-        self.writer = SummaryWriter(log_dir=self.folder_path)
+        self.writer = SummaryWriter(
+            log_dir=self.folder_path,
+            purge_step=0,
+        )
     
     def on_step_end(self) -> None:
         step = self.trainer.ctx.global_step 

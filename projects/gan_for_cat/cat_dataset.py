@@ -12,16 +12,16 @@ class CatDataset(Dataset):
     def __init__(
         self, 
         path: Path,
-        transform = None
+        image_size: int = 256,
     ) -> None:
         super().__init__()
         self.path = Path(path)
         self.img_paths = list(path.rglob('*cat*.jpg'))
         self.transform = Compose([
-            Resize((512, 512)),
+            Resize((image_size, image_size)),
             ToTensor(),
             Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ]) if transform is None else transform
+        ])
     
     def __len__(self) -> int:
         return len(self.img_paths)

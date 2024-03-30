@@ -30,7 +30,7 @@ class Trainer(TrainerBase):
         self.originals.models = models
         self.originals.data_loaders = data_loaders
         self.originals.optimizers = optimizers
-        # setup accelerated objects
+        # setup accelerated objects (ugly but necessary when using DeepSpeed)
         all_accelerated_objects = accelerator.prepare(
             *models, *data_loaders, *optimizers
         )

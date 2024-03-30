@@ -8,10 +8,8 @@ from accelerate import Accelerator
 from hurricane.trainers import Trainer
 from hurricane.hooks import CheckpointHook
 
-from hooks.gan_logger_hook import GANLoggerHook
-from hooks.gan_tensor_board_hook import GANTensorBoardHook
-from hooks.img_peek_hook import ImgPeekHook
-from gan import GAN
+from hooks import GANLoggerHook, ImgPeekHook, GANTensorBoardHook
+from models import Generator, Discriminator
 
 
 def _compute_gradient_penalty(discriminator, real_samples, fake_samples):
@@ -35,10 +33,15 @@ def _compute_gradient_penalty(discriminator, real_samples, fake_samples):
 class GANTrainer(Trainer):
     def __init__(
         self, 
-        model: GAN,
+        
+        g_model: Generator,
+        d_model: Discriminator,
+        
         data_loader: DataLoader, 
+        
         g_optimizer: Optimizer,
         d_optimizer: Optimizer,
+        
         accelerator: Accelerator, 
         epochs: int = 100,
         
@@ -61,18 +64,17 @@ class GANTrainer(Trainer):
         checkpoint_seed: int = 42,
         
     ) -> None:
-        super().__init__(model, data_loader, None, accelerator, epochs)
+        super().__init__(
+            models=[g_model, d_model], 
+            data_loaders=[data_loader], 
+            optimizers=[g_optimizer, d_optimizer], 
+            accelerator=accelerator,
+            epochs=epochs,
+        )
         
         self.g_loop_per_step = g_loop_per_step
         self.d_loop_per_step = d_loop_per_step
         self.lambda_gp = lambda_gp
-        self.g_model = model.generator
-        self.d_model = model.discriminator
-        g_optimizer, d_optimizer = accelerator.prepare(g_optimizer, d_optimizer)
-        self.g_optimizer = g_optimizer
-        self.d_optimizer = d_optimizer
-
-        self.z_dim = model.z_dim
         
         self.hooks = [
             GANLoggerHook(
@@ -99,33 +101,48 @@ class GANTrainer(Trainer):
         ]
 
     def training_step(self) -> torch.Tensor:
-        self.model.train()
-        with self.accelerator.accumulate(self.model):
-            batch_size = self.ctx.batch.shape[0]
-            # train the discriminator
+        for model in self.models:
+            model.train()
+            
+        with self.accelerator.accumulate(*self.models):
+            real_images = self.ctx.batches[0]
+            batch_size = real_images.size(0)
+            g_model, d_model = self.models
+            z_dim = self.originals.models[0].z_dim
+            g_optimizer, d_optimizer = self.optimizers
+            device = self.accelerator.device
+            # train discriminator
             for _ in range(self.d_loop_per_step):
-                self.d_optimizer.zero_grad()
+                d_optimizer.zero_grad()
                 with self.accelerator.autocast():
-                    fake_images = self.g_model.generate(batch_size).detach()
-                    real_images = self.ctx.batch
-                    real_scores = self.d_model(real_images)
-                    fake_scores = self.d_model(fake_images)
-                    gradient_penalty = _compute_gradient_penalty(self.d_model, real_images, fake_images)
-                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2 + self.lambda_gp * gradient_penalty
+                    # construct fake images
+                    z = torch.randn(batch_size, z_dim).to(device)
+                    fake_images = g_model(z)
+                    # compute scores
+                    real_scores = d_model(real_images)
+                    fake_scores = d_model(fake_images)
+                    # get gradient penalty
+                    # gradient_penalty = _compute_gradient_penalty(d_model, real_images, fake_images)
+                    # compute loss
+                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2 # + self.lambda_gp * gradient_penalty
                 self.accelerator.backward(d_loss)
-                self.d_optimizer.step()
-            # train the generator
+                d_optimizer.step()
+            # train generator
             for _ in range(self.g_loop_per_step):
-                self.g_optimizer.zero_grad()
+                g_optimizer.zero_grad()
                 with self.accelerator.autocast():
-                    fake_images = self.g_model.generate(batch_size)
-                    fake_scores = self.d_model(fake_images)
+                    # construct fake images
+                    z = torch.randn(batch_size, z_dim).to(device)
+                    fake_images = g_model(z)
+                    # compute scores
+                    fake_scores = d_model(fake_images)
+                    # compute loss
                     avg_fake_score = fake_scores.mean()
                     g_loss = -avg_fake_score
                 self.accelerator.backward(g_loss)
-                self.g_optimizer.step()
-            # save the losses
+                g_optimizer.step()
+            # save losses to context
             self.ctx.g_step_loss = g_loss
             self.ctx.d_step_loss = d_loss
             # return dummy loss
-            return torch.tensor([0])
+            return torch.tensor([.0], device=self.accelerator.device)

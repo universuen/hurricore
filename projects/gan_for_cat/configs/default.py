@@ -5,7 +5,12 @@ from hurricane.config_base import ConfigBase
 
 
 config_name = 'default'
-gradient_accumulation_interval = 1
+gradient_accumulation_interval = 4
+
+
+class LaunchConfig(ConfigBase):
+    num_processes = 4
+    use_port = "8002"
 
 
 class PathConfig(ConfigBase):
@@ -28,8 +33,15 @@ class LoggerConfig(ConfigBase):
     logs_dir = PathConfig().logs
 
 
-class GANConfig(ConfigBase):
-    z_dim: int = 1024
+class GeneratorConfig(ConfigBase):
+    z_dim = 1024
+    hidden_dim = 256
+    image_size = 256
+
+
+class DiscriminatorConfig(ConfigBase):
+    hidden_dim = 256
+    image_size = 256
 
 
 class AcceleratorConfig(ConfigBase):
@@ -37,7 +49,7 @@ class AcceleratorConfig(ConfigBase):
     
     
 class DataLoaderConfig(ConfigBase):
-    batch_size = 128
+    batch_size = 16
     num_workers = cpu_count()
     shuffle = True
 
@@ -54,7 +66,7 @@ class TrainerConfig(ConfigBase):
     tensor_board_interval = gradient_accumulation_interval
     
     image_peek_folder_path = PathConfig().peek_images
-    image_peek_interval = gradient_accumulation_interval * 50
+    image_peek_interval = gradient_accumulation_interval * 100
     
     checkpoint_folder_path = PathConfig().checkpoints
     checkpoint_interval = gradient_accumulation_interval * 1000
@@ -63,6 +75,7 @@ class TrainerConfig(ConfigBase):
 
 class DatasetConfig(ConfigBase):
     path = PathConfig().dataset_path
+    image_size = 256
 
 
 class GeneratorOptimizerConfig(ConfigBase):

@@ -50,21 +50,9 @@ class LoggerHook(HookBase):
     def on_epoch_start(self) -> None:
         self.step = 0
         if self.trainer.accelerator.is_main_process:
-            self.losses_per_batch = []
+            self.step_losses = []
             self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} started')
             self.start_time = time.time()
-            
-    
-    def _get_remaining_time(self):
-        elapsed_time = time.time() - self.start_time
-        iterator_length = self.trainer.ctx.iterator_length
-        batches_idx = self.trainer.ctx.batches_idx + 1
-        remaining_time = (iterator_length - batches_idx) * (elapsed_time / self.step)
-        days, remainder = divmod(remaining_time, 86400) 
-        hours, remainder = divmod(remainder, 3600) 
-        minutes, seconds = divmod(remainder, 60) 
-        formatted_remaining_time = f"{int(days)}d {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
-        return formatted_remaining_time
         
         
     def on_step_end(self) -> None:
@@ -78,14 +66,26 @@ class LoggerHook(HookBase):
     def on_epoch_end(self) -> None: 
         if self.trainer.accelerator.is_main_process:
             self._log_states()
-            avg_loss = get_list_mean(self.losses_per_batch)
+            avg_loss = get_list_mean(self.step_losses)
             self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss: .5f}')
 
 
     def _collect_step_loss(self):
         step_loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
         if self.trainer.accelerator.is_main_process:
-            self.losses_per_batch.append(step_loss)
+            self.step_losses.append(step_loss)
+    
+    
+    def _get_remaining_time(self):
+        elapsed_time = time.time() - self.start_time
+        iterator_length = self.trainer.ctx.iterator_length
+        batches_idx = self.trainer.ctx.batches_idx + 1
+        remaining_time = (iterator_length - batches_idx) * (elapsed_time / self.step)
+        days, remainder = divmod(remaining_time, 86400) 
+        hours, remainder = divmod(remainder, 3600) 
+        minutes, seconds = divmod(remainder, 60) 
+        formatted_remaining_time = f"{int(days)}d {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
+        return formatted_remaining_time
     
     
     def _log_states(self):
@@ -98,7 +98,7 @@ class LoggerHook(HookBase):
         self.logger.info(
             f"Epoch: {epoch}/{self.trainer.epochs} | "
             f"Step: {idx}/{iterator_length} | "
-            f"Loss: {self.losses_per_batch[-1]:.5f} | "
+            f"Loss: {self.step_losses[-1]:.5f} | "
             f"Progress: {progress:.2%} | "
             f"Time left: {remaining_time} | "
             f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
