@@ -12,6 +12,11 @@ config_name = get_config_name()
 gradient_accumulate_interval = 8
 
 
+class LaunchConfig(ConfigBase):
+    num_processes = 4
+    use_port = "8002"
+
+
 class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'

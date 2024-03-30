@@ -30,11 +30,15 @@ class Trainer(TrainerBase):
         self.originals.models = models
         self.originals.data_loaders = data_loaders
         self.originals.optimizers = optimizers
-        # setup accelerator
+        # setup accelerated objects
+        all_accelerated_objects = accelerator.prepare(
+            *models, *data_loaders, *optimizers
+        )
+        self.models = all_accelerated_objects[:len(models)]
+        self.data_loaders = all_accelerated_objects[len(models):len(models) + len(data_loaders)]
+        self.optimizers = all_accelerated_objects[len(models) + len(data_loaders):]
         self.accelerator = accelerator
-        self.models = [self.accelerator.prepare(model) for model in models]
-        self.optimizers = [self.accelerator.prepare(optimizer) for optimizer in optimizers]
-        self.data_loaders = [self.accelerator.prepare(data_loader) for data_loader in data_loaders]
+        
 
     def training_step(self) -> torch.Tensor:
         for model in self.models:

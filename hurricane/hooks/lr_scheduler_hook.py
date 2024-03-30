@@ -21,12 +21,14 @@ class LRSchedulerHook(HookBase):
         # setup trainer
         trainer.originals.lr_schedulers = lr_schedulers
         trainer.accelerator.step_scheduler_with_optimizer = (mode == 'per_step')
-        self.msg_queue = [
-            (
-                'info',
-                f'Set `accelerator.step_scheduler_with_optimizer` to {mode == "per_step"}',
+        self.msg_queue = []
+        if self.trainer.accelerator.is_main_process:
+            self.msg_queue.append(
+                (
+                    'info',
+                    f'Set `accelerator.step_scheduler_with_optimizer` to {mode == "per_step"}',
+                )
             )
-        ]
         # setup self
         self.mode = mode
         self.lr_schedulers = [

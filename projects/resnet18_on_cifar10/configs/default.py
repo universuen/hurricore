@@ -62,7 +62,7 @@ class LoggerConfig(ConfigBase):
     name = config_name
     level = logging.INFO
     logs_dir = PathConfig().logs
-
+    
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval

@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 
 from peft import LoraConfig, TaskType
-from accelerate import DataLoaderConfiguration
 
 from hurricane.config_base import ConfigBase
 from hurricane.utils import get_config_name
@@ -13,6 +12,11 @@ from hurricane.utils import get_config_name
 model_name = "google/gemma-2b"
 config_name = get_config_name()
 gradient_accumulate_interval = 8
+
+
+class LaunchConfig(ConfigBase):
+    num_processes = 4
+    use_port = "8002"
 
 
 class PathConfig(ConfigBase):

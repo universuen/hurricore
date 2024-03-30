@@ -13,6 +13,11 @@ config_name = get_config_name()
 gradient_accumulate_interval = 32
 
 
+class LaunchConfig(ConfigBase):
+    num_processes = 4
+    use_port = "8002"
+
+
 class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'
@@ -75,4 +80,3 @@ class AcceleratorConfig(ConfigBase):
         # offload_param_device = 'cpu',
         zero3_init_flag = False,
     )
-    dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True)
