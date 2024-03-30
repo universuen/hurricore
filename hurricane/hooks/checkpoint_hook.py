@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import torch
+from torch.utils.data import RandomSampler
 
-from hurricane.hooks import HookBase, LoggerHook, TensorBoardHook
+from hurricane.hooks import HookBase, LoggerHook
 from hurricane.trainers import TrainerBase
 
 
@@ -20,15 +21,20 @@ class CheckpointHook(HookBase):
         assert folder_path is not None and folder_path.is_dir(), 'Invalid checkpoint folder path.'
         assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         self.msg_queue = []
-        # re-prepare dataloader with seedable sampler if necessary
-        if trainer.accelerator.dataloader_config.use_seedable_sampler is False:
+        # re-prepare dataloader with seedable sampler if 
+        conditions = [
+            any(isinstance(dl.sampler, RandomSampler) for dl in trainer.originals.data_loaders),
+            trainer.accelerator.dataloader_config.use_seedable_sampler is False,
+        ]
+        if all(conditions) is True:
             torch.manual_seed(seed)
-            self.msg_queue.append(
-                (
-                    'info', 
-                    'To ensure reproducibility, dataloaders are reprepared with seedable sampler.'
+            if trainer.accelerator.is_main_process:
+                self.msg_queue.append(
+                    (
+                        'info', 
+                        'To ensure reproducibility, dataloaders are reprepared with seedable sampler.'
+                    )
                 )
-            )
             trainer.accelerator.dataloader_config.use_seedable_sampler = True
             trainer.data_loaders = [
                 trainer.accelerator.prepare(dl) 
@@ -41,12 +47,13 @@ class CheckpointHook(HookBase):
                     if hasattr(dl.batch_sampler, 'batch_sampler'):
                         dl.batch_sampler.batch_sampler.sampler = dl.batch_sampler.sampler
                 except AttributeError:
-                    self.msg_queue.append(
-                        (
-                            'error', 
-                            'Failed to fix the issue in Accelerate `prepare_dataloader()`.'
+                    if trainer.accelerator.is_main_process:
+                        self.msg_queue.append(
+                            (
+                                'error', 
+                                'Failed to fix the issue in Accelerate `prepare_dataloader()`.'
+                            )
                         )
-                    )
             ##################################################################################################### 
         
         # register trainer context for checkpointing
@@ -54,18 +61,6 @@ class CheckpointHook(HookBase):
         # setup self
         self.folder_path = folder_path
         self.interval = interval
-    
-    
-    def _collect_logger(self) -> None:
-        logger_hook = self.trainer.get_hook(LoggerHook)
-        if logger_hook is not None:
-            self.logger = logger_hook.logger
-            # process message queue
-            if self.trainer.accelerator.is_main_process:
-                while len(self.msg_queue) > 0:
-                    msg_type, msg = self.msg_queue.pop(0)
-                    getattr(self.logger, msg_type)(msg)
-            del self.msg_queue
     
     
     def on_training_start(self) -> None:
@@ -86,7 +81,6 @@ class CheckpointHook(HookBase):
             dl.skip_batches = self.trainer.ctx.batches_idx + 1
         # should step into the next batch
         self.trainer.ctx.batches_idx += 1
-        self.trainer.ctx.global_step += 1
         # recover hooks
         for hook in self.trainer.hooks:
             if hasattr(hook, 'recover_from_checkpoint'):
@@ -99,18 +93,31 @@ class CheckpointHook(HookBase):
     def on_step_end(self) -> None:
         step = self.trainer.ctx.global_step + 1
         if step % self.interval == 0:
-            ckpt_path = self.folder_path / f'ckpt_step_{step}'
-            self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
-            if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
-                self.logger.info(f'Saved checkpoint at: {ckpt_path}')
+            self._save_checkpoint()
 
 
     def on_epoch_end(self) -> None:
         for dl in self.trainer.data_loaders:
             dl.skip_batches = 0
-
-
+    
+    
     def on_training_end(self) -> None:
+        self._save_checkpoint()
+
+    
+    def _collect_logger(self) -> None:
+        logger_hook = self.trainer.get_hook(LoggerHook)
+        if logger_hook is not None:
+            self.logger = logger_hook.logger
+            # process message queue
+            if self.trainer.accelerator.is_main_process:
+                while len(self.msg_queue) > 0:
+                    msg_type, msg = self.msg_queue.pop(0)
+                    getattr(self.logger, msg_type)(msg)
+            del self.msg_queue
+            
+
+    def _save_checkpoint(self) -> None:
         step = self.trainer.ctx.global_step + 1
         ckpt_path = self.folder_path / f'ckpt_step_{step}'
         self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)

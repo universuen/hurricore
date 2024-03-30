@@ -32,7 +32,6 @@ class TrainerBase:
 
         self.ctx.epoch = 0
         self.ctx.batches_idx = 0
-        self.ctx.global_step = 0
         
         for hook in self.hooks:
             hook.on_training_start()
@@ -49,6 +48,7 @@ class TrainerBase:
             ):
                 self.ctx.batches_idx = batches_idx
                 self.ctx.batches = batches
+                self._set_global_step()
                 
                 for hook in self.hooks:
                     hook.on_step_start()
@@ -57,8 +57,6 @@ class TrainerBase:
 
                 for hook in self.hooks:
                     hook.on_step_end()
-                
-                self.ctx.global_step += 1
             
             for hook in self.hooks:
                 hook.on_epoch_end()
@@ -70,7 +68,7 @@ class TrainerBase:
     
     
     def build_iterator(self) -> Iterable:
-        self.ctx.num_batches = max([len(dl) for dl in self.data_loaders])
+        self.ctx.iterator_length = max([len(dl) for dl in self.data_loaders])
         return zip_longest(*self.data_loaders, fillvalue=None)
     
     
@@ -100,3 +98,10 @@ class TrainerBase:
             if isinstance(hook, hook_type):
                 return hook
         return None
+
+    
+    def _set_global_step(self) -> int:
+        epoch = self.ctx.epoch
+        iterator_length = self.ctx.iterator_length
+        batches_idx = self.ctx.batches_idx
+        self.ctx.global_step = epoch * iterator_length + batches_idx

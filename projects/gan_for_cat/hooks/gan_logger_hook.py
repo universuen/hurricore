@@ -8,19 +8,19 @@ class GANLoggerHook(LoggerHook):
     def on_step_end(self) -> None:
         self.step += 1
         idx = self.trainer.ctx.batch_idx
-        num_batches = len(self.trainer.data_loader)
-        if self.trainer.ctx.global_step % self.interval == 0 or idx == num_batches:
+        iterator_length = len(self.trainer.data_loader)
+        if self.trainer.ctx.global_step % self.interval == 0 or idx == iterator_length:
             g_step_loss = self.trainer.accelerator.gather(self.trainer.ctx.g_step_loss).detach().mean().item()
             d_step_loss = self.trainer.accelerator.gather(self.trainer.ctx.d_step_loss).detach().mean().item()
             if self.trainer.accelerator.is_main_process:
                 self.losses_per_batch.append((g_step_loss, d_step_loss))
                 epoch = self.trainer.ctx.epoch
-                progress = idx / num_batches
-                remaining_time = self._get_remaining_time(num_batches, idx)
+                progress = idx / iterator_length
+                remaining_time = self._get_remaining_time(iterator_length, idx)
                 
                 self.logger.info(
                     f"Epoch: {epoch}/{self.trainer.epochs} | "
-                    f"Step: {idx}/{num_batches} | "
+                    f"Step: {idx}/{iterator_length} | "
                     f"Generator loss: {g_step_loss:.5f} | "
                     f"Discriminator loss: {d_step_loss:.5f} |"
                     f"Progress: {progress:.2%} | "

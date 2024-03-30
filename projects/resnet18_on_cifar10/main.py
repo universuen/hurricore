@@ -11,14 +11,15 @@ from accelerate import Accelerator
 
 from hurricane.logger import Logger
 from hurricane.utils import launch, log_all_configs
-from configs.no_grad_accumulation import *
+from projects.resnet18_on_cifar10.configs.default import *
 from resnet_trainer import ResNetTrainer
 
 
 def main():
     logger = Logger(**LoggerConfig())
-    log_all_configs(logger)
     accelerator = Accelerator(**AcceleratorConfig())
+    if accelerator.is_main_process:
+        log_all_configs(logger)
     transform = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -56,6 +57,5 @@ def main():
     )
     trainer.run()
 
-
 if __name__ == '__main__':
-    launch(main, num_processes=1, use_port="8002")
+    launch(main, **LaunchConfig())

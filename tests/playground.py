@@ -1,4 +1,3 @@
-from typing import Iterable
-from logging import Logger
-
-
+print(
+    any(i for i in range(10) if i == 5),
+)

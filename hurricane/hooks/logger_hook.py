@@ -5,7 +5,7 @@ from torch.cuda import memory_reserved
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
-from hurricane.utils import get_list_mean
+from hurricane.utils import get_list_mean, auto_name
 
 
 def _format_parameters(num_params):
@@ -35,14 +35,17 @@ class LoggerHook(HookBase):
         self.logger = logger
         self.interval = interval
     
+    
     def on_training_start(self) -> None:
         if self.trainer.accelerator.is_main_process:
-            for idx, model in enumerate(self.trainer.models):
+            models = self.trainer.originals.models
+            for name, model in zip(auto_name(models), models):
                 total_params = sum(p.numel() for p in model.parameters())
                 trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-                self.logger.info(f'Model {idx} structure:\n{model}')
-                self.logger.info(f'Model {idx} total parameters: {_format_parameters(total_params)}')
-                self.logger.info(f'Model {idx} trainable parameters: {_format_parameters(trainable_params)}')
+                self.logger.info(f'{name} structure:\n{model}')
+                self.logger.info(f'{name} total parameters: {_format_parameters(total_params)}')
+                self.logger.info(f'{name} trainable parameters: {_format_parameters(trainable_params)}')
+    
     
     def on_epoch_start(self) -> None:
         self.step = 0
@@ -52,37 +55,52 @@ class LoggerHook(HookBase):
             self.start_time = time.time()
             
     
-    def _get_remaining_time(self, num_batches, idx):
+    def _get_remaining_time(self):
         elapsed_time = time.time() - self.start_time
-        remaining_time = (num_batches - idx) * (elapsed_time / self.step)
+        iterator_length = self.trainer.ctx.iterator_length
+        batches_idx = self.trainer.ctx.batches_idx + 1
+        remaining_time = (iterator_length - batches_idx) * (elapsed_time / self.step)
         days, remainder = divmod(remaining_time, 86400) 
         hours, remainder = divmod(remainder, 3600) 
         minutes, seconds = divmod(remainder, 60) 
         formatted_remaining_time = f"{int(days)}d {int(hours):02d}:{int(minutes):02d}:{int(seconds):02d}"
         return formatted_remaining_time
         
+        
     def on_step_end(self) -> None:
         self.step += 1
-        idx = self.trainer.ctx.batches_idx + 1
-        num_batches = len(self.trainer.data_loaders[0])
-        if (self.trainer.ctx.global_step + 1) % self.interval == 0 or idx == num_batches:
-            step_loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
+        if (self.trainer.ctx.global_step + 1) % self.interval == 0:
+            self._collect_step_loss()
             if self.trainer.accelerator.is_main_process:
-                self.losses_per_batch.append(step_loss)
-                epoch = self.trainer.ctx.epoch + 1
-                progress = idx / num_batches
-                remaining_time = self._get_remaining_time(num_batches, idx)
-                
-                self.logger.info(
-                    f"Epoch: {epoch}/{self.trainer.epochs} | "
-                    f"Step: {idx}/{num_batches} | "
-                    f"Loss: {step_loss:.5f} | "
-                    f"Progress: {progress:.2%} | "
-                    f"Time left: {remaining_time} | "
-                    f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
-                )
-                
+                self._log_states()
+      
+      
     def on_epoch_end(self) -> None: 
         if self.trainer.accelerator.is_main_process:
+            self._log_states()
             avg_loss = get_list_mean(self.losses_per_batch)
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss}')
+            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss: .5f}')
+
+
+    def _collect_step_loss(self):
+        step_loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
+        if self.trainer.accelerator.is_main_process:
+            self.losses_per_batch.append(step_loss)
+    
+    
+    def _log_states(self):
+        idx = self.trainer.ctx.batches_idx + 1
+        iterator_length = self.trainer.ctx.iterator_length
+        epoch = self.trainer.ctx.epoch + 1
+        progress = idx / iterator_length
+        remaining_time = self._get_remaining_time()
+        
+        self.logger.info(
+            f"Epoch: {epoch}/{self.trainer.epochs} | "
+            f"Step: {idx}/{iterator_length} | "
+            f"Loss: {self.losses_per_batch[-1]:.5f} | "
+            f"Progress: {progress:.2%} | "
+            f"Time left: {remaining_time} | "
+            f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
+        )
+    

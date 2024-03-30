@@ -64,9 +64,9 @@ class LRSchedulerHook(HookBase):
         if all(conditions) is True:
             lr_schedulers = self.trainer.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
-            for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
-                for idx, lr in enumerate(lr_scheduler.get_last_lr()):
-                    self.logger.info(f'Learning rate: {scheduler_name}-{idx}: {lr}')
+            for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
+                msg = f'{name} LR: {'|'.join([f"{lr:.5f}" for lr in lr_scheduler.get_last_lr()])}'
+                self.logger.info(msg)
         # write learning rate to tensorboard
         conditions = (
             hasattr(self, 'writer'),
@@ -78,7 +78,7 @@ class LRSchedulerHook(HookBase):
             for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 for idx, lr in enumerate(lr_scheduler.get_last_lr()):
                     self.writer.add_scalar(
-                        tag = f'Learning Rate/{scheduler_name}-{idx}',
+                        tag = f'Learning Rate/{scheduler_name} group_{idx}',
                         scalar_value = lr,
                         global_step = self.trainer.ctx.global_step,
                     )
@@ -99,9 +99,9 @@ class LRSchedulerHook(HookBase):
         if all(conditions) is True:
             lr_schedulers = self.trainer.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
-            for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
-                for idx, lr in enumerate(lr_scheduler.get_last_lr()):
-                    self.logger.info(f'Learning rate: {scheduler_name}-{idx}: {lr}')
+            for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
+                msg = f'{name} LR: {'|'.join([f"{lr:.5f}" for lr in lr_scheduler.get_last_lr()])}'
+                self.logger.info(msg)
         # log the learning rate to tensorboard
         conditions = (
             hasattr(self, 'writer'),
@@ -115,7 +115,7 @@ class LRSchedulerHook(HookBase):
             for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 for idx, lr in enumerate(lr_scheduler.get_last_lr()):
                     self.writer.add_scalar(
-                        tag = f'Learning Rate/{scheduler_name}-{idx}',
+                        tag = f'Learning Rate/{scheduler_name} group_{idx}',
                         scalar_value = lr,
                         global_step = self.trainer.ctx.global_step,
                     )

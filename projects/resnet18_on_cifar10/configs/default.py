@@ -1,14 +1,18 @@
 from os import cpu_count
 import logging
 from pathlib import Path
-from accelerate import DataLoaderConfiguration
 
 from hurricane.config_base import ConfigBase
 from hurricane.utils import get_config_name
 
 
 config_name = get_config_name()
-gradient_accumulate_interval = 4
+gradient_accumulate_interval = 1
+
+
+class LaunchConfig(ConfigBase):
+    num_processes = 4
+    use_port = "8002"
 
 
 class PathConfig(ConfigBase):
@@ -25,7 +29,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 10
+    epochs = 2
     
     log_interval = gradient_accumulate_interval
     
@@ -33,8 +37,9 @@ class TrainerConfig(ConfigBase):
     tensor_board_interval=gradient_accumulate_interval
     
     ckpt_folder_path=PathConfig().checkpoints
-    ckpt_interval = gradient_accumulate_interval * 100
+    ckpt_interval = gradient_accumulate_interval * 10
     ckpt_seed = 42
+    
 
 
 class OptimizerConfig(ConfigBase):
@@ -61,4 +66,3 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulate_interval
-    
