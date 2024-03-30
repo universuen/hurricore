@@ -42,11 +42,14 @@ class ImgPeekHook(HookBase):
         )
         if any(conditions[:2]) and conditions[2]:
             g_model = self.trainer.models[0]
-            images = g_model(self.trainer.ctx.z.to(self.trainer.accelerator.device))
+            g_model.eval()
+            with torch.no_grad():
+                images = g_model(self.trainer.ctx.z.to(self.trainer.accelerator.device))
             image_grid = make_grid(images, nrow=2)
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
-            save_image(image_grid, filename)
-            if hasattr(self, 'writer'):
-                self.writer.add_image('Generated Images', image_grid, self.trainer.ctx.global_step)
-            if hasattr(self, 'logger'):
-                self.logger.info(f'Generated images saved at {filename}')
+            if self.trainer.accelerator.is_main_process:
+                save_image(image_grid, filename)
+                if hasattr(self, 'writer'):
+                    self.writer.add_image('Generated Images', image_grid, self.trainer.ctx.global_step)
+                if hasattr(self, 'logger'):
+                    self.logger.info(f'Generated images saved at {filename}')
