@@ -47,7 +47,8 @@ class Generator(nn.Module):
         self.layers = nn.ModuleList(
             [
                 _ResBlock(hidden_dim),
-                nn.ConvTranspose2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1, bias=False),
+                nn.Upsample(scale_factor=4),
+                nn.Conv2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1, bias=False),
             ] * num_up_samples
         )
         self.final_layer = nn.Sequential(
