@@ -11,6 +11,7 @@ class _ResBlock(nn.Module):
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(hidden_dim),
             nn.LeakyReLU(0.1, inplace=True),
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
     def forward(self, x):
@@ -32,32 +33,37 @@ class Generator(nn.Module):
     def __init__(
         self, 
         z_dim: int = 1024, 
-        image_size: int = 512, 
-        hidden_dim: int = 64,
+        image_size: int = 256, 
+        hidden_dim: int = 512,
     ) -> None:
         super().__init__()
         
         assert image_size >= 4, 'image_size must be at least 4'
+        assert hidden_dim >= image_size, 'hidden_dim must be at least image_size'
         assert math.log(image_size, 2).is_integer(), 'image_size must be 2^N'
+        assert math.log(hidden_dim, 2).is_integer(), 'hidden_dim must be 2^N'
         
         self.z_dim = z_dim
         self.hidden_dim = hidden_dim
-        self.preprocess_layer = nn.Linear(z_dim, hidden_dim * 4 * 4)
-        num_up_samples = int(math.log(image_size, 2) - 2)
-        self.layers = nn.ModuleList(
-            [
-                _ResBlock(hidden_dim),
-                nn.Upsample(scale_factor=4),
-                nn.Conv2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1, bias=False),
-            ] * num_up_samples
+        self.preprocess_layer = nn.Sequential(
+            nn.Linear(z_dim, hidden_dim * 4 * 4),
+            nn.BatchNorm1d(hidden_dim * 4 * 4),
+            nn.LeakyReLU(0.1, inplace=True),
         )
+        num_up_samplings = int(math.log(image_size, 2) - 2)
+        self.layers = nn.ModuleList()
+        for _ in range(num_up_samplings):
+            self.layers.extend(
+                [
+                    _ResBlock(hidden_dim),
+                    nn.Upsample(scale_factor=4),
+                    nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1, bias=False),
+                    nn.BatchNorm2d(hidden_dim // 2),
+                ]
+            )
+            hidden_dim //= 2
+
         self.final_layer = nn.Sequential(
-            _ResBlock(hidden_dim),
-            _ResBlock(hidden_dim),
-            _ResBlock(hidden_dim),
-            _ResBlock(hidden_dim),
-            _ResBlock(hidden_dim),
-            _ResBlock(hidden_dim),
             nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1),
             nn.Sigmoid()
         )

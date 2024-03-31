@@ -18,7 +18,6 @@ class LaunchConfig(ConfigBase):
 class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'
-    cifar10_dataset = data / 'cifar10_dataset'
     logs = data / 'logs'
     checkpoints = data / 'checkpoints' / config_name
     tensor_boards = data / 'tensor_boards' / config_name
@@ -29,33 +28,31 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 2
+    epochs = ...
     
     log_interval = gradient_accumulate_interval
     
-    tensor_board_folder_path=PathConfig().tensor_boards
-    tensor_board_interval=gradient_accumulate_interval
+    tensor_board_folder_path = PathConfig().tensor_boards
+    tensor_board_interval = gradient_accumulate_interval
     
-    ckpt_folder_path=PathConfig().checkpoints
+    ckpt_folder_path = PathConfig().checkpoints
     ckpt_interval = gradient_accumulate_interval * 10
     ckpt_seed = 42
     
 
 
 class OptimizerConfig(ConfigBase):
-    lr = 1e-3
+    ...
 
 
 class DatasetConfig(ConfigBase):
-    root=PathConfig().cifar10_dataset
-    train=True
-    download=True
+    ...
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 512
+    batch_size = ...
     shuffle = True
-    num_workers = 1  # cpu_count()
+    num_workers = cpu_count()
 
 
 class LoggerConfig(ConfigBase):

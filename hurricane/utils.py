@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import inspect
 from datetime import datetime
 from pathlib import Path
@@ -61,3 +62,29 @@ def auto_name(iterable: Iterable) -> list[str]:
             names_cnt[name] = 0
         names.append(name)
     return names
+
+
+def format_parameters(num_params):
+    if num_params >= 1e9: 
+        return f'{num_params / 1e9:.2f} B'
+    elif num_params >= 1e6: 
+        return f'{num_params / 1e6:.2f} M'
+    elif num_params >= 1e3: 
+        return f'{num_params / 1e3:.2f} K'
+    else: 
+        return str(num_params)
+
+
+def get_total_parameters(model: torch.nn.Module) -> str:
+    total_params = sum(p.numel() for p in model.parameters())
+    return format_parameters(total_params)
+
+
+def get_trainable_parameters(model: torch.nn.Module) -> str:
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return format_parameters(trainable_params)
+
+
+def set_cuda_visible_devices(*device_indices: tuple[int]) -> None:
+    assert all(isinstance(i, int) for i in device_indices), 'device_indices must be integers'
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))

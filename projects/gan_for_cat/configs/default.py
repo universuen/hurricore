@@ -2,14 +2,18 @@ from os import cpu_count
 from pathlib import Path
 
 from hurricane.config_base import ConfigBase
+from hurricane.utils import set_cuda_visible_devices
+
+
+set_cuda_visible_devices(1)
 
 
 config_name = 'default'
-gradient_accumulation_interval = 4
+gradient_accumulation_interval = 8
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 4
+    num_processes = 1
     use_port = "8002"
 
 
@@ -35,30 +39,29 @@ class LoggerConfig(ConfigBase):
 
 class GeneratorConfig(ConfigBase):
     z_dim = 1024
-    hidden_dim = 128
+    hidden_dim = 512
     image_size = 256
 
 
 class DiscriminatorConfig(ConfigBase):
-    hidden_dim = 64
+    hidden_dim = 512
     image_size = 256
 
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulation_interval
-    
+
     
 class DataLoaderConfig(ConfigBase):
-    batch_size = 16
+    batch_size = 8
     num_workers = cpu_count()
     shuffle = True
 
 
 class TrainerConfig(ConfigBase):
     epochs = 5000
-    d_loop_per_step = 5
+    d_loop_per_step = 3
     g_loop_per_step = 1
-    lambda_gp = 10
     
     log_interval = gradient_accumulation_interval
     
@@ -71,6 +74,8 @@ class TrainerConfig(ConfigBase):
     checkpoint_folder_path = PathConfig().checkpoints
     checkpoint_interval = gradient_accumulation_interval * 1000
     checkpoint_seed = 42
+    
+    lr_scheduler_mode = 'per_step'
 
 
 class DatasetConfig(ConfigBase):
@@ -80,8 +85,10 @@ class DatasetConfig(ConfigBase):
 
 class GeneratorOptimizerConfig(ConfigBase):
     lr = 2e-4
+    weight_decay = 1e-2
 
 
 class DiscriminatorOptimizerConfig(ConfigBase):
     lr = 2e-4
+    weight_decay = 1e-2
     

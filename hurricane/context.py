@@ -1,6 +1,7 @@
 class Context:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __repr__(self) -> str:
         attributes = ', '.join(f"{key}={value}" for key, value in vars(self).items())

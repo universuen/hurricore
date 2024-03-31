@@ -2,53 +2,38 @@ from logging import Logger
 
 import torch
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
 from hurricane.trainers import Trainer
-from hurricane.hooks import CheckpointHook
+from hurricane.hooks import CheckpointHook, LRSchedulerHook, SyncBatchNormHook
 
 from hooks import GANLoggerHook, ImgPeekHook, GANTensorBoardHook
 from models import Generator, Discriminator
-
-
-def _compute_gradient_penalty(discriminator, real_samples, fake_samples):
-    alpha = torch.rand(real_samples.size(0), 1, 1, 1).to(real_samples.device)
-    interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
-    d_interpolates = discriminator(interpolates)
-    fake = torch.ones(d_interpolates.size()).to(real_samples.device)
-    gradients = torch.autograd.grad(
-        outputs=d_interpolates,
-        inputs=interpolates,
-        grad_outputs=fake,
-        create_graph=True,
-        retain_graph=True,
-        only_inputs=True,
-    )[0]
-    gradients = gradients.view(gradients.size(0), -1)
-    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
-    return gradient_penalty
 
 
 class GANTrainer(Trainer):
     def __init__(
         self, 
         
+        data_loader: DataLoader, 
+        accelerator: Accelerator, 
+        
         g_model: Generator,
         d_model: Discriminator,
-        
-        data_loader: DataLoader, 
         
         g_optimizer: Optimizer,
         d_optimizer: Optimizer,
         
-        accelerator: Accelerator, 
         epochs: int = 100,
+        
+        g_lr_scheduler: LRScheduler = None,
+        d_lr_scheduler: LRScheduler = None,
+        lr_scheduler_mode: str = 'per_epoch',
         
         g_loop_per_step: int = 1,
         d_loop_per_step: int = 1,
-        
-        lambda_gp: int = 10,
         
         logger: Logger = None,
         log_interval: int = 1,
@@ -62,8 +47,8 @@ class GANTrainer(Trainer):
         checkpoint_folder_path: str = None,
         checkpoint_interval: int = 1000,
         checkpoint_seed: int = 42,
-        
     ) -> None:
+        
         super().__init__(
             models=[g_model, d_model], 
             data_loaders=[data_loader], 
@@ -74,9 +59,11 @@ class GANTrainer(Trainer):
         
         self.g_loop_per_step = g_loop_per_step
         self.d_loop_per_step = d_loop_per_step
-        self.lambda_gp = lambda_gp
         
         self.hooks = [
+            SyncBatchNormHook(
+                trainer=self
+            ),
             GANLoggerHook(
                 trainer=self,
                 logger=logger,
@@ -91,6 +78,11 @@ class GANTrainer(Trainer):
                 trainer=self,
                 folder_path=tensor_board_folder_path,
                 interval=tensor_board_interval,
+            ),
+            LRSchedulerHook(
+                trainer=self,
+                lr_schedulers=[g_lr_scheduler, d_lr_scheduler],
+                mode=lr_scheduler_mode,
             ),
             CheckpointHook(
                 trainer=self,
@@ -117,17 +109,14 @@ class GANTrainer(Trainer):
                 with self.accelerator.autocast():
                     # construct fake images
                     z = torch.randn(batch_size, z_dim).to(device)
-                    fake_images = g_model(z)
+                    with torch.no_grad():
+                        fake_images = g_model(z).detach()
                     # compute scores
                     real_scores = d_model(real_images)
                     fake_scores = d_model(fake_images)
-                    # compute loss
+                    # compute loss with parameter regularization
                     d_loss = (fake_scores.mean() - real_scores.mean()) / 2
                 self.accelerator.backward(d_loss)
-                # clip parameters
-                with torch.no_grad():
-                    for p in d_model.parameters():
-                        p.grad.data.clamp_(-0.1, 0.1)
                 d_optimizer.step()
             # train generator
             for _ in range(self.g_loop_per_step):

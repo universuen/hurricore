@@ -5,18 +5,12 @@ from torch.cuda import memory_reserved
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
-from hurricane.utils import get_list_mean, auto_name
-
-
-def _format_parameters(num_params):
-    if num_params >= 1e9: 
-        return f'{num_params / 1e9:.2f} B'
-    elif num_params >= 1e6: 
-        return f'{num_params / 1e6:.2f} M'
-    elif num_params >= 1e3: 
-        return f'{num_params / 1e3:.2f} K'
-    else: 
-        return str(num_params)
+from hurricane.utils import (
+    auto_name,
+    get_list_mean,
+    get_total_parameters,
+    get_trainable_parameters,
+)
 
 
 class LoggerHook(HookBase):
@@ -40,11 +34,9 @@ class LoggerHook(HookBase):
         if self.trainer.accelerator.is_main_process:
             models = self.trainer.originals.models
             for name, model in zip(auto_name(models), models):
-                total_params = sum(p.numel() for p in model.parameters())
-                trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
                 self.logger.info(f'{name} structure:\n{model}')
-                self.logger.info(f'{name} total parameters: {_format_parameters(total_params)}')
-                self.logger.info(f'{name} trainable parameters: {_format_parameters(trainable_params)}')
+                self.logger.info(f'{name} total parameters: {get_total_parameters(model)}')
+                self.logger.info(f'{name} trainable parameters: {get_trainable_parameters(model)}')
     
     
     def on_epoch_start(self) -> None:

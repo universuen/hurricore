@@ -3,6 +3,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from hurricane.hooks import HookBase, LoggerHook, TensorBoardHook
 from hurricane.trainers import TrainerBase
 from hurricane.utils import auto_name
+from hurricane.context import Context
 
 
 class LRSchedulerHook(HookBase):
@@ -19,7 +20,9 @@ class LRSchedulerHook(HookBase):
             assert lr_scheduler is not None, 'Invalid learning rate scheduler.'
         assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup trainer
-        trainer.originals.lr_schedulers = lr_schedulers
+        self.originals = Context(
+            lr_schedulers=lr_schedulers,
+        )
         trainer.accelerator.step_scheduler_with_optimizer = (mode == 'per_step')
         self.msg_queue = []
         if self.trainer.accelerator.is_main_process:
@@ -64,7 +67,7 @@ class LRSchedulerHook(HookBase):
             self.trainer.accelerator.is_main_process,
         )
         if all(conditions) is True:
-            lr_schedulers = self.trainer.originals.lr_schedulers
+            lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 msg = f'{name} LR: {'|'.join([f"{lr:.5f}" for lr in lr_scheduler.get_last_lr()])}'
@@ -75,7 +78,7 @@ class LRSchedulerHook(HookBase):
             self.trainer.accelerator.is_main_process,
         )
         if all(conditions) is True:
-            lr_schedulers = self.trainer.originals.lr_schedulers
+            lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 for idx, lr in enumerate(lr_scheduler.get_last_lr()):
@@ -99,7 +102,7 @@ class LRSchedulerHook(HookBase):
             (self.trainer.ctx.global_step + 1) % self.log_interval == 0,
         )
         if all(conditions) is True:
-            lr_schedulers = self.trainer.originals.lr_schedulers
+            lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 msg = f'{name} LR: {'|'.join([f"{lr:.5f}" for lr in lr_scheduler.get_last_lr()])}'
@@ -112,7 +115,7 @@ class LRSchedulerHook(HookBase):
             (self.trainer.ctx.global_step + 1) % self.log_interval == 0,
         )
         if all(conditions) is True:
-            lr_schedulers = self.trainer.originals.lr_schedulers
+            lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 for idx, lr in enumerate(lr_scheduler.get_last_lr()):
