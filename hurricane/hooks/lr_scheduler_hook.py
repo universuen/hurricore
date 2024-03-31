@@ -70,7 +70,7 @@ class LRSchedulerHook(HookBase):
             lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
-                msg = f'{name} LR: {'|'.join([f"{lr:.5f}" for lr in lr_scheduler.get_last_lr()])}'
+                msg = f'{name} LR: {'|'.join([f"{lr:.7f}" for lr in lr_scheduler.get_last_lr()])}'
                 self.logger.info(msg)
         # write learning rate to tensorboard
         conditions = (
@@ -105,7 +105,7 @@ class LRSchedulerHook(HookBase):
             lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
-                msg = f'{name} LR: {'|'.join([f"{lr:.5f}" for lr in lr_scheduler.get_last_lr()])}'
+                msg = f'{name} LR: {'|'.join([f"{lr:.7f}" for lr in lr_scheduler.get_last_lr()])}'
                 self.logger.info(msg)
         # log the learning rate to tensorboard
         conditions = (
