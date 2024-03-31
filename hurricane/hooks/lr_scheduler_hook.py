@@ -42,9 +42,13 @@ class LRSchedulerHook(HookBase):
     def on_training_start(self) -> None:
         # collect logger
         logger_hook = self.trainer.get_hook(LoggerHook)
-        if logger_hook is not None:
+        self.log_interval = 1
+        conditions = (
+            logger_hook is not None,
+            self.trainer.accelerator.is_main_process,
+        )
+        if all(conditions) is True:
             self.logger = logger_hook.logger
-            self.log_interval = logger_hook.interval
             # process message queue
             while len(self.msg_queue) > 0:
                 msg_type, msg = self.msg_queue.pop(0)
@@ -52,7 +56,11 @@ class LRSchedulerHook(HookBase):
             del self.msg_queue
         # collect tensor board writer
         tb_hook = self.trainer.get_hook(TensorBoardHook)
-        if tb_hook is not None:
+        conditions = (
+            tb_hook is not None,
+            self.trainer.accelerator.is_main_process,
+        )
+        if all(conditions) is True:
             self.writer = tb_hook.writer
             self.tb_interval = tb_hook.interval
             
@@ -62,22 +70,14 @@ class LRSchedulerHook(HookBase):
         for lr_scheduler in self.lr_schedulers:
             lr_scheduler.step()
         # log learning rate
-        conditions = (
-            hasattr(self, 'logger'),
-            self.trainer.accelerator.is_main_process,
-        )
-        if all(conditions) is True:
+        if hasattr(self, 'logger'):
             lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
                 msg = f'{name} LR: {'|'.join([f"{lr:.7f}" for lr in lr_scheduler.get_last_lr()])}'
                 self.logger.info(msg)
         # write learning rate to tensorboard
-        conditions = (
-            hasattr(self, 'writer'),
-            self.trainer.accelerator.is_main_process,
-        )
-        if all(conditions) is True:
+        if hasattr(self, 'writer'):
             lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
@@ -98,10 +98,8 @@ class LRSchedulerHook(HookBase):
         conditions = (
             hasattr(self, 'logger'),
             hasattr(self, 'log_interval'),
-            self.trainer.accelerator.is_main_process,
-            (self.trainer.ctx.global_step + 1) % self.log_interval == 0,
         )
-        if all(conditions) is True:
+        if all(conditions) and (self.trainer.ctx.global_step + 1) % self.log_interval == 0:
             lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
@@ -111,10 +109,8 @@ class LRSchedulerHook(HookBase):
         conditions = (
             hasattr(self, 'writer'),
             hasattr(self, 'tb_interval'),
-            self.trainer.accelerator.is_main_process,
-            (self.trainer.ctx.global_step + 1) % self.log_interval == 0,
         )
-        if all(conditions) is True:
+        if all(conditions) and (self.trainer.ctx.global_step + 1) % self.tb_interval == 0:
             lr_schedulers = self.originals.lr_schedulers
             optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
             for scheduler_name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):

@@ -23,9 +23,10 @@ class TensorBoardHook(HookBase):
         # setup self
         self.interval = interval
         self.folder_path = folder_path
-        self.writer = SummaryWriter(
-            log_dir=self.folder_path,
-        )
+        if trainer.accelerator.is_main_process:
+            self.writer = SummaryWriter(
+                log_dir=self.folder_path,
+            )
     
     def on_step_end(self) -> None:
         step = self.trainer.ctx.global_step 
@@ -47,8 +48,10 @@ class TensorBoardHook(HookBase):
             self.writer.flush()
 
     def on_training_end(self) -> None:
-        self.writer.close()
+        if self.trainer.accelerator.is_main_process:
+            self.writer.close()
     
     def recover_from_checkpoint(self) -> None:
-        self.writer.purge_step = self.trainer.ctx.global_step
-        self.writer.close()
+        if self.trainer.accelerator.is_main_process:
+            self.writer.purge_step = self.trainer.ctx.global_step
+            self.writer.close()

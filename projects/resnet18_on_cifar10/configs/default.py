@@ -3,7 +3,9 @@ import logging
 from pathlib import Path
 
 from hurricane.config_base import ConfigBase
-from hurricane.utils import get_config_name
+from hurricane.utils import get_config_name, set_cuda_visible_devices
+
+set_cuda_visible_devices(4, 5, 6, 7)
 
 
 config_name = get_config_name()
@@ -11,8 +13,8 @@ gradient_accumulate_interval = 1
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 2
-    use_port = "8002"
+    num_processes = 4
+    use_port = "8000"
 
 
 class PathConfig(ConfigBase):
@@ -53,7 +55,7 @@ class DatasetConfig(ConfigBase):
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 512
+    batch_size = 8
     shuffle = True
     num_workers = 1  # cpu_count()
 

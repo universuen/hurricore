@@ -26,8 +26,10 @@ class LoggerHook(HookBase):
         assert logger is not None, 'Invalid logger.'
         assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup self
-        self.logger = logger
         self.interval = interval
+        # logger is only for main process
+        if trainer.accelerator.is_main_process:
+            self.logger = logger
     
     
     def on_training_start(self) -> None:
@@ -95,4 +97,3 @@ class LoggerHook(HookBase):
             f"Time left: {remaining_time} | "
             f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
         )
-    

@@ -107,13 +107,16 @@ class CheckpointHook(HookBase):
     
     def _collect_logger(self) -> None:
         logger_hook = self.trainer.get_hook(LoggerHook)
-        if logger_hook is not None:
+        conditions = [
+            logger_hook is not None,
+            self.trainer.accelerator.is_main_process
+        ]
+        if all(conditions) is True:
             self.logger = logger_hook.logger
             # process message queue
-            if self.trainer.accelerator.is_main_process:
-                while len(self.msg_queue) > 0:
-                    msg_type, msg = self.msg_queue.pop(0)
-                    getattr(self.logger, msg_type)(msg)
+            while len(self.msg_queue) > 0:
+                msg_type, msg = self.msg_queue.pop(0)
+                getattr(self.logger, msg_type)(msg)
             del self.msg_queue
             
 
