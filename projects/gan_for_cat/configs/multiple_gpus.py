@@ -5,7 +5,7 @@ from hurricane.config_base import ConfigBase
 from hurricane.utils import set_cuda_visible_devices, get_config_name
 
 
-set_cuda_visible_devices(1)
+# set_cuda_visible_devices(1)
 
 
 config_name = get_config_name()
@@ -13,7 +13,7 @@ gradient_accumulation_interval = 8
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 1
+    num_processes = 4
     use_port = "8002"
 
 
