@@ -9,12 +9,12 @@ from hurricane.utils import set_cuda_visible_devices, get_config_name
 
 
 config_name = get_config_name()
-gradient_accumulation_interval = 8
+gradient_accumulation_interval = 2
 
 
 class LaunchConfig(ConfigBase):
     num_processes = 4
-    use_port = "8002"
+    use_port = "8001"
 
 
 class PathConfig(ConfigBase):
@@ -59,7 +59,7 @@ class DataLoaderConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 5000
+    epochs = 1000
     d_loop_per_step = 3
     g_loop_per_step = 1
     
@@ -72,7 +72,7 @@ class TrainerConfig(ConfigBase):
     image_peek_interval = gradient_accumulation_interval
     
     checkpoint_folder_path = PathConfig().checkpoints
-    checkpoint_interval = gradient_accumulation_interval * 1000
+    checkpoint_interval = gradient_accumulation_interval * 300
     checkpoint_seed = 42
     
     lr_scheduler_mode = 'per_step'

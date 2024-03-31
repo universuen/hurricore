@@ -42,13 +42,13 @@ class LRSchedulerHook(HookBase):
     def on_training_start(self) -> None:
         # collect logger
         logger_hook = self.trainer.get_hook(LoggerHook)
-        self.log_interval = 1
         conditions = (
             logger_hook is not None,
             self.trainer.accelerator.is_main_process,
         )
         if all(conditions) is True:
             self.logger = logger_hook.logger
+            self.log_interval = logger_hook.interval
             # process message queue
             while len(self.msg_queue) > 0:
                 msg_type, msg = self.msg_queue.pop(0)

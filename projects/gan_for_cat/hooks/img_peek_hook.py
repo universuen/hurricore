@@ -28,11 +28,21 @@ class ImgPeekHook(HookBase):
         # collect logger
         logger_hook = self.trainer.get_hook(LoggerHook)
         if logger_hook is not None:
-            self.logger = logger_hook.logger
+            conditions = (
+                self.trainer.accelerator.is_main_process,
+                hasattr(logger_hook, 'logger')
+            )
+            if all(conditions):
+                self.logger = logger_hook.logger
         # collect tensor board writer
         tb_hook = self.trainer.get_hook(TensorBoardHook)
         if tb_hook is not None:
-            self.writer = tb_hook.writer
+            conditions = (
+                self.trainer.accelerator.is_main_process,
+                hasattr(tb_hook, 'writer')
+            )
+            if all(conditions):
+                self.writer = tb_hook.writer
     
     def on_step_end(self):
         conditions = (
@@ -49,7 +59,7 @@ class ImgPeekHook(HookBase):
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
             if self.trainer.accelerator.is_main_process:
                 save_image(image_grid, filename)
-                if hasattr(self, 'writer'):
-                    self.writer.add_image('Generated Images', image_grid, self.trainer.ctx.global_step)
-                if hasattr(self, 'logger'):
-                    self.logger.info(f'Generated images saved at {filename}')
+            if hasattr(self, 'writer'):
+                self.writer.add_image('Generated Images', image_grid, self.trainer.ctx.global_step)
+            if hasattr(self, 'logger'):
+                self.logger.info(f'Generated images saved at {filename}')
