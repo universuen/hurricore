@@ -2,15 +2,24 @@ import math
 
 import torch
 from torch import nn
+from torch.nn.utils import spectral_norm
+
+
+def sn_conv2d(*args, **kwargs):
+    return spectral_norm(nn.Conv2d(*args, **kwargs))
+
+
+def sn_linear(*args, **kwargs):
+    return spectral_norm(nn.Linear(*args, **kwargs))
+
 
 class _ResBlock(nn.Module):
     def __init__(self, hidden_dim: int) -> None:
         super().__init__()
         self.block = nn.Sequential(
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(hidden_dim),
+            sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
     def forward(self, x):
@@ -41,29 +50,23 @@ class Discriminator(nn.Module):
         assert math.log(hidden_dim, 2).is_integer(), 'hidden_dim must be 2^N'
         
         self.hidden_dim = hidden_dim
-        self.preprocess_layer = nn.Sequential(
-            nn.Conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(hidden_dim),
-        )
+        self.preprocess_layer = sn_conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False)
         num_down_samplings = int(math.log(image_size, 2) - 2)
         self.layers = nn.ModuleList()
         for _ in range(num_down_samplings):
             self.layers.extend(
                 [
                     _ResBlock(hidden_dim),
-                    nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1, bias=False),
-                    nn.BatchNorm2d(hidden_dim // 2),
+                    sn_conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1, bias=False),
                 ]
             )
             hidden_dim //= 2
  
         self.final_layer = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(hidden_dim * 4 * 4, 16, bias=False),
-            nn.BatchNorm1d(16),
+            sn_linear(hidden_dim * 4 * 4, 16),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Linear(16, 1),
-            nn.Tanh(),
+            sn_linear(16, 1),
         )
         self.apply(init_weights)
     

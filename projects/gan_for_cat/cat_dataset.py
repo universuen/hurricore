@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose, ToTensor, Normalize, Resize
+from torchvision.transforms import Compose, ToTensor, Normalize, Resize, RandomHorizontalFlip
 from PIL import Image
 
 
@@ -19,6 +19,7 @@ class CatDataset(Dataset):
         self.img_paths = list(path.rglob('*cat*.jpg'))
         self.transform = Compose([
             Resize((image_size, image_size)),
+            RandomHorizontalFlip(0.5),
             ToTensor(),
             Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])

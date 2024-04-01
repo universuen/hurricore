@@ -53,7 +53,7 @@ class AcceleratorConfig(ConfigBase):
 
     
 class DataLoaderConfig(ConfigBase):
-    batch_size = 4
+    batch_size = 16
     num_workers = cpu_count()
     shuffle = True
 
