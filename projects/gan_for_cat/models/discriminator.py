@@ -57,10 +57,11 @@ class Discriminator(nn.Module):
                 ]
             )
             hidden_dim //= 2
+            image_size //= 2
  
         self.final_layer = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(hidden_dim * 4 * 4, 64),
+            nn.Linear(hidden_dim * image_size * image_size, 64),
             nn.LeakyReLU(0.1, inplace=True),
             nn.LayerNorm(64),
             nn.Linear(64, 16),

@@ -21,7 +21,7 @@ class ImgPeekHook(HookBase):
         assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         self.folder_path = folder_path
         self.peek_interval = interval
-        z = torch.randn(4, trainer.originals.models[0].z_dim)
+        z = torch.randn(9, trainer.originals.models[0].z_dim)
         trainer.ctx.z = z
     
     def on_training_start(self) -> None:
@@ -55,7 +55,7 @@ class ImgPeekHook(HookBase):
             g_model.eval()
             with torch.no_grad():
                 images = g_model(self.trainer.ctx.z.to(self.trainer.accelerator.device))
-            image_grid = make_grid(images, nrow=2)
+            image_grid = make_grid(images, nrow=3)
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
             if self.trainer.accelerator.is_main_process:
                 save_image(image_grid, filename)
