@@ -9,6 +9,10 @@ def sn_conv2d(*args, **kwargs):
     return spectral_norm(nn.Conv2d(*args, **kwargs))
 
 
+def sn_linear(*args, **kwargs):
+    return spectral_norm(nn.Linear(*args, **kwargs))
+
+
 class _ResBlock(nn.Module):
     def __init__(self, hidden_dim: int, image_size: int) -> None:
         super().__init__()
@@ -21,17 +25,6 @@ class _ResBlock(nn.Module):
 
     def forward(self, x):
         return x + self.block(x)
-
-
-def init_weights(layer: nn.Module):
-    layer_name = layer.__class__.__name__
-    if 'Conv' in layer_name:
-        nn.init.normal_(layer.weight.data, 0.0, 0.02)
-    elif layer_name == 'Linear':
-        nn.init.normal_(layer.weight.data, 0.0, 0.02)
-    elif 'Norm' in layer_name:
-        nn.init.normal_(layer.weight.data, 1.0, 0.02)
-        nn.init.constant_(layer.bias.data, 0)
 
 
 class Discriminator(nn.Module):
@@ -63,15 +56,9 @@ class Discriminator(nn.Module):
  
         self.final_layer = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(hidden_dim * image_size * image_size, 64),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.LayerNorm(64),
-            nn.Linear(64, 16),
-            nn.LeakyReLU(0.1, inplace=True),
-            nn.LayerNorm(16),
-            nn.Linear(16, 1),
+            sn_linear(hidden_dim * image_size * image_size, 1),
         )
-        self.apply(init_weights)
+        
     
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         x = self.preprocess_layer(z)
