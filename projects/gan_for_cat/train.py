@@ -11,7 +11,7 @@ from hurricane.logger import Logger
 from models import Generator, Discriminator
 from cat_dataset import CatDataset
 from gan_trainer import GANTrainer
-from configs.poc import *
+from configs.for_128px import *
 
 
 def main():

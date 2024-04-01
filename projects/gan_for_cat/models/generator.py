@@ -65,7 +65,7 @@ class Generator(nn.Module):
 
         self.final_layer = nn.Sequential(
             nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1),
-            nn.Sigmoid()
+            nn.Tanh(),
         )
         self.apply(init_weights)
     

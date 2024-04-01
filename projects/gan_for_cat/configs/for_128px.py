@@ -7,9 +7,15 @@ from hurricane.utils import set_cuda_visible_devices, get_config_name
 
 # set_cuda_visible_devices(1)
 
+image_size = 128
+epochs = 5000
+batch_size = 128
+lr = 2e-4
+peek_interval = 10
+ckpt_interval = 100
+gradient_accumulation_interval = 1
 
 config_name = get_config_name()
-gradient_accumulation_interval = 2
 
 
 class LaunchConfig(ConfigBase):
@@ -39,13 +45,13 @@ class LoggerConfig(ConfigBase):
 
 class GeneratorConfig(ConfigBase):
     z_dim = 1024
-    hidden_dim = 512
-    image_size = 256
+    hidden_dim = 128
+    image_size = image_size
 
 
 class DiscriminatorConfig(ConfigBase):
-    hidden_dim = 512
-    image_size = 256
+    hidden_dim = 256
+    image_size = image_size
 
 
 class AcceleratorConfig(ConfigBase):
@@ -53,14 +59,14 @@ class AcceleratorConfig(ConfigBase):
 
     
 class DataLoaderConfig(ConfigBase):
-    batch_size = 16
+    batch_size = batch_size
     num_workers = cpu_count()
     shuffle = True
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 1000
-    d_loop_per_step = 3
+    epochs = epochs
+    d_loop_per_step = 2
     g_loop_per_step = 1
     
     log_interval = gradient_accumulation_interval
@@ -69,10 +75,10 @@ class TrainerConfig(ConfigBase):
     tensor_board_interval = gradient_accumulation_interval
     
     image_peek_folder_path = PathConfig().peek_images
-    image_peek_interval = gradient_accumulation_interval * 10
+    image_peek_interval = gradient_accumulation_interval * peek_interval
     
     checkpoint_folder_path = PathConfig().checkpoints
-    checkpoint_interval = gradient_accumulation_interval * 300
+    checkpoint_interval = gradient_accumulation_interval * ckpt_interval
     checkpoint_seed = 42
     
     lr_scheduler_mode = 'per_step'
@@ -80,15 +86,15 @@ class TrainerConfig(ConfigBase):
 
 class DatasetConfig(ConfigBase):
     path = PathConfig().dataset_path
-    image_size = 256
+    image_size = image_size
 
 
 class GeneratorOptimizerConfig(ConfigBase):
-    lr = 2e-4
+    lr = lr
     weight_decay = 1e-2
 
 
 class DiscriminatorOptimizerConfig(ConfigBase):
-    lr = 2e-4
+    lr = lr
     weight_decay = 1e-2
     

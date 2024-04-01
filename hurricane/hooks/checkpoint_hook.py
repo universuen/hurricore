@@ -85,6 +85,7 @@ class CheckpointHook(HookBase):
         for hook in self.trainer.hooks:
             if hasattr(hook, 'recover_from_checkpoint'):
                 hook.recover_from_checkpoint()
+        self.trainer.accelerator.wait_for_everyone()
         # log
         if hasattr(self, 'logger') and self.trainer.accelerator.is_main_process:
             self.logger.info(f'Resumed training from checkpoint: {latest_ckpt_dir}')
