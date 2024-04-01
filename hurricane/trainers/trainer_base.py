@@ -105,3 +105,12 @@ class TrainerBase:
         iterator_length = self.ctx.iterator_length
         batches_idx = self.ctx.batches_idx
         self.ctx.global_step = epoch * iterator_length + batches_idx
+
+    
+    def __repr__(self) -> str:
+        result = f'{self.__class__.__name__}(\n'
+        for hook in self.hooks:
+            result += f'    {hook.__class__.__name__},\n'
+        result += ')'
+        return result
+    

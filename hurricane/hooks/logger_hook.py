@@ -34,6 +34,8 @@ class LoggerHook(HookBase):
     
     def on_training_start(self) -> None:
         if self.trainer.accelerator.is_main_process:
+            self.logger.info('Training started')
+            self.logger.info(f'Trainer:\n{self.trainer}')
             models = self.trainer.originals.models
             for name, model in zip(auto_name(models), models):
                 self.logger.info(f'{name} structure:\n{model}')

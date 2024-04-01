@@ -13,7 +13,7 @@ gradient_accumulate_interval = 1
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 4
+    num_processes = 1
     use_port = "8000"
 
 
