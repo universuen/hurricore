@@ -66,7 +66,7 @@ class DataLoaderConfig(ConfigBase):
 
 class TrainerConfig(ConfigBase):
     epochs = epochs
-    d_loop_per_step = 2
+    d_loop_per_step = 1
     g_loop_per_step = 1
     
     log_interval = gradient_accumulation_interval

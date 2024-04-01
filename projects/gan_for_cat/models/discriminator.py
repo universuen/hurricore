@@ -10,11 +10,12 @@ def sn_conv2d(*args, **kwargs):
 
 
 class _ResBlock(nn.Module):
-    def __init__(self, hidden_dim: int) -> None:
+    def __init__(self, hidden_dim: int, image_size: int) -> None:
         super().__init__()
         self.block = nn.Sequential(
             sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
             nn.LeakyReLU(0.1, inplace=True),
+            nn.LayerNorm([hidden_dim, image_size, image_size]),
             sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
         )
 
@@ -52,8 +53,9 @@ class Discriminator(nn.Module):
         for _ in range(num_down_samplings):
             self.layers.extend(
                 [
-                    _ResBlock(hidden_dim),
+                    _ResBlock(hidden_dim, image_size),
                     sn_conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1),
+                    nn.LayerNorm([hidden_dim // 2, image_size // 2, image_size // 2]),
                 ]
             )
             hidden_dim //= 2
