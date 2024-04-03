@@ -13,6 +13,33 @@ from hooks import GANLoggerHook, ImgPeekHook, GANTensorBoardHook
 from models import Generator, Discriminator
 
 
+def _compute_gradient_penalty(
+        d_model: torch.nn.Module,
+        real_images: torch.Tensor,
+        fake_images: torch.Tensor,
+        device: torch.device,
+) -> torch.Tensor:
+    alpha = torch.rand(real_images.shape[0], 1, 1, 1).to(device)
+
+    interpolates = alpha * real_images + (1 - alpha) * fake_images
+    interpolates.requires_grad = True
+
+    disc_interpolates = d_model(interpolates)
+
+    gradients = torch.autograd.grad(
+        outputs=disc_interpolates,
+        inputs=interpolates,
+        grad_outputs=torch.ones(disc_interpolates.size()).to(device),
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True
+    )[0]
+
+    gradients = gradients.view(gradients.size()[0], -1)
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gradient_penalty
+
+
 class GANTrainer(Trainer):
     def __init__(
         self, 
@@ -27,6 +54,7 @@ class GANTrainer(Trainer):
         d_optimizer: Optimizer,
         
         epochs: int = 100,
+        gp_lambda: float = 10.0,
         
         g_lr_scheduler: LRScheduler = None,
         d_lr_scheduler: LRScheduler = None,
@@ -56,6 +84,8 @@ class GANTrainer(Trainer):
             accelerator=accelerator,
             epochs=epochs,
         )
+        
+        self.gp_lambda = gp_lambda
         
         self.g_loop_per_step = g_loop_per_step
         self.d_loop_per_step = d_loop_per_step
@@ -114,8 +144,10 @@ class GANTrainer(Trainer):
                     # compute scores
                     real_scores = d_model(real_images)
                     fake_scores = d_model(fake_images)
+                    # compute gradient penalty
+                    gradient_penalty = _compute_gradient_penalty(d_model, real_images, fake_images, device)
                     # compute loss with parameter regularization
-                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2
+                    d_loss = (fake_scores.mean() - real_scores.mean()) / 2 + self.gp_lambda * gradient_penalty
                 self.accelerator.backward(d_loss)
                 d_optimizer.step()
             # train generator

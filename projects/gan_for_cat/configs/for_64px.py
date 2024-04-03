@@ -66,6 +66,7 @@ class DataLoaderConfig(ConfigBase):
 
 class TrainerConfig(ConfigBase):
     epochs = epochs
+    gp_lambda = 10
     d_loop_per_step = 1
     g_loop_per_step = 1
     
@@ -91,10 +92,12 @@ class DatasetConfig(ConfigBase):
 
 class GeneratorOptimizerConfig(ConfigBase):
     lr = lr
-    weight_decay = 1e-2
+    # weight_decay = 1e-2
+    betas=(0.5, 0.9)
 
 
 class DiscriminatorOptimizerConfig(ConfigBase):
     lr = lr
-    weight_decay = 1e-2
+    # weight_decay = 1e-2
+    betas=(0.5, 0.9)
     
