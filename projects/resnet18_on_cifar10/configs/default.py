@@ -5,11 +5,11 @@ from pathlib import Path
 from hurricane.config_base import ConfigBase
 from hurricane.utils import get_config_name, set_cuda_visible_devices
 
-set_cuda_visible_devices(4, 5, 6, 7)
+# set_cuda_visible_devices(4, 5, 6, 7)
 
 
 config_name = get_config_name()
-gradient_accumulate_interval = 1
+gradient_accumulate_interval = 10
 
 
 class LaunchConfig(ConfigBase):

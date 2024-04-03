@@ -5,7 +5,6 @@ from torchvision.utils import save_image, make_grid
 
 from hurricane.hooks import HookBase, LoggerHook, TensorBoardHook
 from hurricane.trainers import TrainerBase
-from hurricane.utils import is_deepspeed_zero3
 
 
 class ImgPeekHook(HookBase):
@@ -23,34 +22,10 @@ class ImgPeekHook(HookBase):
         self.peek_interval = interval
         z = torch.randn(9, trainer.originals.models[0].z_dim)
         trainer.ctx.z = z
-    
-    def on_training_start(self) -> None:
-        # collect logger
-        logger_hook = self.trainer.get_hook(LoggerHook)
-        if logger_hook is not None:
-            conditions = (
-                self.trainer.accelerator.is_main_process,
-                hasattr(logger_hook, 'logger')
-            )
-            if all(conditions):
-                self.logger = logger_hook.logger
-        # collect tensor board writer
-        tb_hook = self.trainer.get_hook(TensorBoardHook)
-        if tb_hook is not None:
-            conditions = (
-                self.trainer.accelerator.is_main_process,
-                hasattr(tb_hook, 'writer')
-            )
-            if all(conditions):
-                self.writer = tb_hook.writer
+
     
     def on_step_end(self):
-        conditions = (
-            self.trainer.accelerator.is_main_process,
-            is_deepspeed_zero3(self.trainer.accelerator),
-            (self.trainer.ctx.global_step + 1) % self.peek_interval == 0
-        )
-        if any(conditions[:2]) and conditions[2]:
+        if (self.trainer.ctx.global_step + 1) % self.peek_interval == 0:
             g_model = self.trainer.models[0]
             g_model.eval()
             with torch.no_grad():
@@ -62,7 +37,15 @@ class ImgPeekHook(HookBase):
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
             if self.trainer.accelerator.is_main_process:
                 save_image(image_grid, filename)
-            if hasattr(self, 'writer'):
-                self.writer.add_image('Generated Images', image_grid, self.trainer.ctx.global_step)
-            if hasattr(self, 'logger'):
-                self.logger.info(f'Generated images saved at {filename}')
+            TensorBoardHook.msg_queue.append(
+                (
+                    'add_image',
+                    {
+                        'tag': 'Generated Images',
+                        'img_tensor': image_grid,
+                        'global_step': self.trainer.ctx.global_step,
+                    }
+                )
+            )
+            LoggerHook.msg_queue.append(('info', f'Generated images saved at {filename}'))
+

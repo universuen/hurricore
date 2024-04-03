@@ -5,6 +5,17 @@ from torch import nn
 from torch.nn.utils import spectral_norm
 
 
+def _init_weights(layer: nn.Module):
+    layer_name = layer.__class__.__name__
+    if 'Conv' in layer_name:
+        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+    elif layer_name == 'Linear':
+        nn.init.normal_(layer.weight.data, 0.0, 0.02)
+    elif 'Norm' in layer_name:
+        nn.init.normal_(layer.weight.data, 1.0, 0.02)
+        nn.init.constant_(layer.bias.data, 0)
+
+
 def _sn_conv2d(*args, **kwargs):
     return spectral_norm(nn.Conv2d(*args, **kwargs))
 
@@ -20,7 +31,7 @@ class _ResBlock(nn.Module):
             _sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LayerNorm([hidden_dim, image_size, image_size]),
             nn.LeakyReLU(0.1, inplace=True),
-            _sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            # _sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
     def forward(self, x):
@@ -37,7 +48,7 @@ class Discriminator(nn.Module):
         assert image_size >= 4, 'image_size must be at least 4'
         assert hidden_dim >= image_size, 'hidden_dim must be at least image_size'
         assert math.log(image_size, 2).is_integer(), 'image_size must be 2^N'
-        assert math.log(hidden_dim, 2).is_integer(), 'hidden_dim must be 2^N'
+        # assert math.log(hidden_dim, 2).is_integer(), 'hidden_dim must be 2^N'
         
         self.hidden_dim = hidden_dim
         self.preprocess_layer = _sn_conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1)
@@ -47,18 +58,18 @@ class Discriminator(nn.Module):
             self.layers.extend(
                 [
                     _ResBlock(hidden_dim, image_size),
-                    _sn_conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1, bias=False),
-                    nn.LayerNorm([hidden_dim // 2, image_size // 2, image_size // 2]),
+                    _sn_conv2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1, bias=False),
+                    nn.LayerNorm([hidden_dim, image_size // 2, image_size // 2]),
                     nn.LeakyReLU(0.1, inplace=True),
                 ]
             )
-            hidden_dim //= 2
             image_size //= 2
  
         self.final_layer = nn.Sequential(
             nn.Flatten(),
             _sn_linear(hidden_dim * image_size * image_size, 1, bias=False),
         )
+        self.apply(_init_weights)
         
     
     def forward(self, z: torch.Tensor) -> torch.Tensor:

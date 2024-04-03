@@ -25,17 +25,7 @@ class HFLLMPeekHook(HookBase):
         self.prompts = prompts
         self.tokenizer = tokenizer
         self.interval = interval
-    
-    def on_training_start(self) -> None:
-        # collect logger
-        logger_hook = self.trainer.get_hook(LoggerHook)
-        conditions = (
-            logger_hook is not None,
-            self.trainer.accelerator.is_main_process,
-        )
-        if all(conditions):
-            self.logger = logger_hook.logger
-            self.log_interval = logger_hook.interval
+        
     
     def on_step_end(self) -> None:
         # peek model results
@@ -67,7 +57,5 @@ class HFLLMPeekHook(HookBase):
                         answer = self.tokenizer.decode(answer_ids, skip_special_tokens=True)
                         answers.append(answer)
                 peek_results = zip(self.prompts, answers)
-                # log the results
-                if hasattr(self, 'logger'):
-                    for q, a in peek_results:
-                        self.logger.info(f'Prompt: {q}\nAnswer: {a}')
+                for q, a in peek_results:
+                    LoggerHook.msg_queue.append(('info', f'Prompt: {q}\nAnswer: {a}'))

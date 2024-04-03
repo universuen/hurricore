@@ -8,17 +8,15 @@ class GANLoggerHook(LoggerHook):
     
     def on_epoch_start(self) -> None:
         super().on_epoch_start()
-        if self.trainer.accelerator.is_main_process:
-            self.g_step_losses = []
-            self.d_step_losses = []
+        self.g_step_losses = []
+        self.d_step_losses = []
     
     
     def _collect_step_loss(self):
         g_step_loss = self.trainer.accelerator.gather(self.trainer.ctx.g_step_loss).detach().mean().item()
         d_step_loss = self.trainer.accelerator.gather(self.trainer.ctx.d_step_loss).detach().mean().item()
-        if self.trainer.accelerator.is_main_process:
-            self.g_step_losses.append(g_step_loss)
-            self.d_step_losses.append(d_step_loss)
+        self.g_step_losses.append(g_step_loss)
+        self.d_step_losses.append(d_step_loss)
     
     
     def _log_states(self):
@@ -40,9 +38,8 @@ class GANLoggerHook(LoggerHook):
 
 
     def on_epoch_end(self) -> None:
-        if self.trainer.accelerator.is_main_process:
-            avg_g_loss = get_list_mean(self.g_step_losses)
-            avg_d_loss = get_list_mean(self.d_step_losses)
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished')
-            self.logger.info(f'Average G loss: {avg_g_loss:.5f}')
-            self.logger.info(f'Average D loss: {avg_d_loss:.5f}')
+        avg_g_loss = get_list_mean(self.g_step_losses)
+        avg_d_loss = get_list_mean(self.d_step_losses)
+        self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished')
+        self.logger.info(f'Average G loss: {avg_g_loss:.5f}')
+        self.logger.info(f'Average D loss: {avg_d_loss:.5f}')

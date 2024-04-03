@@ -1,10 +1,12 @@
 import time
 from logging import Logger
+from threading import Thread
 
 from torch.cuda import memory_reserved
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
+from hurricane.dummy_object import DummyObject
 from hurricane.utils import (
     auto_name,
     get_list_mean,
@@ -14,6 +16,9 @@ from hurricane.utils import (
 
 
 class LoggerHook(HookBase):
+    
+    msg_queue = []
+    
     def __init__(
         self, 
         trainer: TrainerBase,
@@ -28,48 +33,43 @@ class LoggerHook(HookBase):
         # setup self
         self.interval = interval
         # logger is only for main process
-        if trainer.accelerator.is_main_process:
-            self.logger = logger
+        self.logger = logger if trainer.accelerator.is_main_process else DummyObject()
+        self._activate_msg_queue()
     
     
     def on_training_start(self) -> None:
-        if self.trainer.accelerator.is_main_process:
-            self.logger.info('Training started')
-            self.logger.info(f'Trainer:\n{self.trainer}')
-            models = self.trainer.originals.models
-            for name, model in zip(auto_name(models), models):
-                self.logger.info(f'{name} structure:\n{model}')
-                self.logger.info(f'{name} total parameters: {get_total_parameters(model)}')
-                self.logger.info(f'{name} trainable parameters: {get_trainable_parameters(model)}')
+        self.logger.info('Training started')
+        self.logger.info(f'Trainer:\n{self.trainer}')
+        models = self.trainer.originals.models
+        for name, model in zip(auto_name(models), models):
+            self.logger.info(f'{name} structure:\n{model}')
+            self.logger.info(f'{name} total parameters: {get_total_parameters(model)}')
+            self.logger.info(f'{name} trainable parameters: {get_trainable_parameters(model)}')
     
     
     def on_epoch_start(self) -> None:
         self.step = 0
-        if self.trainer.accelerator.is_main_process:
-            self.step_losses = []
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} started')
-            self.start_time = time.time()
-        
+        self.step_losses = []
+        self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} started')
+        self.start_time = time.time()
+    
         
     def on_step_end(self) -> None:
         self.step += 1
         if (self.trainer.ctx.global_step + 1) % self.interval == 0:
             self._collect_step_loss()
-            if self.trainer.accelerator.is_main_process:
-                self._log_states()
+            self._log_states()
       
       
     def on_epoch_end(self) -> None: 
-        if self.trainer.accelerator.is_main_process:
-            self._log_states()
-            avg_loss = get_list_mean(self.step_losses)
-            self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss: .5f}')
+        self._log_states()
+        avg_loss = get_list_mean(self.step_losses)
+        self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss: .5f}')
 
 
     def _collect_step_loss(self):
         step_loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
-        if self.trainer.accelerator.is_main_process:
-            self.step_losses.append(step_loss)
+        self.step_losses.append(step_loss)
     
     
     def _get_remaining_time(self):
@@ -99,3 +99,14 @@ class LoggerHook(HookBase):
             f"Time left: {remaining_time} | "
             f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
         )
+    
+    def _activate_msg_queue(self):
+        def listen_and_process(self):
+            while True:
+                if len(self.msg_queue) > 0:
+                    method, msg = self.msg_queue.pop(0)
+                    getattr(self.logger, method)(msg)
+                else:
+                    time.sleep(0.01)
+        Thread(target=listen_and_process, args=(self, )).start()
+    

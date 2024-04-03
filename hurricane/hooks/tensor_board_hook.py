@@ -1,14 +1,18 @@
+import time
 from pathlib import Path
+from threading import Thread
 
 from torch.utils.tensorboard import SummaryWriter
-from tensorboard.compat.proto.event_pb2 import Event, SessionLog
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
 from hurricane.utils import auto_name
+from hurricane.dummy_object import DummyObject
 
 
 class TensorBoardHook(HookBase):
+    msg_queue = []
+    
     def __init__(
         self, 
         trainer: TrainerBase,
@@ -23,35 +27,44 @@ class TensorBoardHook(HookBase):
         # setup self
         self.interval = interval
         self.folder_path = folder_path
-        if trainer.accelerator.is_main_process:
-            self.writer = SummaryWriter(
-                log_dir=self.folder_path,
-            )
+        self.writer = SummaryWriter(log_dir=self.folder_path) if trainer.accelerator.is_main_process else DummyObject()
+        self._activate_msg_queue()
+    
     
     def on_step_end(self) -> None:
         step = self.trainer.ctx.global_step 
         if (step + 1) % self.interval == 0:
             loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
-            if self.trainer.accelerator.is_main_process:
-                self.writer.add_scalar('Loss/Training', loss, step)
-                self.writer.flush()
+            self.writer.add_scalar('Loss/Training', loss, step)
+            self.writer.flush()
+                 
                    
     def on_epoch_end(self) -> None:
-        if self.trainer.accelerator.is_main_process:
-            step = self.trainer.ctx.global_step
-            models = self.trainer.originals.models
-            for model_name, model in zip(auto_name(models), models):
-                for layer_name, param in model.named_parameters():
-                    if param.grad is not None:
-                        self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
-                        self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
-            self.writer.flush()
+        step = self.trainer.ctx.global_step
+        models = self.trainer.originals.models
+        for model_name, model in zip(auto_name(models), models):
+            for layer_name, param in model.named_parameters():
+                if param.grad is not None:
+                    self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
+                    self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
+        self.writer.flush()
+
 
     def on_training_end(self) -> None:
-        if self.trainer.accelerator.is_main_process:
-            self.writer.close()
+        self.writer.close()
+    
     
     def recover_from_checkpoint(self) -> None:
-        if self.trainer.accelerator.is_main_process:
-            self.writer.purge_step = self.trainer.ctx.global_step
-            self.writer.close()
+        self.writer.purge_step = self.trainer.ctx.global_step
+        self.writer.close()
+        
+
+    def _activate_msg_queue(self):
+        def listen_and_process(self):
+            while True:
+                if len(self.msg_queue) > 0:
+                    method, kwargs = self.msg_queue.pop(0)
+                    getattr(self.writer, method)(**kwargs)
+                else:
+                    time.sleep(0.01)
+        Thread(target=listen_and_process, args=(self, )).start()
