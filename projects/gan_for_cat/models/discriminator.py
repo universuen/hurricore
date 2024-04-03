@@ -5,11 +5,11 @@ from torch import nn
 from torch.nn.utils import spectral_norm
 
 
-def sn_conv2d(*args, **kwargs):
+def _sn_conv2d(*args, **kwargs):
     return spectral_norm(nn.Conv2d(*args, **kwargs))
 
 
-def sn_linear(*args, **kwargs):
+def _sn_linear(*args, **kwargs):
     return spectral_norm(nn.Linear(*args, **kwargs))
 
 
@@ -17,10 +17,10 @@ class _ResBlock(nn.Module):
     def __init__(self, hidden_dim: int, image_size: int) -> None:
         super().__init__()
         self.block = nn.Sequential(
-            sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(0.1, inplace=True),
+            _sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LayerNorm([hidden_dim, image_size, image_size]),
-            sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
+            nn.LeakyReLU(0.1, inplace=True),
+            _sn_conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
     def forward(self, x):
@@ -40,15 +40,16 @@ class Discriminator(nn.Module):
         assert math.log(hidden_dim, 2).is_integer(), 'hidden_dim must be 2^N'
         
         self.hidden_dim = hidden_dim
-        self.preprocess_layer = sn_conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1)
+        self.preprocess_layer = _sn_conv2d(3, hidden_dim, kernel_size=3, stride=1, padding=1)
         num_down_samplings = int(math.log(image_size, 2) - 2)
         self.layers = nn.ModuleList()
         for _ in range(num_down_samplings):
             self.layers.extend(
                 [
                     _ResBlock(hidden_dim, image_size),
-                    sn_conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1),
+                    _sn_conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1, bias=False),
                     nn.LayerNorm([hidden_dim // 2, image_size // 2, image_size // 2]),
+                    nn.LeakyReLU(0.1, inplace=True),
                 ]
             )
             hidden_dim //= 2
@@ -56,7 +57,7 @@ class Discriminator(nn.Module):
  
         self.final_layer = nn.Sequential(
             nn.Flatten(),
-            sn_linear(hidden_dim * image_size * image_size, 1),
+            _sn_linear(hidden_dim * image_size * image_size, 1, bias=False),
         )
         
     

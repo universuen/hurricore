@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 import os
 
-from configs.multiple_gpus import PathConfig
+from configs.for_64px import PathConfig
 
 def create_video_from_images(img_folder_path: Path, saving_path: Path):
     images = [img for img in os.listdir(img_folder_path) if img.endswith((".png", ".jpg", ".jpeg"))]

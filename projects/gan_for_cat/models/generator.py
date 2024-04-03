@@ -5,11 +5,11 @@ from torch import nn
 
 
 class _ResBlock(nn.Module):
-    def __init__(self, hidden_dim: int) -> None:
+    def __init__(self, hidden_dim: int, image_size: int) -> None:
         super().__init__()
         self.block = nn.Sequential(
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(hidden_dim),
+            nn.LayerNorm([hidden_dim, image_size, image_size]),
             nn.LeakyReLU(0.1, inplace=True),
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
         )
@@ -34,26 +34,26 @@ class Generator(nn.Module):
         
         self.z_dim = z_dim
         self.hidden_dim = hidden_dim
-        self.preprocess_layer = nn.Sequential(
-            nn.Linear(z_dim, hidden_dim * 4 * 4),
-            nn.BatchNorm1d(hidden_dim * 4 * 4),
-            nn.LeakyReLU(0.1, inplace=True),
-        )
+        self.preprocess_layer = nn.Linear(z_dim, hidden_dim * 4 * 4)
+
         num_up_samplings = int(math.log(image_size, 2) - 2)
         self.layers = nn.ModuleList()
+        image_size = 4
         for _ in range(num_up_samplings):
             self.layers.extend(
                 [
-                    _ResBlock(hidden_dim),
+                    _ResBlock(hidden_dim, image_size),
                     nn.Upsample(scale_factor=4),
-                    nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1, bias=False),
-                    nn.BatchNorm2d(hidden_dim // 2),
+                    nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1),
+                    nn.LayerNorm([hidden_dim // 2, image_size * 2, image_size * 2]),
+                    nn.LeakyReLU(0.1, inplace=True),
                 ]
             )
             hidden_dim //= 2
+            image_size *= 2
 
         self.final_layer = nn.Sequential(
-            nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1, bias=False),
             nn.Tanh(),
         )
 
