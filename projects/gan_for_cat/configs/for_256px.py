@@ -7,11 +7,11 @@ from hurricane.utils import ConfigBase, set_cuda_visible_devices, get_config_nam
 set_cuda_visible_devices(0, 1, 2, 3)
 
 image_size = 256
-epochs = 5000
+epochs = 3000
 batch_size = 32
 lr = 2e-4
 peek_interval = 100
-ckpt_interval = 300
+ckpt_interval = 1000
 gradient_accumulation_interval = 1
 
 config_name = get_config_name()
@@ -44,12 +44,12 @@ class LoggerConfig(ConfigBase):
 
 class GeneratorConfig(ConfigBase):
     z_dim = 1024
-    hidden_dim = 64
+    hidden_dim = 256
     image_size = image_size
 
 
 class DiscriminatorConfig(ConfigBase):
-    hidden_dim = 96
+    hidden_dim = 512
     image_size = image_size
 
 
@@ -66,7 +66,7 @@ class DataLoaderConfig(ConfigBase):
 class TrainerConfig(ConfigBase):
     epochs = epochs
     gp_lambda = 10
-    d_loop_per_step = 3
+    d_loop_per_step = 2
     g_loop_per_step = 1
     
     log_interval = gradient_accumulation_interval

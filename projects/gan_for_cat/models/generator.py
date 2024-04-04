@@ -19,10 +19,10 @@ class _ResBlock(nn.Module):
     def __init__(self, hidden_dim: int, image_size: int) -> None:
         super().__init__()
         self.block = nn.Sequential(
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
             nn.LayerNorm([hidden_dim, image_size, image_size]),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
         )
 
     def forward(self, x):
@@ -55,15 +55,19 @@ class Generator(nn.Module):
                 [
                     _ResBlock(hidden_dim, image_size),
                     nn.Upsample(scale_factor=4),
-                    nn.Conv2d(hidden_dim, hidden_dim, kernel_size=4, stride=2, padding=1),
-                    nn.LayerNorm([hidden_dim, image_size * 2, image_size * 2]),
+                    nn.Conv2d(hidden_dim, hidden_dim // 2, kernel_size=4, stride=2, padding=1),
+                    nn.LayerNorm([hidden_dim // 2, image_size * 2, image_size * 2]),
                     nn.LeakyReLU(0.1, inplace=True),
                 ]
             )
             image_size *= 2
+            hidden_dim //= 2
 
         self.final_layer = nn.Sequential(
-            nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(hidden_dim, 3, kernel_size=3, stride=1, padding=1),
+            nn.LayerNorm([3, image_size, image_size]),
+            nn.LeakyReLU(0.1, inplace=True),
+            _ResBlock(3, image_size),
             nn.Tanh(),
         )
         self.apply(_init_weights)
