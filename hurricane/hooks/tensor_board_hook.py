@@ -40,14 +40,14 @@ class TensorBoardHook(HookBase):
                    
     def on_epoch_end(self) -> None:
         pass
-        # step = self.trainer.ctx.global_step
-        # models = self.trainer.originals.models
-        # for model_name, model in zip(auto_name(models), models):
-        #     for layer_name, param in model.named_parameters():
-        #         if param.grad is not None:
-        #             self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
-        #             self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
-        # self.writer.flush()
+        step = self.trainer.ctx.global_step
+        models = self.trainer.originals.models
+        for model_name, model in zip(auto_name(models), models):
+            for layer_name, param in model.named_parameters():
+                if param.grad is not None:
+                    self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
+                    self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
+        self.writer.flush()
 
 
     def on_training_end(self) -> None:

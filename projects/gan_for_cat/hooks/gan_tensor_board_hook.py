@@ -7,3 +7,6 @@ class GANTensorBoardHook(TensorBoardHook):
             self.writer.add_scalar('Loss/Generator', self.trainer.ctx.g_step_loss, self.trainer.ctx.global_step)
             self.writer.add_scalar('Loss/Discriminator', self.trainer.ctx.d_step_loss, self.trainer.ctx.global_step)
             self.writer.flush()
+
+    def on_epoch_end(self) -> None:
+        pass
