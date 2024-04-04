@@ -30,9 +30,7 @@ class ImgPeekHook(HookBase):
             g_model.eval()
             with torch.no_grad():
                 images = g_model(self.trainer.ctx.z.to(self.trainer.accelerator.device)).detach()
-            min_val = images.min()
-            max_val = images.max()
-            images = (images - min_val) / (max_val - min_val)
+            images = (images + 1) / 2
             image_grid = make_grid(images, nrow=3)
             filename = self.folder_path / f"results_at_step_{self.trainer.ctx.global_step}.png"
             if self.trainer.accelerator.is_main_process:
