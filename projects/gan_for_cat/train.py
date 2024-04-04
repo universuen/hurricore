@@ -1,4 +1,4 @@
-import _path_setup
+import _path_setup  # noqa: F401
 
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
@@ -10,7 +10,7 @@ from hurricane.utils import Logger, launch, log_all_configs
 from models import Generator, Discriminator
 from cat_dataset import CatDataset
 from gan_trainer import GANTrainer
-from configs.for_128px import *
+from configs.for_256px import *
 
 
 def main():

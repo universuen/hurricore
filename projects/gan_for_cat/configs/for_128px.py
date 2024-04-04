@@ -11,7 +11,7 @@ epochs = 5000
 batch_size = 64
 lr = 2e-4
 peek_interval = 100
-ckpt_interval = 1000
+ckpt_interval = 500
 gradient_accumulation_interval = 1
 
 config_name = get_config_name()

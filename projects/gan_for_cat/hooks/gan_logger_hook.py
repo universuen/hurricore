@@ -43,3 +43,5 @@ class GANLoggerHook(LoggerHook):
         self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished')
         self.logger.info(f'Average G loss: {avg_g_loss:.5f}')
         self.logger.info(f'Average D loss: {avg_d_loss:.5f}')
+
+    
