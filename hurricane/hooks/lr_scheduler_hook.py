@@ -2,8 +2,7 @@ from torch.optim.lr_scheduler import LRScheduler
 
 from hurricane.hooks import HookBase, LoggerHook, TensorBoardHook
 from hurricane.trainers import TrainerBase
-from hurricane.utils import auto_name
-from hurricane.context import Context
+from hurricane.utils import Context, auto_name
 
 
 class LRSchedulerHook(HookBase):

@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
 from hurricane.trainers import TrainerBase
-from hurricane.context import Context
+from hurricane.utils import Context
 
 
 class Trainer(TrainerBase):

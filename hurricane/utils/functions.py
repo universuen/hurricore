@@ -4,19 +4,19 @@ import os
 import inspect
 from datetime import datetime
 from pathlib import Path
-from logging import Logger
+from logging import Logger as LoggerType
 from typing import Iterable
 
 import torch
 from accelerate import notebook_launcher
 
-from hurricane.config_base import ConfigBase
+from hurricane.utils import ConfigBase
 
 
 launch = notebook_launcher
 
 
-def log_all_configs(logger: Logger) -> None:
+def log_all_configs(logger: LoggerType) -> None:
     for subclass in ConfigBase.__subclasses__():
         logger.info(subclass())
 

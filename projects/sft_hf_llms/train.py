@@ -10,8 +10,7 @@ from accelerate import Accelerator
 
 from hurricane.trainers import HFLLMTrainer
 from hurricane.collators import HFLLMITCollator
-from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs
+from hurricane.utils import Logger, launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
 from configs.opt_350m import *

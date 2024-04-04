@@ -6,8 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from hurricane.hooks import HookBase, LoggerHook
 from hurricane.trainers import TrainerBase
-from hurricane.utils import auto_name
-from hurricane.dummy_object import DummyObject
+from hurricane.utils import DummyObject, auto_name
 
 
 class TensorBoardHook(HookBase):

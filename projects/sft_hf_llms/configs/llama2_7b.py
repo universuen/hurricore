@@ -2,10 +2,9 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from accelerate import DeepSpeedPlugin, DataLoaderConfiguration
+from accelerate import DeepSpeedPlugin
 
-from hurricane.config_base import ConfigBase
-from hurricane.utils import get_config_name
+from hurricane.utils import ConfigBase, get_config_name
 
 
 model_name = "meta-llama/Llama-2-7b-hf"

@@ -9,10 +9,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
 from peft import get_peft_model
 
-from hurricane.trainers.hf_llm_trainer import HFLLMTrainer
-from hurricane.collators.hf_llm_instruction_tuning_collator import HFLLMITCollator
-from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs
+from hurricane.trainers import HFLLMTrainer
+from hurricane.collators import HFLLMITCollator
+from hurricane.utils import Logger, launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
 from configs.gemma_2b import *

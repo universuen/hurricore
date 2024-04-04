@@ -4,8 +4,8 @@ from pathlib import Path
 
 from accelerate import DeepSpeedPlugin, DataLoaderConfiguration
 
-from hurricane.config_base import ConfigBase
-from hurricane.utils import get_config_name
+from hurricane.utils import ConfigBase, get_config_name
+
 
 model_name = "google/gemma-2b"
 config_name = get_config_name()

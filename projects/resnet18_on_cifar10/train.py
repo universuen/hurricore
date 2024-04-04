@@ -9,9 +9,9 @@ import torch.nn as nn
 from torchvision.models import resnet18
 from accelerate import Accelerator
 
-from hurricane.logger import Logger
-from hurricane.utils import launch, log_all_configs
-from projects.resnet18_on_cifar10.configs.default import *
+from hurricane.utils import Logger, launch, log_all_configs
+
+from configs.default import *
 from resnet_trainer import ResNetTrainer
 
 

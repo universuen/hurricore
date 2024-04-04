@@ -6,8 +6,8 @@ from torch.cuda import memory_reserved
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
-from hurricane.dummy_object import DummyObject
 from hurricane.utils import (
+    DummyObject,
     auto_name,
     get_list_mean,
     get_total_parameters,

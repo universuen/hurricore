@@ -3,8 +3,7 @@ import logging
 from pathlib import Path
 from accelerate import DataLoaderConfiguration
 
-from hurricane.config_base import ConfigBase
-from hurricane.utils import get_config_name
+from hurricane.utils import ConfigBase, get_config_name
 
 
 model_name = "facebook/opt-350m"

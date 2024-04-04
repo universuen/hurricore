@@ -2,8 +2,7 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from hurricane.config_base import ConfigBase
-from hurricane.utils import get_config_name
+from hurricane.utils import ConfigBase, get_config_name
 
 
 config_name = get_config_name()
