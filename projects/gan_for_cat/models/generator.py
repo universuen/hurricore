@@ -22,7 +22,7 @@ class _ResBlock(nn.Module):
             nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LayerNorm([hidden_dim, image_size, image_size]),
             nn.LeakyReLU(0.1, inplace=True),
-            # nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(hidden_dim, hidden_dim, kernel_size=3, stride=1, padding=1, bias=False),
         )
 
     def forward(self, x):
@@ -39,7 +39,7 @@ class Generator(nn.Module):
         super().__init__()
         
         assert image_size >= 4, 'image_size must be at least 4'
-        assert hidden_dim >= image_size, 'hidden_dim must be at least image_size'
+        # assert hidden_dim >= image_size, 'hidden_dim must be at least image_size'
         assert math.log(image_size, 2).is_integer(), 'image_size must be 2^N'
         # assert math.log(hidden_dim, 2).is_integer(), 'hidden_dim must be 2^N'
         

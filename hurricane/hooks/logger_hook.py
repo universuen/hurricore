@@ -104,8 +104,11 @@ class LoggerHook(HookBase):
         def listen_and_process(self):
             while True:
                 if len(self.msg_queue) > 0:
-                    method, msg = self.msg_queue.pop(0)
-                    getattr(self.logger, method)(msg)
+                    try:
+                        method, msg = self.msg_queue.pop(0)
+                        getattr(self.logger, method)(msg)
+                    except Exception as e:
+                        self.logger.error(f'Error in LoggerHook: {e}')
                 else:
                     time.sleep(0.01)
         Thread(target=listen_and_process, args=(self, )).start()

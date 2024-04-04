@@ -4,7 +4,7 @@ from threading import Thread
 
 from torch.utils.tensorboard import SummaryWriter
 
-from hurricane.hooks import HookBase
+from hurricane.hooks import HookBase, LoggerHook
 from hurricane.trainers import TrainerBase
 from hurricane.utils import auto_name
 from hurricane.dummy_object import DummyObject
@@ -63,8 +63,11 @@ class TensorBoardHook(HookBase):
         def listen_and_process(self):
             while True:
                 if len(self.msg_queue) > 0:
-                    method, kwargs = self.msg_queue.pop(0)
-                    getattr(self.writer, method)(**kwargs)
+                    try:
+                        method, kwargs = self.msg_queue.pop(0)
+                        getattr(self.writer, method)(**kwargs)
+                    except Exception as e:
+                        LoggerHook.msg_queue.append(('error', f'Error in TensorBoardHook: {e}'))
                 else:
                     time.sleep(0.01)
         Thread(target=listen_and_process, args=(self, )).start()

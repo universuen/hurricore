@@ -5,11 +5,11 @@ from hurricane.config_base import ConfigBase
 from hurricane.utils import set_cuda_visible_devices, get_config_name
 
 
-set_cuda_visible_devices(2, 3)
+set_cuda_visible_devices(0, 1, 2, 3)
 
-image_size = 64
+image_size = 128
 epochs = 5000
-batch_size = 128
+batch_size = 64
 lr = 2e-4
 peek_interval = 100
 ckpt_interval = 1000
@@ -19,7 +19,7 @@ config_name = get_config_name()
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 2
+    num_processes = 4
     use_port = "8001"
 
 
@@ -45,12 +45,12 @@ class LoggerConfig(ConfigBase):
 
 class GeneratorConfig(ConfigBase):
     z_dim = 1024
-    hidden_dim = 128
+    hidden_dim = 64
     image_size = image_size
 
 
 class DiscriminatorConfig(ConfigBase):
-    hidden_dim = 192
+    hidden_dim = 96
     image_size = image_size
 
 
