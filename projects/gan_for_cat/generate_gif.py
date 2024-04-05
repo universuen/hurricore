@@ -7,7 +7,7 @@ from tqdm import tqdm
 from models import Generator
 from configs.for_256px import GeneratorConfig, PathConfig
 
-CKPT_PATH = PathConfig().checkpoints / 'ckpt_step_900'
+CKPT_PATH = PathConfig().checkpoints / 'ckpt_step_9000'
 
 if __name__ == '__main__':
     # load model
