@@ -9,6 +9,7 @@ from configs.for_256px import GeneratorConfig, PathConfig
 
 CKPT_PATH = PathConfig().checkpoints / 'ckpt_step_45000'
 
+
 if __name__ == '__main__':
     # load model
     generator = Generator(**GeneratorConfig()).to('cpu')
@@ -35,4 +36,3 @@ if __name__ == '__main__':
     # save gif
     imageio.mimsave(PathConfig().data / 'interploated.gif', all_images, fps=10)
     print(f"Saved gif to {PathConfig().data / 'interploated.gif'}.")
-    

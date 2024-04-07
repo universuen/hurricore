@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from accelerate import DataLoaderConfiguration
 
-from hurricane.utils import ConfigBase, get_config_name
+from hurricane.utils import ConfigBase, get_file_name
 
 
 epochs = 10
@@ -12,7 +12,7 @@ lr = 5e-5
 model_name = "facebook/opt-350m"
 gradient_accumulate_interval = 8
 
-config_name = get_config_name()
+config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):

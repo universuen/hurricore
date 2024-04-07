@@ -1,7 +1,7 @@
 from os import cpu_count
 from pathlib import Path
 
-from hurricane.utils import ConfigBase, set_cuda_visible_devices, get_config_name
+from hurricane.utils import ConfigBase, set_cuda_visible_devices, get_file_name
 
 
 set_cuda_visible_devices(0, 1, 2, 3)
@@ -14,7 +14,7 @@ peek_interval = 100
 ckpt_interval = 1000
 gradient_accumulation_interval = 1
 
-config_name = get_config_name()
+config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):

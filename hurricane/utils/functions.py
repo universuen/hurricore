@@ -32,7 +32,7 @@ def find_start_and_end_index(a: torch.Tensor, b: torch.Tensor) -> int:
         return -1, -1
 
 
-def get_config_name() -> str:
+def get_file_name() -> str:
     caller_frame_record = inspect.stack()[1]
     module_path = caller_frame_record.filename
     return Path(module_path).stem

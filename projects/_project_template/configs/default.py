@@ -2,7 +2,7 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from hurricane.utils import ConfigBase, get_config_name
+from hurricane.utils import ConfigBase, get_file_name
 
 
 epochs = 100
@@ -11,7 +11,7 @@ lr = 5e-5
 gradient_accumulate_interval = 1
 ckpt_interval = 10
 
-config_name = get_config_name()
+config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):
