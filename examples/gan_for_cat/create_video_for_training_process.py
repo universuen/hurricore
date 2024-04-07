@@ -1,10 +1,11 @@
-import _path_setup
+import _path_setup  # noqa: F401
 
 from pathlib import Path
 import cv2
 import os
 
-from configs.for_64px import PathConfig
+from configs.for_256px import PathConfig
+
 
 def create_video_from_images(img_folder_path: Path, saving_path: Path):
     images = [img for img in os.listdir(img_folder_path) if img.endswith((".png", ".jpg", ".jpeg"))]
@@ -23,6 +24,7 @@ def create_video_from_images(img_folder_path: Path, saving_path: Path):
         out.write(frame)  # Write out frame to video
     # Release the video writer
     out.release()  
+
 
 if __name__ == '__main__':
     create_video_from_images(PathConfig().peek_images, PathConfig().data / 'training_process.mp4')

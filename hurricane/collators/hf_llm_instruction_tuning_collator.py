@@ -17,7 +17,7 @@ class HFLLMITCollator:
         self.max_len = max_len
         self.logger = logger
 
-    def collate_fn(self, batch: list[tuple[str]]) -> tuple[torch.Tensor, ...]:
+    def __call__(self, batch: list[tuple[str]]) -> tuple[torch.Tensor, ...]:
         chats_strings = [
             self.tokenizer.apply_chat_template(
                 conversation=[

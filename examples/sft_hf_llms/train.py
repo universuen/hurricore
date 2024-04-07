@@ -7,14 +7,13 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
-from peft import get_peft_model
 
 from hurricane.trainers import HFLLMTrainer
 from hurricane.collators import HFLLMITCollator
 from hurricane.utils import Logger, launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.gemma_2b import (
+from configs.opt_350m import (
     LoggerConfig,
     AcceleratorConfig,
     DataLoaderConfig,
@@ -22,14 +21,13 @@ from configs.gemma_2b import (
     TrainerConfig,
     LaunchConfig,
     CollatorConfig,
-    PEFTConfig,
     model_name,
 )
 
 
 def main():
-    logger = Logger(**LoggerConfig())
     accelerator = Accelerator(**AcceleratorConfig())
+    logger = Logger(**LoggerConfig())
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     if accelerator.is_main_process:
         log_all_configs(logger)
@@ -40,13 +38,12 @@ def main():
         dataset = ZhihuQADataset()
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
     model.resize_token_embeddings(len(tokenizer))
-    model = get_peft_model(model, **PEFTConfig())
     data_loader = DataLoader(
         dataset=dataset,
         collate_fn=HFLLMITCollator(
             tokenizer=tokenizer, 
             **CollatorConfig(),
-        ).collate_fn,
+        ),
         **DataLoaderConfig(),
     )
     optimizer = AdamW(
