@@ -10,7 +10,18 @@ from hurricane.utils import Logger, launch, log_all_configs
 from models import Generator, Discriminator
 from cat_dataset import CatDataset
 from gan_trainer import GANTrainer
-from configs.for_256px import *
+from configs.for_256px import (
+    LoggerConfig,
+    AcceleratorConfig,
+    GeneratorConfig,
+    DiscriminatorConfig,
+    DatasetConfig,
+    DataLoaderConfig,
+    GeneratorOptimizerConfig,
+    DiscriminatorOptimizerConfig,
+    TrainerConfig,
+    LaunchConfig,
+)
 
 
 def main():

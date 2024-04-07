@@ -6,9 +6,13 @@ from accelerate import DataLoaderConfiguration
 from hurricane.utils import ConfigBase, get_config_name
 
 
+epochs = 10
+batch_size = 12
+lr = 5e-5
 model_name = "facebook/opt-350m"
-config_name = get_config_name()
 gradient_accumulate_interval = 8
+
+config_name = get_config_name()
 
 
 class LaunchConfig(ConfigBase):
@@ -29,7 +33,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 10
+    epochs = epochs
     
     log_interval = gradient_accumulate_interval
     
@@ -49,11 +53,11 @@ class TrainerConfig(ConfigBase):
     
 
 class OptimizerConfig(ConfigBase):
-    lr = 5e-5
+    lr = lr
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 12
+    batch_size = batch_size
     shuffle = True
     num_workers = cpu_count()
 

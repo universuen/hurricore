@@ -7,9 +7,12 @@ from hurricane.utils import ConfigBase, get_config_name, set_cuda_visible_device
 
 # set_cuda_visible_devices(4, 5, 6, 7)
 
+epochs = 10
+batch_size = 64
+lr = 1e-3
+gradient_accumulate_interval = 10
 
 config_name = get_config_name()
-gradient_accumulate_interval = 10
 
 
 class LaunchConfig(ConfigBase):
@@ -31,7 +34,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 2
+    epochs = epochs
     
     log_interval = gradient_accumulate_interval
     
@@ -45,7 +48,7 @@ class TrainerConfig(ConfigBase):
 
 
 class OptimizerConfig(ConfigBase):
-    lr = 1e-3
+    lr = lr
 
 
 class DatasetConfig(ConfigBase):
@@ -55,7 +58,7 @@ class DatasetConfig(ConfigBase):
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 8
+    batch_size = batch_size
     shuffle = True
     num_workers = 1  # cpu_count()
 

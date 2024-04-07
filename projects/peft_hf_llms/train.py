@@ -14,7 +14,17 @@ from hurricane.collators import HFLLMITCollator
 from hurricane.utils import Logger, launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.gemma_2b import *
+from configs.gemma_2b import (
+    LoggerConfig,
+    AcceleratorConfig,
+    DataLoaderConfig,
+    OptimizerConfig,
+    TrainerConfig,
+    LaunchConfig,
+    CollatorConfig,
+    PEFTConfig,
+    model_name,
+)
 
 
 def main():

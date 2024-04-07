@@ -7,7 +7,7 @@ from tqdm import tqdm
 from models import Generator
 from configs.for_256px import GeneratorConfig, PathConfig
 
-CKPT_PATH = PathConfig().checkpoints / 'ckpt_step_9000'
+CKPT_PATH = PathConfig().checkpoints / 'ckpt_step_45000'
 
 if __name__ == '__main__':
     # load model
@@ -33,6 +33,6 @@ if __name__ == '__main__':
         image = (image * 255).astype('uint8')
         all_images.append(image)
     # save gif
-    imageio.mimsave(PathConfig().data / 'interploated.gif', all_images, fps=24)
+    imageio.mimsave(PathConfig().data / 'interploated.gif', all_images, fps=10)
     print(f"Saved gif to {PathConfig().data / 'interploated.gif'}.")
     

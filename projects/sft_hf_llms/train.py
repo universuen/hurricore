@@ -13,7 +13,16 @@ from hurricane.collators import HFLLMITCollator
 from hurricane.utils import Logger, launch, log_all_configs
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.opt_350m import *
+from configs.opt_350m import (
+    LoggerConfig,
+    AcceleratorConfig,
+    DataLoaderConfig,
+    OptimizerConfig,
+    TrainerConfig,
+    LaunchConfig,
+    CollatorConfig,
+    model_name,
+)
 
 
 def main():

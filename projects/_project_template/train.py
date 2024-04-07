@@ -7,7 +7,14 @@ from accelerate import Accelerator
 
 from hurricane.utils import Logger, launch, log_all_configs
 
-from configs.default import *
+from configs.default import (
+    LoggerConfig,
+    AcceleratorConfig,
+    DataLoaderConfig,
+    OptimizerConfig,
+    TrainerConfig,
+    LaunchConfig,
+)
 
 
 def main():

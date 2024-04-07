@@ -5,14 +5,18 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, get_config_name
 
 
-config_name = get_config_name()
+epochs = 100
+batch_size = 64
+lr = 5e-5
 gradient_accumulate_interval = 1
 ckpt_interval = 10
 
+config_name = get_config_name()
+
 
 class LaunchConfig(ConfigBase):
-    num_processes = 2
-    use_port = "8002"
+    num_processes = 8
+    use_port = "8000"
 
 
 class PathConfig(ConfigBase):
@@ -28,7 +32,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = ...
+    epochs = epochs
     
     log_interval = gradient_accumulate_interval
     
@@ -40,9 +44,8 @@ class TrainerConfig(ConfigBase):
     ckpt_seed = 42
     
 
-
 class OptimizerConfig(ConfigBase):
-    ...
+    lr = lr
 
 
 class DatasetConfig(ConfigBase):
@@ -50,7 +53,7 @@ class DatasetConfig(ConfigBase):
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = ...
+    batch_size = batch_size
     shuffle = True
     num_workers = cpu_count()
 

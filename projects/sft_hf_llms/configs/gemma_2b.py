@@ -7,9 +7,13 @@ from accelerate import DeepSpeedPlugin, DataLoaderConfiguration
 from hurricane.utils import ConfigBase, get_config_name
 
 
+epochs = 10
+batch_size = 1
+lr = 5e-5
 model_name = "google/gemma-2b"
-config_name = get_config_name()
 gradient_accumulate_interval = 32
+
+config_name = get_config_name()
 
 
 class LaunchConfig(ConfigBase):
@@ -30,7 +34,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = 10
+    epochs = epochs
     
     log_interval = gradient_accumulate_interval
     
@@ -50,11 +54,11 @@ class TrainerConfig(ConfigBase):
 
 
 class OptimizerConfig(ConfigBase):
-    lr = 5e-5
+    lr = lr
 
 
 class DataLoaderConfig(ConfigBase):
-    batch_size = 1
+    batch_size = batch_size
     shuffle = True
     num_workers = cpu_count()
 
