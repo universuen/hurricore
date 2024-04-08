@@ -1,14 +1,14 @@
 import _path_setup  # noqa: F401
-
 import torch
-import imageio
+import cv2
 from tqdm import tqdm
 
 from models import Generator
 from configs.for_256px import GeneratorConfig, PathConfig
 
 CKPT_PATH = PathConfig().checkpoints / 'ckpt_step_45000'
-
+STEP = 72
+NUM_CATS = 5
 
 if __name__ == '__main__':
     # load model
@@ -16,23 +16,32 @@ if __name__ == '__main__':
     model_path = CKPT_PATH / 'pytorch_model.bin'
     generator.load_state_dict(torch.load(model_path, map_location='cpu'))
     generator.eval()
+
+    # Set up video writer
+    video_filename = PathConfig().data / 'interpolation.mp4'
+    # Define the codec and create VideoWriter object
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_writer = cv2.VideoWriter(str(video_filename), fourcc, 24.0, (256, 256))
+    
     # create interpolation
-    sparse_z = torch.randn(10, GeneratorConfig().z_dim)
-    sparse_z = torch.cat([sparse_z, sparse_z[0].unsqueeze(0)])
-    interploated_z = []
-    for i in range(len(sparse_z) - 1):
-        for j in range(10):
-            interploated_z.append(sparse_z[i] + (sparse_z[i + 1] - sparse_z[i]) * j / 10)
-    interploated_z.append(sparse_z[-1])
-    # generate images
-    all_images = []
-    for z in tqdm(interploated_z):
-        z = z.to('cpu')
-        with torch.no_grad():
-            image = generator(z.unsqueeze(0)).squeeze(0).permute(1, 2, 0).cpu().numpy()
-        image = (image + 1) / 2
-        image = (image * 255).astype('uint8')
-        all_images.append(image)
-    # save gif
-    imageio.mimsave(PathConfig().data / 'interploated.gif', all_images, fps=10)
-    print(f"Saved gif to {PathConfig().data / 'interploated.gif'}.")
+    cnt = 0
+    start_z = torch.randn(1, GeneratorConfig().z_dim).to('cpu')
+    end_z = torch.randn(1, GeneratorConfig().z_dim).to('cpu')
+    while cnt < NUM_CATS:
+        z_diff = (end_z - start_z) / STEP
+        for i in tqdm(range(STEP)):
+            z = start_z + z_diff * i
+            with torch.no_grad():
+                img = generator(z).squeeze().permute(1, 2, 0).numpy()
+            img = (img + 1) / 2
+            frame = (img * 255).astype('uint8')
+            # Convert frame from RGB to BGR
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            video_writer.write(frame)
+        cnt += 1
+        start_z = end_z
+        end_z = torch.randn(1, GeneratorConfig().z_dim).to('cpu')
+
+    # Release the video writer
+    video_writer.release()
+    print(f'Interpolation video saved at {video_filename}')
