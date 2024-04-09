@@ -17,6 +17,7 @@ class HFLLMITCollator:
         self.max_len = max_len
         self.logger = logger
 
+
     def __call__(self, batch: list[tuple[str]]) -> tuple[torch.Tensor, ...]:
         chats_strings = [
             self.tokenizer.apply_chat_template(
