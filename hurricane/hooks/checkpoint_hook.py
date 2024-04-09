@@ -33,15 +33,6 @@ class CheckpointHook(HookBase):
                 trainer.accelerator.prepare(dl) 
                 for dl in trainer.originals.data_loaders
             ]
-            
-            # TODO: Remove this when the issue is fixed in Accelerate `prepare_dataloader()`#####################
-            for dl in trainer.data_loaders:
-                try:
-                    if hasattr(dl.batch_sampler, 'batch_sampler'):
-                        dl.batch_sampler.batch_sampler.sampler = dl.batch_sampler.sampler
-                except AttributeError:
-                    LoggerHook.msg_queue.append(('error', 'Failed to fix the issue in Accelerate `prepare_dataloader()`.'))
-            ##################################################################################################### 
         
         # register trainer context for checkpointing
         trainer.accelerator.register_for_checkpointing(trainer.ctx)

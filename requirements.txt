@@ -1,7 +1,8 @@
 # core
 torch
-accelerate >= 0.29.1
+accelerate >= 0.29.2
 pytest
+tensorboard
 
 # examples dependencies
 transformers

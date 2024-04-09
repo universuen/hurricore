@@ -2,7 +2,7 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from accelerate import DeepSpeedPlugin, DataLoaderConfiguration
+from accelerate import DeepSpeedPlugin
 
 from hurricane.utils import ConfigBase, get_file_name
 
