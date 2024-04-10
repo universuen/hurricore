@@ -10,31 +10,33 @@ from accelerate import Accelerator
 
 from hurricane.trainers import HFLLMTrainer
 from hurricane.collators import HFLLMITCollator
-from hurricane.utils import Logger, launch, log_all_configs
+from hurricane.utils import Logger, launch, log_all_configs, import_config
 
 from zhihu_qa_dataset import ZhihuQADataset
-from configs.opt_350m import (
-    LoggerConfig,
-    AcceleratorConfig,
-    DataLoaderConfig,
-    OptimizerConfig,
-    TrainerConfig,
-    LaunchConfig,
-    CollatorConfig,
-    model_name,
-)
+
+# import config from module path
+config = import_config('configs.opt_350m')
+
+""" Optional:
+import config from file path
+`config = import_config('examples/sft_hf_llms/configs/opt_350m.py')`
+import config from url
+`config = import_config('https://raw.githubusercontent.com/universuen/hurricane/main/examples/sft_hf_llms/configs/opt_350m.py')`
+"""
 
 
 def main():
-    accelerator = Accelerator(**AcceleratorConfig())
-    logger = Logger(**LoggerConfig())
+    # setup logger and accelerator
+    accelerator = Accelerator(**config.AcceleratorConfig())
+    logger = Logger(**config.LoggerConfig())
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     if accelerator.is_main_process:
         log_all_configs(logger)
         logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
+    # setup tokenizer, model, dataset and dataloader
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(config.model_name)
+        model = AutoModelForCausalLM.from_pretrained(config.model_name)
         dataset = ZhihuQADataset()
     tokenizer.add_special_tokens({'pad_token': '<pad>'})
     model.resize_token_embeddings(len(tokenizer))
@@ -42,18 +44,22 @@ def main():
         dataset=dataset,
         collate_fn=HFLLMITCollator(
             tokenizer=tokenizer, 
-            **CollatorConfig(),
+            **config.CollatorConfig(),
         ),
-        **DataLoaderConfig(),
+        **config.DataLoaderConfig(),
     )
+    # setup optimizer and lr scheduler
     optimizer = AdamW(
         params=model.parameters(),
-        **OptimizerConfig(),
+        **config.OptimizerConfig(),
     )
+    num_steps_per_epoch = len(data_loader) // config.AcceleratorConfig().gradient_accumulation_steps
+    num_epochs = config.TrainerConfig().epochs
     scheduler = CosineAnnealingLR(
         optimizer=optimizer,
-        T_max=(len(data_loader) // AcceleratorConfig().gradient_accumulation_steps) * TrainerConfig().epochs,
+        T_max=num_steps_per_epoch * num_epochs,
     )
+    # setup trainer and run
     trainer = HFLLMTrainer(
         model=model, 
         data_loader=data_loader, 
@@ -63,8 +69,8 @@ def main():
         tokenizer=tokenizer,
         lr_scheduler=scheduler,
         lr_scheduler_mode='per_step',
-        **TrainerConfig(),
+        **config.TrainerConfig(),
     )
     trainer.run()
 
-launch(main, **LaunchConfig())
+launch(main, **config.LaunchConfig())

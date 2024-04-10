@@ -94,8 +94,7 @@ def set_cuda_visible_devices(*device_indices: tuple[int]) -> None:
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
 
 
-def import_config(file_or_url_path: str):
-    path = file_or_url_path
+def import_config(path: str):
     assert isinstance(path, str), "path must be a string"
     temp_file_path = None
     if path.startswith("http"):
