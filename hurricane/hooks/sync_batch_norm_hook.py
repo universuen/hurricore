@@ -6,3 +6,9 @@ from hurricane.hooks import HookBase
 class SyncBatchNormHook(HookBase):
     def on_training_start(self) -> None:
         self.trainer.models = tuple(SyncBatchNorm.convert_sync_batchnorm(model) for model in self.trainer.models)
+        # check if all models with name containing BatchNorm have been converted
+        for model in self.trainer.models:
+            for name, module in model.named_modules():
+                type_name = type(module).__name__
+                if "BatchNorm" in type_name:
+                    assert isinstance(module, SyncBatchNorm), f"{name} is not converted to SyncBatchNorm."
