@@ -98,7 +98,7 @@ def import_config(path: str):
     assert isinstance(path, str), "path must be a string"
     temp_file_path = None
     if path.startswith("http"):
-        # Handle URL
+        # handle URL
         response = requests.get(path)
         if response.status_code != 200:
             raise ImportError(f"Cannot download the module from {path}")
@@ -109,13 +109,13 @@ def import_config(path: str):
             module_name = Path(tmp_file.name).stem
         spec = util.spec_from_file_location(module_name, module_path)
     elif  "/" in path or "\\" in path:
-        # Handle filesystem path
+        # handle filesystem path
         path = Path(path)
         module_path = str(path)
         module_name = Path(path).stem
         spec = util.spec_from_file_location(module_name, module_path)
     else:
-        # Handle module import string
+        # handle module import string
         try:
             return import_module(path)
         except ImportError as e:
@@ -129,7 +129,6 @@ def import_config(path: str):
     spec.loader.exec_module(module)
     
     if temp_file_path is not None:
-        print(temp_file_path)
         os.remove(temp_file_path)
     
     return module
