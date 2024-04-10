@@ -4,11 +4,11 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, set_cuda_visible_devices, get_file_name
 
 
-set_cuda_visible_devices(0, 1, 2, 3)
+# set_cuda_visible_devices(0, 1, 2, 3)
 
 image_size = 256
 epochs = 3000
-batch_size = 32
+batch_size = 64
 lr = 2e-4
 peek_interval = 100
 ckpt_interval = 1000
@@ -18,7 +18,7 @@ config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 4
+    num_processes = 2
     use_port = "8001"
 
 
