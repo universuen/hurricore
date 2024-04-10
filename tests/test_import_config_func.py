@@ -36,7 +36,7 @@ def test_import_config():
     assert config.ConfigB.c == 2, "path import is not working."
     assert config.ConfigB.d == 3, "path import is not working."
     # test url import
-    url = r'https://raw.githubusercontent.com/universuen/hurricane/main/examples/resnet18_on_cifar10/configs/default.py'
+    url = 'https://raw.githubusercontent.com/universuen/hurricane/main/projects/_template/configs/default.py'
     config = import_config(url)
     assert config.TrainerConfig is not None, "url import is not working."
     # test module import

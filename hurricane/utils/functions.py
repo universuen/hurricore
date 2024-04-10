@@ -4,7 +4,6 @@ import os
 import sys
 import inspect
 import requests
-import tempfile
 from datetime import datetime
 from pathlib import Path
 from logging import Logger as LoggerType
@@ -102,7 +101,7 @@ def import_config(path: str):
         response = requests.get(path)
         if response.status_code != 200:
             raise ImportError(f"Cannot download the module from {path}")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode='w+') as tmp_file:
+        with open(Path(__file__).parents[2] / '_temp_config.py', 'w') as tmp_file:
             temp_file_path = tmp_file.name
             tmp_file.write(response.text)
             module_path = tmp_file.name

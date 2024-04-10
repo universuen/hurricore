@@ -14,7 +14,7 @@ from hurricane.trainers import Trainer
 from hurricane.hooks import CheckpointHook
 
 
-temp_folder_path = Path('temp_checkpoints/')
+temp_folder_path = Path(__file__).parents[1] / '_temp_checkpoints'
 
 
 
