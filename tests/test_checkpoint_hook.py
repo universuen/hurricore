@@ -2,7 +2,7 @@ import _path_setup  # noqa: F401
 
 import shutil
 from pathlib import Path
-
+from copy import deepcopy
 
 import torch
 from torch import nn
@@ -40,7 +40,7 @@ class _TestTrainer(Trainer):
         return torch.tensor(0.0)
     
 
-def test_checkpoint_hook():
+def test_checkpoint_hook_dataloader():
     # set up test folder
     if temp_folder_path.exists():
         shutil.rmtree(temp_folder_path)
@@ -82,3 +82,63 @@ def test_checkpoint_hook():
     
     # clean up
     shutil.rmtree(temp_folder_path)
+
+
+def test_checkpoint_hook_context():
+    # set up test folder
+    if temp_folder_path.exists():
+        shutil.rmtree(temp_folder_path)
+    temp_folder_path.mkdir(parents=True)
+    
+    trainer = _TestTrainer()
+    trainer.run()
+    original_context = deepcopy(trainer.ctx)
+    del trainer
+    
+    # remove all but the 5th and the 15th
+    ckpt_dirs = [d for d in temp_folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
+    for ckpt_dir in ckpt_dirs:
+        if ckpt_dir.name not in ['ckpt_step_5', 'ckpt_step_15']:
+            shutil.rmtree(ckpt_dir)
+    
+    # test reproducibility on the 2nd epoch
+    trainer = _TestTrainer()
+    trainer.run()
+    new_context = deepcopy(trainer.ctx)
+    for key in vars(original_context).keys():
+        if key not in ['step_loss', 'batches']:
+            new_value = getattr(new_context, key)
+            original_value = getattr(original_context, key)
+            assert new_value == original_value, \
+                (
+                    f"Context key {key} does not match.\n"
+                    f"\tBefore: {original_value}\n"
+                    f"\tAfter: {new_value}\n"
+                )
+                
+    del trainer
+
+    # remove all but the 5th
+    ckpt_dirs = [d for d in temp_folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
+    for ckpt_dir in ckpt_dirs:
+        if ckpt_dir.name not in ['ckpt_step_5']:
+            shutil.rmtree(ckpt_dir)
+    
+    # test reproducibility on the 1st epoch
+    trainer = _TestTrainer()
+    trainer.run()
+    new_context = deepcopy(trainer.ctx)
+    for key in vars(original_context).keys():
+        if key not in ['step_loss', 'batches']:
+            assert new_value == original_value, \
+                (
+                    f"Context key {key} does not match.\n"
+                    f"\tBefore: {original_value}\n"
+                    f"\tAfter: {new_value}\n"
+                )
+    del trainer
+    
+    # clean up
+    shutil.rmtree(temp_folder_path)
+
+test_checkpoint_hook_context()
