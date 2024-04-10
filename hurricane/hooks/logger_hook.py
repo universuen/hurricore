@@ -65,8 +65,8 @@ class LoggerHook(HookBase):
         self._log_states()
         avg_loss = get_list_mean(self.step_losses)
         self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss: .5f}')
-
-
+    
+    
     def _collect_step_loss(self):
         step_loss = self.trainer.accelerator.gather(self.trainer.ctx.step_loss).detach().mean().item()
         self.step_losses.append(step_loss)
@@ -76,7 +76,7 @@ class LoggerHook(HookBase):
         elapsed_time = time.time() - self.start_time
         iterator_length = self.trainer.ctx.iterator_length
         batches_idx = self.trainer.ctx.batches_idx + 1
-        remaining_time = (iterator_length - batches_idx) * (elapsed_time / self.step)
+        remaining_time = (iterator_length - batches_idx) * (elapsed_time / (self.step + 1e-6))
         days, remainder = divmod(remaining_time, 86400) 
         hours, remainder = divmod(remainder, 3600) 
         minutes, seconds = divmod(remainder, 60) 
@@ -85,6 +85,8 @@ class LoggerHook(HookBase):
     
     
     def _log_states(self):
+        if len(self.step_losses) == 0:
+            return
         idx = self.trainer.ctx.batches_idx + 1
         iterator_length = self.trainer.ctx.iterator_length
         epoch = self.trainer.ctx.epoch + 1
@@ -111,5 +113,5 @@ class LoggerHook(HookBase):
                         self.logger.error(f'Error in LoggerHook: {e}')
                 else:
                     time.sleep(0.01)
-        Thread(target=listen_and_process, args=(self, )).start()
+        Thread(target=listen_and_process, args=(self, ), daemon=True).start()
     

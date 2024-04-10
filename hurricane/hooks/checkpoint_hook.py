@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import sleep
 
 import torch
 from torch.utils.data import RandomSampler
@@ -51,12 +52,12 @@ class CheckpointHook(HookBase):
         latest_step = max(steps)
         latest_ckpt_dir = self.folder_path / f'ckpt_step_{latest_step}'
         self.trainer.accelerator.load_state(latest_ckpt_dir)
+        # should step into the next batch
+        self.trainer.ctx.batches_idx += 1
         # recover dataloaders states
         for dl in self.trainer.data_loaders:
             dl.set_epoch(self.trainer.ctx.epoch)
-            dl.skip_batches = self.trainer.ctx.batches_idx + 1
-        # should step into the next batch
-        self.trainer.ctx.batches_idx += 1
+            dl.skip_batches = self.trainer.ctx.batches_idx
         # recover hooks
         for hook in self.trainer.hooks:
             if hasattr(hook, 'recover_from_checkpoint'):
@@ -75,11 +76,13 @@ class CheckpointHook(HookBase):
     def on_epoch_end(self) -> None:
         for dl in self.trainer.data_loaders:
             dl.skip_batches = 0
-    
-    
-    def on_training_end(self) -> None:
-        self._save_checkpoint()
-            
+        if self.trainer.ctx.epoch + 1 == self.trainer.epochs:
+            '''
+            This cannot be put in `on_training_end` because LoggerHook will
+            shut down its message queue before `on_training_end` is called.
+            '''
+            self._save_checkpoint()
+            sleep(1)
 
     def _save_checkpoint(self) -> None:
         step = self.trainer.ctx.global_step + 1

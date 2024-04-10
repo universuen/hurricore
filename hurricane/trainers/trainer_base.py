@@ -44,7 +44,7 @@ class TrainerBase:
             
             for batches_idx, batches in enumerate(
                 iterable=self.build_iterator(), 
-                start=self.ctx.batches_idx
+                start=self.data_loaders[0].skip_batches
             ):
                 self.ctx.batches_idx = batches_idx
                 self.ctx.batches = batches
@@ -60,8 +60,6 @@ class TrainerBase:
             
             for hook in self.hooks:
                 hook.on_epoch_end()
-                
-            self.ctx.batches_idx = 0
         
         for hook in self.hooks:
             hook.on_training_end()

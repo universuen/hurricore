@@ -1,5 +1,6 @@
 from hurricane.trainers.trainer_base import TrainerBase
 
+
 class HookBase:
     def __init__(self, trainer: TrainerBase) -> None:
         self.trainer = trainer

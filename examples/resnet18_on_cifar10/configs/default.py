@@ -7,16 +7,16 @@ from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
 # set_cuda_visible_devices(4, 5, 6, 7)
 
-epochs = 10
-batch_size = 64
+epochs = 2
+batch_size = 256
 lr = 1e-3
-gradient_accumulate_interval = 10
+gradient_accumulate_interval = 2
 
 config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 1
+    num_processes = 2
     use_port = "8000"
 
 

@@ -70,4 +70,4 @@ class TensorBoardHook(HookBase):
                         LoggerHook.msg_queue.append(('error', f'Error in TensorBoardHook: {e}'))
                 else:
                     time.sleep(0.01)
-        Thread(target=listen_and_process, args=(self, )).start()
+        Thread(target=listen_and_process, args=(self, ), daemon=True).start()
