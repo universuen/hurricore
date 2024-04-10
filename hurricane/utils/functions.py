@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import os
+import sys
 import inspect
+import requests
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from logging import Logger as LoggerType
 from typing import Iterable
+from importlib import util, import_module
+from typing import Union
 
 import torch
 from accelerate import notebook_launcher
@@ -88,3 +93,51 @@ def get_trainable_parameters(model: torch.nn.Module) -> str:
 def set_cuda_visible_devices(*device_indices: tuple[int]) -> None:
     assert all(isinstance(i, int) for i in device_indices), 'device_indices must be integers'
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
+
+
+
+
+
+def import_config(path: str):
+    """
+    Imports a configuration module from a given filesystem path, URL, or module import string.
+
+    Parameters:
+    - path: A string path, a string URL, or a module import string representing the location of the module to be imported.
+
+    Returns:
+    The imported module.
+    """
+    assert isinstance(path, str), "path must be a string"
+    if path.startswith("http"):
+        # Handle URL
+        response = requests.get(path)
+        if response.status_code != 200:
+            raise ImportError(f"Cannot download the module from {path}")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode='w+') as tmp_file:
+            tmp_file.write(response.text)
+            module_path = tmp_file.name
+            module_name = Path(tmp_file.name).stem
+        spec = util.spec_from_file_location(module_name, module_path)
+    elif  "/" in path or "\\" in path:
+        # Handle filesystem path
+        path = Path(path)
+        module_path = str(path)
+        module_name = Path(path).stem
+        spec = util.spec_from_file_location(module_name, module_path)
+    else:
+        # Handle module import string
+        try:
+            return import_module(path)
+        except ImportError as e:
+            raise ImportError(f"Cannot import module using import string {path}") from e
+
+    if spec is None:
+        raise ImportError(f"Cannot import module from {path}")
+    
+    module = util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    
+    return module
+
