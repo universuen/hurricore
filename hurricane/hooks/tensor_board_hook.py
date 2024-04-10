@@ -28,6 +28,7 @@ class TensorBoardHook(HookBase):
         self.folder_path = folder_path
         self.writer = SummaryWriter(log_dir=self.folder_path) if trainer.accelerator.is_main_process else DummyObject()
         self._activate_msg_queue()
+        # TODO: auto run tensorboard
     
     
     def on_step_end(self) -> None:
