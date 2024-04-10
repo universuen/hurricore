@@ -10,7 +10,6 @@ from pathlib import Path
 from logging import Logger as LoggerType
 from typing import Iterable
 from importlib import util, import_module
-from typing import Union
 
 import torch
 from accelerate import notebook_launcher
@@ -95,19 +94,8 @@ def set_cuda_visible_devices(*device_indices: tuple[int]) -> None:
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
 
 
-
-
-
-def import_config(path: str):
-    """
-    Imports a configuration module from a given filesystem path, URL, or module import string.
-
-    Parameters:
-    - path: A string path, a string URL, or a module import string representing the location of the module to be imported.
-
-    Returns:
-    The imported module.
-    """
+def import_config(file_or_url_path: str):
+    path = file_or_url_path
     assert isinstance(path, str), "path must be a string"
     temp_file_path = None
     if path.startswith("http"):
