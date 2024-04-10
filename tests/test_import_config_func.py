@@ -8,9 +8,11 @@ from hurricane.utils import import_config
 dummy_config_str = """
 from hurricane.utils import ConfigBase
 
+
 class ConfigA(ConfigBase):
     a = 1
     b = '2'
+
 
 class ConfigB(ConfigBase):
     c = ConfigA().a + 1
@@ -47,7 +49,3 @@ def test_import_config():
     assert config.ConfigB.d == 3, "module import is not working."
     # clean up
     shutil.rmtree(temp_folder_path)
-    
-    
-
-test_import_config()

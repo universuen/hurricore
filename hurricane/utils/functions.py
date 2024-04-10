@@ -109,12 +109,14 @@ def import_config(path: str):
     The imported module.
     """
     assert isinstance(path, str), "path must be a string"
+    temp_file_path = None
     if path.startswith("http"):
         # Handle URL
         response = requests.get(path)
         if response.status_code != 200:
             raise ImportError(f"Cannot download the module from {path}")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode='w+') as tmp_file:
+            temp_file_path = tmp_file.name
             tmp_file.write(response.text)
             module_path = tmp_file.name
             module_name = Path(tmp_file.name).stem
@@ -138,6 +140,10 @@ def import_config(path: str):
     module = util.module_from_spec(spec)
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
+    
+    if temp_file_path is not None:
+        print(temp_file_path)
+        os.remove(temp_file_path)
     
     return module
 
