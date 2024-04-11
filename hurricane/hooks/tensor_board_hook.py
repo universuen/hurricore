@@ -31,7 +31,7 @@ class TensorBoardHook(HookBase):
         self._activate_msg_queue()
     
     
-    def on_epoch_start(self) -> None:
+    def on_training_start(self) -> None:
         tb = program.TensorBoard()
         tb.configure(argv=[None, '--logdir', str(self.folder_path)])
         url = tb.launch()
