@@ -3,6 +3,7 @@ from pathlib import Path
 from threading import Thread
 
 from torch.utils.tensorboard import SummaryWriter
+from tensorboard import program
 
 from hurricane.hooks import HookBase, LoggerHook
 from hurricane.trainers import TrainerBase
@@ -28,7 +29,13 @@ class TensorBoardHook(HookBase):
         self.folder_path = folder_path
         self.writer = SummaryWriter(log_dir=self.folder_path) if trainer.accelerator.is_main_process else DummyObject()
         self._activate_msg_queue()
-        # TODO: auto run tensorboard
+    
+    
+    def on_epoch_start(self) -> None:
+        tb = program.TensorBoard()
+        tb.configure(argv=[None, '--logdir', str(self.folder_path)])
+        url = tb.launch()
+        LoggerHook.msg_queue.append(('info', f"Tensorboard is launched at {url}."))
     
     
     def on_step_end(self) -> None:
