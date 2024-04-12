@@ -26,7 +26,7 @@ class HFLLMTrainer(Trainer):
         data_loader: DataLoader, 
         optimizer: Optimizer,
         accelerator: Accelerator,
-        epochs: int = 100,
+        num_epochs: int = 100,
         ckpt_seed: int = 42,
         
         logger: Logger = None,
@@ -51,7 +51,7 @@ class HFLLMTrainer(Trainer):
             optimizers=[optimizer], 
             data_loaders=[data_loader], 
             accelerator=accelerator,
-            epochs=epochs,
+            num_epochs=num_epochs,
         )
         
         if peek_prompts is None:

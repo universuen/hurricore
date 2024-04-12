@@ -18,7 +18,7 @@ class _TestTrainer(Trainer):
             optimizers=[AdamW(model.parameters(), lr=1e-3)],
             data_loaders=[DataLoader(range(1), batch_size=1, shuffle=True)],
             accelerator=Accelerator(),
-            epochs=1,
+            num_epochs=1,
         )
         self.hooks = [
             HFLLMPeekHook(

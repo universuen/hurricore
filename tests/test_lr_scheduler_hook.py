@@ -17,7 +17,7 @@ class _TestTrainer(Trainer):
         num_processes = 1,
         # gradient_accumulation_interval = 10,
         batch_size = 8,
-        epochs = 2,
+        num_epochs = 2,
     ):
         model = nn.Linear(1, 1)
         optimizer = AdamW(model.parameters(), lr=1)
@@ -32,7 +32,7 @@ class _TestTrainer(Trainer):
                 ),
             ],
             accelerator=Accelerator(),
-            epochs=epochs,
+            num_epochs=num_epochs,
         )
         num_batches = len(self.data_loaders[0])
         self.hooks = [
@@ -41,7 +41,7 @@ class _TestTrainer(Trainer):
                 lr_schedulers=[
                     CosineAnnealingLR(
                         optimizer=optimizer,
-                        T_max=epochs * num_batches * num_processes,
+                        T_max=num_epochs * num_batches * num_processes,
                         eta_min=0.0,
                     )
                 ],

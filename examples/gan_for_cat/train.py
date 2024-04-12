@@ -39,7 +39,7 @@ def main():
     g_optimizer = AdamW(g_model.parameters(), **config.GeneratorOptimizerConfig()) 
     d_optimizer = AdamW(d_model.parameters(), **config.DiscriminatorOptimizerConfig())
     num_steps_per_epoch = len(data_loader)
-    num_epochs = config.TrainerConfig().epochs
+    num_epochs = config.TrainerConfig().num_epochs
     gradient_accumulation_steps = accelerator.gradient_accumulation_steps
     g_scheduler = CosineAnnealingLR(
         optimizer=g_optimizer,

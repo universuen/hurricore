@@ -25,7 +25,7 @@ class _TestTrainer(Trainer):
             optimizers=[AdamW(model.parameters(), lr=1e-3)],
             data_loaders=[DataLoader(range(10), batch_size=1, shuffle=True)],
             accelerator=Accelerator(),
-            epochs=2,
+            num_epochs=2,
         )
         self.hooks = [CheckpointHook(self, folder_path=temp_folder_path, interval=5)]
         self.iterated_results = []

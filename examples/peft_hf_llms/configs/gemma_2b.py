@@ -9,7 +9,7 @@ from peft import LoraConfig, TaskType
 from hurricane.utils import ConfigBase, get_file_name
 
 
-epochs = 100
+num_epochs = 100
 batch_size = 4
 lr = 5e-5
 model_name = "google/gemma-2b"
@@ -37,7 +37,7 @@ class PathConfig(ConfigBase):
 
 class TrainerConfig(ConfigBase):
     
-    epochs = epochs
+    num_epochs = num_epochs
     
     log_interval = gradient_accumulate_interval
     

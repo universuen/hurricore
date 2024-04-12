@@ -53,7 +53,7 @@ class GANTrainer(Trainer):
         g_optimizer: Optimizer,
         d_optimizer: Optimizer,
         
-        epochs: int = 100,
+        num_epochs: int = 100,
         gp_lambda: float = 10.0,
         
         g_lr_scheduler: LRScheduler = None,
@@ -82,7 +82,7 @@ class GANTrainer(Trainer):
             data_loaders=[data_loader], 
             optimizers=[g_optimizer, d_optimizer], 
             accelerator=accelerator,
-            epochs=epochs,
+            num_epochs=num_epochs,
         )
         
         self.gp_lambda = gp_lambda

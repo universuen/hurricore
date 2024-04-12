@@ -7,7 +7,7 @@ from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
 # set_cuda_visible_devices(4, 5, 6, 7)
 
-epochs = 2
+num_epochs = 2
 batch_size = 256
 lr = 1e-3
 gradient_accumulate_interval = 2
@@ -34,7 +34,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = epochs
+    num_epochs = num_epochs
     
     log_interval = gradient_accumulate_interval
     

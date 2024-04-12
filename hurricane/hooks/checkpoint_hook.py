@@ -76,7 +76,7 @@ class CheckpointHook(HookBase):
     def on_epoch_end(self) -> None:
         for dl in self.trainer.data_loaders:
             dl.skip_batches = 0
-        if self.trainer.ctx.epoch + 1 == self.trainer.epochs:
+        if self.trainer.ctx.epoch + 1 == self.trainer.num_epochs:
             '''
             This cannot be put in `on_training_end` because LoggerHook will
             shut down its message queue before `on_training_end` is called.

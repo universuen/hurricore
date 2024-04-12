@@ -15,14 +15,14 @@ class TrainerBase:
         models: list[nn.Module],
         optimizers: list[Optimizer],
         data_loaders: list[DataLoader],
-        epochs: int = 100,
+        num_epochs: int = 100,
     ) -> None:
 
         self.models = models
         self.optimizers = optimizers
         self.data_loaders = data_loaders
         self.ctx = Context()
-        self.epochs = epochs
+        self.num_epochs = num_epochs
         self.hooks = []
         
         assert len(set([len(dl) for dl in data_loaders])) == 1, 'All data loaders must have the same length.'
@@ -36,7 +36,7 @@ class TrainerBase:
         for hook in self.hooks:
             hook.on_training_start()
             
-        for epoch in range(self.ctx.epoch, self.epochs):
+        for epoch in range(self.ctx.epoch, self.num_epochs):
             self.ctx.epoch = epoch
             
             for hook in self.hooks:

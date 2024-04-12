@@ -17,13 +17,13 @@ class Trainer(TrainerBase):
         optimizers: list[Optimizer],
         data_loaders: list[DataLoader],
         accelerator: Accelerator,
-        epochs: int = 100,
+        num_epochs: int = 100,
     ) -> None:
         super().__init__(
             models=models, 
             data_loaders=data_loaders, 
             optimizers=optimizers,
-            epochs=epochs,
+            num_epochs=num_epochs,
         )
         # backup original objects
         self.originals = Context()

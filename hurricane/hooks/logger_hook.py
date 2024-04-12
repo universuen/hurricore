@@ -94,7 +94,7 @@ class LoggerHook(HookBase):
         remaining_time = self._get_remaining_time()
         
         self.logger.info(
-            f"Epoch: {epoch}/{self.trainer.epochs} | "
+            f"Epoch: {epoch}/{self.trainer.num_epochs} | "
             f"Step: {idx}/{iterator_length} | "
             f"Loss: {self.step_losses[-1]:.5f} | "
             f"Progress: {progress:.2%} | "

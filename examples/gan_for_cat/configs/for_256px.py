@@ -7,7 +7,7 @@ from hurricane.utils import ConfigBase, set_cuda_visible_devices, get_file_name
 # set_cuda_visible_devices(0, 1, 2, 3)
 
 image_size = 256
-epochs = 3000
+num_epochs = 3000
 batch_size = 64
 lr = 2e-4
 peek_interval = 100
@@ -64,7 +64,7 @@ class DataLoaderConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = epochs
+    num_epochs = num_epochs
     gp_lambda = 10
     d_loop_per_step = 1
     g_loop_per_step = 1

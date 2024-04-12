@@ -26,7 +26,7 @@ class _TestTrainer(Trainer):
             optimizers=[AdamW(nn.Linear(1, 1).parameters(), lr=1e-3)],
             data_loaders=[DataLoader(range(1), batch_size=1, shuffle=True)],
             accelerator=Accelerator(),
-            epochs=1,
+            num_epochs=1,
         )
         self.hooks = [SyncBatchNormHook(self)]
         

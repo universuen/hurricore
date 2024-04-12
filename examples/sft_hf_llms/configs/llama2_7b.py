@@ -7,7 +7,7 @@ from accelerate import DeepSpeedPlugin
 from hurricane.utils import ConfigBase, get_file_name
 
 
-epochs = 10
+num_epochs = 10
 batch_size = 1
 lr = 5e-5
 model_name = "meta-llama/Llama-2-7b-hf"
@@ -34,7 +34,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = epochs
+    num_epochs = num_epochs
     
     log_interval = gradient_accumulate_interval
     

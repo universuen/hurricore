@@ -28,7 +28,7 @@ class ResNetTrainer(Trainer):
         data_loader: DataLoader, 
         optimizer: Optimizer, 
         accelerator: Accelerator,
-        epochs: int = 100,
+        num_epochs: int = 100,
         ckpt_seed: int = 42,
         
         logger: Logger = None,
@@ -49,7 +49,7 @@ class ResNetTrainer(Trainer):
             data_loaders=[data_loader], 
             optimizers=[optimizer], 
             accelerator=accelerator,
-            epochs=epochs,
+            num_epochs=num_epochs,
         )
         self.hooks = [
             LoggerHook(

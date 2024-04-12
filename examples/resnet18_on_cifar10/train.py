@@ -54,7 +54,7 @@ def main():
         **config.OptimizerConfig(),
     )
     num_steps_per_epoch = len(data_loader)
-    num_epochs = config.TrainerConfig().epochs
+    num_epochs = config.TrainerConfig().num_epochs
     gradient_accumulation_steps = accelerator.gradient_accumulation_steps
     scheduler = CosineAnnealingLR(
         optimizer=optimizer,
