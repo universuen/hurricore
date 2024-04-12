@@ -132,3 +132,15 @@ def import_config(path: str):
     
     return module
 
+
+def get_params_details_table(*models: tuple[torch.nn.Module]) -> str:
+        table_header = f"\t{'Model':<30} | {'Total Params':>20} | {'Trainable Params':>20}"
+        table_divider = '\t' + '-' * len(table_header)
+        table_rows = [table_header, table_divider]
+        for name, model in zip(auto_name(models), models):
+            total_params = get_total_parameters(model)
+            trainable_params = get_trainable_parameters(model)
+            row = f"\t{name:<30} | {total_params:>20} | {trainable_params:>20}"
+            table_rows.append(row)
+        full_table = '\n'.join(table_rows)
+        return f'\n{full_table}\n'

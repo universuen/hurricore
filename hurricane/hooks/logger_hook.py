@@ -10,8 +10,7 @@ from hurricane.utils import (
     DummyObject,
     auto_name,
     get_list_mean,
-    get_total_parameters,
-    get_trainable_parameters,
+    get_params_details_table,
 )
 
 
@@ -43,8 +42,8 @@ class LoggerHook(HookBase):
         models = self.trainer.originals.models
         for name, model in zip(auto_name(models), models):
             self.logger.info(f'{name} structure:\n{model}')
-            self.logger.info(f'{name} total parameters: {get_total_parameters(model)}')
-            self.logger.info(f'{name} trainable parameters: {get_trainable_parameters(model)}')
+        params_table = get_params_details_table(*models)
+        self.logger.info(f'Parameters details:\n{params_table}')
     
     
     def on_epoch_start(self) -> None:
