@@ -34,7 +34,7 @@ class TensorBoardHook(HookBase):
     def on_training_start(self) -> None:
         if self.trainer.accelerator.is_main_process:
             tb = program.TensorBoard()
-            tb.configure(argv=[None, '--logdir', str(self.folder_path)])
+            tb.configure(argv=[None, '--logdir', str(self.folder_path.parent)])
             url = tb.launch()
             LoggerHook.msg_queue.append(('info', f"Tensorboard is launched at {url}"))
     
