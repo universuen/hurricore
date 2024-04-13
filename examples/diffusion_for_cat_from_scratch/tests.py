@@ -9,7 +9,7 @@ from unet import(
     UpSampling,
     UNet,
 )
-
+from noise_schedulers import DDPMNoiseScheduler
 
 @torch.no_grad()
 def test_patchify_and_unpatchify():
@@ -58,3 +58,15 @@ def test_u_net():
     u_net = UNet(16, 64, 16).cuda()
     x = u_net(x)
     assert x.shape == (1, 3, 256, 256), "UNet is not working correctly"
+
+
+def test_ddpm_scheduler():
+    ddpm = DDPMNoiseScheduler()
+    images = torch.rand(32, 3, 256, 256)
+    corrupted_images, noise = ddpm.corrupt(images, 0)
+    assert corrupted_images.shape == images.shape, "Corrupted images shape is not correct"
+    assert noise.shape == images.shape, "Noise shape is not correct"
+    recovered_images = ddpm.recover(corrupted_images, noise, 0)
+    assert recovered_images.shape == images.shape, "Recovered images shape is not correct"
+    recovered_images = ddpm.recover(corrupted_images, noise, 0, with_randomness=False)
+    assert recovered_images.shape == images.shape, "Recovered images shape is not correct"

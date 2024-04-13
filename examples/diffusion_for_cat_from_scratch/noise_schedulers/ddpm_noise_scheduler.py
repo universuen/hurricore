@@ -39,12 +39,12 @@ class DDPMNoiseScheduler:
         corrupted_images: torch.Tensor, 
         noise: torch.Tensor, 
         t: int, 
-        with_randomness: bool = True
+        with_randomness: bool = True,
     ) -> torch.Tensor:
         coefficient_1 = self.math['1 / sqrt(alphas)'][t]
         coefficient_2 = self.math['betas'][t] / self.math['sqrt(1 - alphas_bar)'][t]
         coefficient_3 = self.math['sqrt(betas)'][t]
-        mean = coefficient_1(corrupted_images - coefficient_2 * noise)
+        mean = coefficient_1 * (corrupted_images - coefficient_2 * noise)
         std = coefficient_3
         if with_randomness:
             z = torch.randn_like(corrupted_images).to(corrupted_images.device)
