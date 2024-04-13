@@ -1,4 +1,4 @@
-import _path_setup
+import _path_setup  # noqa: F401
 
 from hurricane.utils import import_config
 
