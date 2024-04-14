@@ -4,7 +4,7 @@ from pathlib import Path
 
 from hurricane.utils import ConfigBase, get_file_name
 
-
+image_size = 256
 epochs = 100
 batch_size = 64
 lr = 5e-5
@@ -12,6 +12,12 @@ gradient_accumulate_interval = 1
 ckpt_interval = 10
 
 config_name = get_file_name()
+
+
+class DDPMNoiseSchedulerConfig(ConfigBase):
+    beta_start = 1e-4
+    beta_end = 2e-2
+    num_steps = 1000
 
 
 class LaunchConfig(ConfigBase):
@@ -22,6 +28,7 @@ class LaunchConfig(ConfigBase):
 class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'
+    dataset = data / 'afhq'
     logs = data / 'logs'
     checkpoints = data / 'checkpoints' / config_name
     tensor_boards = data / 'tensor_boards' / config_name
@@ -49,7 +56,8 @@ class OptimizerConfig(ConfigBase):
 
 
 class DatasetConfig(ConfigBase):
-    ...
+    path = PathConfig().dataset
+    image_size = image_size
 
 
 class DataLoaderConfig(ConfigBase):

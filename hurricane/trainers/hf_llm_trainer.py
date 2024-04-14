@@ -27,7 +27,7 @@ class HFLLMTrainer(Trainer):
         optimizer: Optimizer,
         accelerator: Accelerator,
         num_epochs: int = 100,
-        ckpt_seed: int = 42,
+        
         
         logger: Logger = None,
         log_interval: int = 1,
@@ -44,6 +44,7 @@ class HFLLMTrainer(Trainer):
         
         ckpt_folder_path: Path = None,
         ckpt_interval: int = 1000,
+        ckpt_seed: int = 42,
         
     ) -> None:
         super().__init__(

@@ -63,7 +63,7 @@ def test_u_net():
 def test_ddpm_scheduler():
     ddpm = DDPMNoiseScheduler()
     images = torch.rand(32, 3, 256, 256)
-    corrupted_images, noise = ddpm.corrupt(images, 0)
+    corrupted_images, noise = ddpm.corrupt(images, torch.randint(0, 1000, (32, 1)))
     assert corrupted_images.shape == images.shape, "Corrupted images shape is not correct"
     assert noise.shape == images.shape, "Noise shape is not correct"
     recovered_images = ddpm.recover(corrupted_images, noise, 0)

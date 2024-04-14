@@ -1,1 +1,1 @@
-from noise_schedulers.ddpm_noise_scheduler import DDPMNoiseScheduler
+from noise_schedulers.ddpm_noise_scheduler import DDPMNoiseScheduler  # noqa: F401

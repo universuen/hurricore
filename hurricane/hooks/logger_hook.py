@@ -21,7 +21,7 @@ class LoggerHook(HookBase):
     def __init__(
         self, 
         trainer: TrainerBase,
-        logger: Logger = None,
+        logger: Logger,
         interval: int = 1, 
     ) -> None:
         super().__init__(trainer)

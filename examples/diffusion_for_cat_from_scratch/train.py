@@ -40,7 +40,7 @@ def main():
     num_steps_per_epoch = len(data_loader)
     num_epochs = config.TrainerConfig().epochs
     gradient_accumulation_steps = accelerator.gradient_accumulation_steps
-    scheduler = CosineAnnealingLR(
+    lr_scheduler = CosineAnnealingLR(
         optimizer=optimizer,
         T_max=num_steps_per_epoch * num_epochs // gradient_accumulation_steps,
     )

@@ -26,7 +26,7 @@ class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'
     logs = data / 'logs'
-    dataset_path = data / 'afhq'
+    dataset = data / 'afhq'
     checkpoints = data / 'checkpoints' / config_name
     tensor_boards = data / 'tensor_boards' / config_name
     peek_images = data / 'peek_images' / config_name
@@ -85,7 +85,7 @@ class TrainerConfig(ConfigBase):
 
 
 class DatasetConfig(ConfigBase):
-    path = PathConfig().dataset_path
+    path = PathConfig().dataset
     image_size = image_size
 
 
