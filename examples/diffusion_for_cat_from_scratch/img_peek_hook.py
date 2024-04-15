@@ -22,7 +22,7 @@ class ImgPeekHook(HookBase):
         self.peek_interval = interval
         image_size = trainer.originals.models[0].image_size
         self.num_steps = trainer.originals.models[0].num_steps
-        z = torch.randn(9, 3, image_size, image_size, device=trainer.accelerator.device)
+        z = torch.randn(9, 3, image_size, image_size)
         trainer.ctx.z = z
 
     
@@ -31,7 +31,7 @@ class ImgPeekHook(HookBase):
             model = self.trainer.models[0]
             model.eval()
             with torch.no_grad():
-                images = self.trainer.ctx.z
+                images = self.trainer.ctx.z.to(self.trainer.accelerator.device)
                 for t in reversed(range(self.num_steps)):
                     t = torch.full((images.size(0), 1), t, device=images.device, dtype=torch.long)
                     predicted_noise = model(images, t)
