@@ -32,7 +32,7 @@ class UNetConfig(ConfigBase):
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 1
+    num_processes = 2
     use_port = "8000"
 
 

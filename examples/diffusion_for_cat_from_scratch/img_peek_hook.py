@@ -20,7 +20,7 @@ class ImgPeekHook(HookBase):
         assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         self.folder_path = folder_path
         self.peek_interval = interval
-        image_size = trainer.models[0].image_size
+        image_size = trainer.originals.models[0].image_size
         z = torch.randn(9, 3, image_size, image_size, device=trainer.accelerator.device)
         trainer.ctx.z = z
 
