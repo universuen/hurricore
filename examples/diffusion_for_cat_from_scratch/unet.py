@@ -81,20 +81,21 @@ class DownSampling(nn.Module):
         attn_patch_size: int = 32,
     ) -> None:
         super().__init__()
-        self.layers = nn.Sequential(
-            
+        self.conv = nn.Sequential(
+            nn.GroupNorm(8, in_dim) if in_dim != 3 else nn.Identity(),
             nn.Conv2d(in_dim, out_dim, 4, 2, 1),
-            nn.GroupNorm(8, out_dim),
             nn.LeakyReLU(0.1),
-            
+        )
+        self.attn = nn.Sequential(
+            nn.GroupNorm(8, out_dim),
             ViT(out_dim, attn_embed_dim, attn_patch_size),
-            nn.GroupNorm(8, out_dim),
             nn.LeakyReLU(0.1),
-            
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.layers(x)
+        conved_x = self.conv(x)
+        attened_x = self.attn(conved_x)
+        return conved_x + attened_x
 
 
 class UpSampling(nn.Module):
@@ -106,20 +107,32 @@ class UpSampling(nn.Module):
         attn_patch_size: int = 16,
     ) -> None:
         super().__init__()
-        self.layers = nn.Sequential(
-            
+        self.conv = nn.Sequential(
+            nn.GroupNorm(8, in_dim),
             nn.ConvTranspose2d(in_dim, out_dim, 4, 2, 1),
-            nn.GroupNorm(8, out_dim) if out_dim != 3 else nn.Identity(),
             nn.LeakyReLU(0.1),
-            
+        )
+        self.attn = nn.Sequential(
+            nn.GroupNorm(8, out_dim) if out_dim != 3 else nn.Identity(),
             ViT(out_dim, attn_embed_dim, attn_patch_size),
-            nn.GroupNorm(8, out_dim) if out_dim != 3 else nn.Identity(),
             nn.LeakyReLU(0.1),
-            
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.layers(x)
+        conved_x = self.conv(x)
+        attened_x = self.attn(conved_x)
+        return conved_x + attened_x
+
+
+def sinusoidal_embedding(n, d):
+    # Returns the standard positional embedding
+    embedding = torch.tensor([[i / 10_000 ** (2 * j / d) for j in range(d)] for i in range(n)])
+    sin_mask = torch.arange(0, n, 2)
+
+    embedding[sin_mask] = torch.sin(embedding[sin_mask])
+    embedding[1 - sin_mask] = torch.cos(embedding[sin_mask])
+
+    return embedding
 
 
 class UNet(nn.Module):
@@ -134,8 +147,11 @@ class UNet(nn.Module):
         super().__init__()
         
         self.image_size = image_size
-        self.time_embedding = nn.Embedding(num_steps, hidden_dim)
-        self.time_projector = nn.Linear(hidden_dim, image_size ** 2 * 3)
+        self.num_steps = num_steps
+        
+        self.time_embedding = nn.Embedding(num_steps, image_size ** 2 * 3)
+        self.time_embedding.weight.data = sinusoidal_embedding(num_steps, image_size ** 2 * 3)
+        self.time_embedding.requires_grad_(False)
 
         self.down1 = DownSampling(3, hidden_dim, attn_embed_dim, attn_patch_size)
         self.down2 = DownSampling(hidden_dim, hidden_dim * 2, attn_embed_dim, attn_patch_size)
@@ -144,9 +160,12 @@ class UNet(nn.Module):
 
         
         self.bottleneck = nn.Sequential(
+            nn.GroupNorm(8, hidden_dim * 8),
             nn.Conv2d(hidden_dim * 8, hidden_dim * 16, 3, padding=1),
             nn.LeakyReLU(0.1),
+            nn.GroupNorm(8, hidden_dim * 16),
             ViT(hidden_dim * 16, attn_embed_dim, attn_patch_size),
+            nn.GroupNorm(8, hidden_dim * 16),
             nn.Conv2d(hidden_dim * 16, hidden_dim * 8, 3, padding=1),
             nn.LeakyReLU(0.1),
         )
@@ -162,9 +181,8 @@ class UNet(nn.Module):
         )
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        time_embedding = self.time_embedding(t)
-        time_projected = self.time_projector(time_embedding).view(-1, 3, self.image_size, self.image_size)
-        x = x + time_projected
+        time_embedding = self.time_embedding(t).view(-1, 3, self.image_size, self.image_size)
+        x = x + time_embedding
         
         d1 = self.down1(x)
         d2 = self.down2(d1)
