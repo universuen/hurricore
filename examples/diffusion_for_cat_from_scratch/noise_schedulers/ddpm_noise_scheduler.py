@@ -28,16 +28,22 @@ class DDPMNoiseScheduler:
     def gather(self, math_name: str, t: torch.Tensor) -> torch.Tensor:
         assert math_name in self.math.keys(), f"Math name {math_name} not found in math dictionary"
         return self.math[math_name][t].reshape(-1, 1, 1, 1)
-        
+    
+    
+    def to(self, device: torch.device) -> None:
+        for key in self.math.keys():
+            self.math[key] = self.math[key].to(device)
+            
     
     def corrupt(
             self, 
             images: torch.Tensor, 
             t: torch.Tensor,
         ) -> tuple[torch.Tensor, torch.Tensor]:
+        t = t.reshape(-1, 1, 1, 1)
         mean = self.gather('sqrt(alphas_bar)', t) * images
         std = self.gather('sqrt(1 - alphas_bar)', t)
-        noise = torch.randn_like(images)
+        noise = torch.randn_like(images, device=images.device)
         corrupted_images = mean + std * noise
         return corrupted_images, noise
     
@@ -48,9 +54,11 @@ class DDPMNoiseScheduler:
         noise: torch.Tensor, 
         t: torch.Tensor, 
     ) -> torch.Tensor:
+        t = t.reshape(-1, 1, 1, 1)
         mean = self.gather('1 / sqrt(alphas)', t) * (corrupted_images - self.gather('(1 - alphas) / sqrt(1 - alphas_bar)', t) * noise)
         std = self.gather('sqrt(betas)', t)
-        z = torch.randn_like(corrupted_images)
-        z[t == 0] = 0
-        recovered_images = mean + std * torch.randn_like(corrupted_images)
+        z = torch.randn_like(corrupted_images, device=corrupted_images.device)
+        mask = (t == 0).expand_as(corrupted_images)
+        z[mask] = 0
+        recovered_images = mean + std * z
         return recovered_images

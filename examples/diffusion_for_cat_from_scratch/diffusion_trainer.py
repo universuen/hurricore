@@ -43,6 +43,9 @@ class DiffusionTrainer(Trainer):
             tensor_board_folder_path: str = None,
             tensor_board_interval: int = 1,
             
+            image_peek_folder_path: Path = None,
+            image_peek_interval: int = 1000,
+            
             ckpt_folder_path: Path = None,
             ckpt_interval: int = 1000,
             ckpt_seed: int = 42,
@@ -71,6 +74,11 @@ class DiffusionTrainer(Trainer):
                 folder_path=tensor_board_folder_path,
                 interval=tensor_board_interval,
             ),
+            ImgPeekHook(
+                trainer=self,
+                folder_path=image_peek_folder_path,
+                interval=image_peek_interval,
+            ),
             CheckpointHook(
                 trainer=self,
                 folder_path=ckpt_folder_path,
@@ -78,12 +86,13 @@ class DiffusionTrainer(Trainer):
                 seed=ckpt_seed,
             ),
         ]
+        noise_scheduler.to(self.accelerator.device)
         self.noise_scheduler = noise_scheduler
         
     def compute_loss(self) -> Tensor:
         model = self.models[0]
         batch = self.ctx.batches[0]
-        t = torch.randint(self.noise_scheduler.num_steps)
+        t = torch.randint(0, self.noise_scheduler.num_steps, (1,1)).to(batch.device)
         corrupted_images, noise = self.noise_scheduler.corrupt(batch, t)
         predicted_noise = model(corrupted_images, t)
         loss = torch.nn.functional.mse_loss(predicted_noise, noise)

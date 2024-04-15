@@ -180,4 +180,3 @@ class UNet(nn.Module):
         
         out = self.final(u4)
         return out
-

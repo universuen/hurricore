@@ -10,7 +10,7 @@ from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 num_epochs = 2
 batch_size = 256
 lr = 1e-3
-gradient_accumulate_interval = 2
+gradient_accumulation_interval = 2
 
 config_name = get_file_name()
 
@@ -36,13 +36,13 @@ class PathConfig(ConfigBase):
 class TrainerConfig(ConfigBase):
     num_epochs = num_epochs
     
-    log_interval = gradient_accumulate_interval
+    log_interval = gradient_accumulation_interval
     
     tensor_board_folder_path=PathConfig().tensor_boards
-    tensor_board_interval=gradient_accumulate_interval
+    tensor_board_interval=gradient_accumulation_interval
     
     ckpt_folder_path=PathConfig().checkpoints
-    ckpt_interval = gradient_accumulate_interval * 10
+    ckpt_interval = gradient_accumulation_interval * 10
     ckpt_seed = 42
     
 
@@ -70,4 +70,4 @@ class LoggerConfig(ConfigBase):
     
 
 class AcceleratorConfig(ConfigBase):
-    gradient_accumulation_steps = gradient_accumulate_interval
+    gradient_accumulation_steps = gradient_accumulation_interval

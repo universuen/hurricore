@@ -18,6 +18,7 @@ class TensorBoardHook(HookBase):
         trainer: TrainerBase,
         folder_path: Path = None,
         interval: int = 1,
+        record_grad: bool = False,
     ) -> None:
         super().__init__(trainer)
         # check validity
@@ -27,6 +28,7 @@ class TensorBoardHook(HookBase):
         # setup self
         self.interval = interval
         self.folder_path = folder_path
+        self.record_grad = record_grad
         self.writer = SummaryWriter(log_dir=self.folder_path) if trainer.accelerator.is_main_process else DummyObject()
         self._activate_msg_queue()
     
@@ -48,15 +50,15 @@ class TensorBoardHook(HookBase):
                  
                    
     def on_epoch_end(self) -> None:
-        pass
-        step = self.trainer.ctx.global_step
-        models = self.trainer.originals.models
-        for model_name, model in zip(auto_name(models), models):
-            for layer_name, param in model.named_parameters():
-                if param.grad is not None:
-                    self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
-                    self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
-        self.writer.flush()
+        if self.record_grad:
+            step = self.trainer.ctx.global_step
+            models = self.trainer.originals.models
+            for model_name, model in zip(auto_name(models), models):
+                for layer_name, param in model.named_parameters():
+                    if param.grad is not None:
+                        self.writer.add_histogram(f"Parameters/{model_name}-{layer_name}", param, step)
+                        self.writer.add_histogram(f"Gradients/{model_name}-{layer_name}", param.grad, step)
+            self.writer.flush()
 
 
     def on_training_end(self) -> None:

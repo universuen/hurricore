@@ -8,8 +8,8 @@ from hurricane.utils import ConfigBase, get_file_name
 num_epochs = 100
 batch_size = 64
 lr = 5e-5
-gradient_accumulate_interval = 1
-ckpt_interval = 10
+gradient_accumulation_interval = 1
+ckpt_interval = 1000
 
 config_name = get_file_name()
 
@@ -34,13 +34,15 @@ class PathConfig(ConfigBase):
 class TrainerConfig(ConfigBase):
     num_epochs = num_epochs
     
-    log_interval = gradient_accumulate_interval
+    lr_scheduler_mode = 'per_epoch'
+    
+    log_interval = gradient_accumulation_interval
     
     tensor_board_folder_path = PathConfig().tensor_boards
-    tensor_board_interval = gradient_accumulate_interval
+    tensor_board_interval = gradient_accumulation_interval
     
     ckpt_folder_path = PathConfig().checkpoints
-    ckpt_interval = gradient_accumulate_interval * ckpt_interval
+    ckpt_interval = gradient_accumulation_interval * ckpt_interval
     ckpt_seed = 42
     
 
@@ -65,4 +67,4 @@ class LoggerConfig(ConfigBase):
     
 
 class AcceleratorConfig(ConfigBase):
-    gradient_accumulation_steps = gradient_accumulate_interval
+    gradient_accumulation_steps = gradient_accumulation_interval

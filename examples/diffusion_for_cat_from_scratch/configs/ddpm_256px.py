@@ -6,12 +6,13 @@ from hurricane.utils import ConfigBase, get_file_name
 
 
 num_diffusion_steps = 1000
-image_size = 256
-num_epochs = 100
+image_size = 128
+num_epochs = 1000
 batch_size = 64
-lr = 5e-5
-gradient_accumulate_interval = 1
-ckpt_interval = 10
+lr = 1e-4
+gradient_accumulation_interval = 1
+ckpt_interval = 1000
+image_peek_interval = 1000
 
 config_name = get_file_name()
 
@@ -24,9 +25,9 @@ class DDPMNoiseSchedulerConfig(ConfigBase):
 
 class UNetConfig(ConfigBase):
     image_size = image_size
-    hidden_dim = 256
-    attn_embed_dim = 128
-    attn_patch_size = 32
+    hidden_dim = 16
+    attn_embed_dim = 2048
+    attn_patch_size = 8
     num_steps = num_diffusion_steps
 
 
@@ -40,6 +41,7 @@ class PathConfig(ConfigBase):
     data = project / 'data'
     dataset = data / 'afhq'
     logs = data / 'logs'
+    peek_images = data / 'peek_images' / config_name
     checkpoints = data / 'checkpoints' / config_name
     tensor_boards = data / 'tensor_boards' / config_name
 
@@ -51,18 +53,24 @@ class PathConfig(ConfigBase):
 class TrainerConfig(ConfigBase):
     num_epochs = num_epochs
     
-    log_interval = gradient_accumulate_interval
+    log_interval = gradient_accumulation_interval
     
     tensor_board_folder_path = PathConfig().tensor_boards
-    tensor_board_interval = gradient_accumulate_interval
+    tensor_board_interval = gradient_accumulation_interval
+    
+    image_peek_folder_path = PathConfig().peek_images
+    image_peek_interval = gradient_accumulation_interval * image_peek_interval
     
     ckpt_folder_path = PathConfig().checkpoints
-    ckpt_interval = gradient_accumulate_interval * ckpt_interval
+    ckpt_interval = gradient_accumulation_interval * ckpt_interval
     ckpt_seed = 42
     
+    lr_scheduler_mode = 'per_step'
+
 
 class OptimizerConfig(ConfigBase):
     lr = lr
+    # betas=(0.5, 0.9)
 
 
 class DatasetConfig(ConfigBase):
@@ -83,4 +91,4 @@ class LoggerConfig(ConfigBase):
     
 
 class AcceleratorConfig(ConfigBase):
-    gradient_accumulation_steps = gradient_accumulate_interval
+    gradient_accumulation_steps = gradient_accumulation_interval
