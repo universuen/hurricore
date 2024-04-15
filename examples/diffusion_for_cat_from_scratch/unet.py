@@ -125,11 +125,17 @@ class UpSampling(nn.Module):
 class UNet(nn.Module):
     def __init__(
         self, 
+        image_size=256,
         hidden_dim=16, 
         attn_embed_dim=64,
         attn_patch_size=32,
+        num_steps=1000,
     ):
         super().__init__()
+        
+        self.image_size = image_size
+        self.time_embedding = nn.Embedding(num_steps, hidden_dim)
+        self.time_projector = nn.Linear(hidden_dim, image_size ** 2 * 3)
 
         self.down1 = DownSampling(3, hidden_dim, attn_embed_dim, attn_patch_size)
         self.down2 = DownSampling(hidden_dim, hidden_dim * 2, attn_embed_dim, attn_patch_size)
@@ -155,7 +161,11 @@ class UNet(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+        time_embedding = self.time_embedding(t)
+        time_projected = self.time_projector(time_embedding).view(-1, 3, self.image_size, self.image_size)
+        x = x + time_projected
+        
         d1 = self.down1(x)
         d2 = self.down2(d1)
         d3 = self.down3(d2)

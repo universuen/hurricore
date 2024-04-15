@@ -54,11 +54,16 @@ def test_up_sampling():
 
 @torch.no_grad()
 def test_u_net():
-    x = torch.rand(1, 3, 256, 256).cuda()
-    u_net = UNet(16, 64, 16).cuda()
-    x = u_net(x)
-    assert x.shape == (1, 3, 256, 256), "UNet is not working correctly"
-
+    x = torch.rand(32, 3, 128, 128).cuda()
+    t = torch.randint(0, 1000, (32, 1)).cuda()
+    u_net = UNet(
+        image_size=128,
+        attn_patch_size=8,
+        num_steps=1000,
+    ).cuda()
+    x = u_net(x, t)
+    assert x.shape == (32, 3, 128, 128), "UNet is not working correctly"
+    
 
 def test_ddpm_scheduler():
     ddpm = DDPMNoiseScheduler()
@@ -67,6 +72,4 @@ def test_ddpm_scheduler():
     assert corrupted_images.shape == images.shape, "Corrupted images shape is not correct"
     assert noise.shape == images.shape, "Noise shape is not correct"
     recovered_images = ddpm.recover(corrupted_images, noise, 0)
-    assert recovered_images.shape == images.shape, "Recovered images shape is not correct"
-    recovered_images = ddpm.recover(corrupted_images, noise, 0, with_randomness=False)
     assert recovered_images.shape == images.shape, "Recovered images shape is not correct"

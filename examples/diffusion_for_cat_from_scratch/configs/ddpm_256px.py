@@ -4,8 +4,10 @@ from pathlib import Path
 
 from hurricane.utils import ConfigBase, get_file_name
 
+
+num_diffusion_steps = 1000
 image_size = 256
-epochs = 100
+num_epochs = 100
 batch_size = 64
 lr = 5e-5
 gradient_accumulate_interval = 1
@@ -17,11 +19,19 @@ config_name = get_file_name()
 class DDPMNoiseSchedulerConfig(ConfigBase):
     beta_start = 1e-4
     beta_end = 2e-2
-    num_steps = 1000
+    num_steps = num_diffusion_steps
+
+
+class UNetConfig(ConfigBase):
+    image_size = image_size
+    hidden_dim = 256
+    attn_embed_dim = 128
+    attn_patch_size = 32
+    num_steps = num_diffusion_steps
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 8
+    num_processes = 1
     use_port = "8000"
 
 
@@ -39,7 +49,7 @@ class PathConfig(ConfigBase):
 
 
 class TrainerConfig(ConfigBase):
-    epochs = epochs
+    num_epochs = num_epochs
     
     log_interval = gradient_accumulate_interval
     

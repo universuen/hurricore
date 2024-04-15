@@ -83,6 +83,8 @@ class DiffusionTrainer(Trainer):
     def compute_loss(self) -> Tensor:
         model = self.models[0]
         batch = self.ctx.batches[0]
-        t = torch.rand()
-    
-        
+        t = torch.randint(self.noise_scheduler.num_steps)
+        corrupted_images, noise = self.noise_scheduler.corrupt(batch, t)
+        predicted_noise = model(corrupted_images, t)
+        loss = torch.nn.functional.mse_loss(predicted_noise, noise)
+        return loss
