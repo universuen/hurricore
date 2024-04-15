@@ -22,9 +22,11 @@ class ImgPeekHook(HookBase):
         self.peek_interval = interval
         image_size = trainer.originals.models[0].image_size
         self.num_steps = trainer.originals.models[0].num_steps
-        z = torch.randn(9, 3, image_size, image_size)
+        z = torch.randn(9, 3, image_size, image_size, device=trainer.accelerator.device)
         trainer.ctx.z = z
 
+    def recover_from_checkpoint(self):
+        self.trainer.ctx.z = self.trainer.ctx.z.to(self.trainer.accelerator.device)
     
     def on_step_end(self):
         if (self.trainer.ctx.global_step + 1) % self.peek_interval == 0:
