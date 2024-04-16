@@ -26,7 +26,7 @@ class DDPMNoiseSchedulerConfig(ConfigBase):
 class UNetConfig(ConfigBase):
     image_size = image_size
     layers_per_block = 2
-    block_out_channels = (32, 64, 128, 256, 512, 512)
+    block_out_channels = (64, 64, 128, 256, 512, 512)
 
 
 class LaunchConfig(ConfigBase):
