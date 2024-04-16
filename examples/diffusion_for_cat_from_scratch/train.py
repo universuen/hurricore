@@ -13,7 +13,7 @@ from noise_schedulers import DDPMNoiseScheduler
 from diffusion_trainer import DiffusionTrainer
 
 # import config from module path
-config = import_config('configs.ddpm_256px')
+config = import_config('configs.ddpm_128px')
 
 
 def main():

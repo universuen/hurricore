@@ -26,7 +26,7 @@ class DDPMNoiseSchedulerConfig(ConfigBase):
 class UNetConfig(ConfigBase):
     image_size = image_size
     hidden_dim = 16
-    attn_embed_dim = 2048
+    attn_embed_dim = 1024
     attn_patch_size = 8
     num_steps = num_diffusion_steps
 

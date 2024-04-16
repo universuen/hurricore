@@ -84,12 +84,12 @@ class DownSampling(nn.Module):
         self.conv = nn.Sequential(
             nn.GroupNorm(8, in_dim) if in_dim != 3 else nn.Identity(),
             nn.Conv2d(in_dim, out_dim, 4, 2, 1),
-            nn.LeakyReLU(0.1),
+            nn.SiLU(),
         )
         self.attn = nn.Sequential(
             nn.GroupNorm(8, out_dim),
             ViT(out_dim, attn_embed_dim, attn_patch_size),
-            nn.LeakyReLU(0.1),
+            nn.SiLU(),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -110,12 +110,12 @@ class UpSampling(nn.Module):
         self.conv = nn.Sequential(
             nn.GroupNorm(8, in_dim),
             nn.ConvTranspose2d(in_dim, out_dim, 4, 2, 1),
-            nn.LeakyReLU(0.1),
+            nn.SiLU(),
         )
         self.attn = nn.Sequential(
             nn.GroupNorm(8, out_dim) if out_dim != 3 else nn.Identity(),
             ViT(out_dim, attn_embed_dim, attn_patch_size),
-            nn.LeakyReLU(0.1),
+            nn.SiLU(),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -159,12 +159,15 @@ class UNet(nn.Module):
         self.bottleneck = nn.Sequential(
             nn.GroupNorm(8, hidden_dim * 8),
             nn.Conv2d(hidden_dim * 8, hidden_dim * 16, 3, padding=1),
-            nn.LeakyReLU(0.1),
+            nn.SiLU(),
+            
             nn.GroupNorm(8, hidden_dim * 16),
             ViT(hidden_dim * 16, attn_embed_dim, attn_patch_size),
+            nn.SiLU(),
+            
             nn.GroupNorm(8, hidden_dim * 16),
             nn.Conv2d(hidden_dim * 16, hidden_dim * 8, 3, padding=1),
-            nn.LeakyReLU(0.1),
+            nn.SiLU(),
         )
         
         self.up1 = UpSampling(hidden_dim * 8 * 2, hidden_dim * 4, attn_embed_dim, attn_patch_size)
