@@ -68,3 +68,4 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulation_interval
+    mixed_precision = 'fp32'

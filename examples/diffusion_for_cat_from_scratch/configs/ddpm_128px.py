@@ -7,12 +7,12 @@ from hurricane.utils import ConfigBase, get_file_name
 
 num_diffusion_steps = 1000
 image_size = 128
-num_epochs = 1000
-batch_size = 64
+num_epochs = 100
+batch_size = 32
 lr = 1e-4
 gradient_accumulation_interval = 1
 ckpt_interval = 1000
-image_peek_interval = 1000
+image_peek_interval = 100
 
 config_name = get_file_name()
 
@@ -25,14 +25,12 @@ class DDPMNoiseSchedulerConfig(ConfigBase):
 
 class UNetConfig(ConfigBase):
     image_size = image_size
-    hidden_dim = 16
-    attn_embed_dim = 1024
-    attn_patch_size = 8
-    num_steps = num_diffusion_steps
+    layers_per_block = 2
+    block_out_channels = (32, 64, 128, 256, 512, 512)
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 2
+    num_processes = 1
     use_port = "8000"
 
 
@@ -92,3 +90,4 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulation_interval
+    mixed_precision = 'fp16'

@@ -74,4 +74,3 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulation_interval
-    dataloader_config=DataLoaderConfiguration(use_seedable_sampler=True)

@@ -58,6 +58,10 @@ class DiffusionTrainer(Trainer):
             accelerator=accelerator,
             num_epochs=num_epochs,
         )
+        
+        noise_scheduler = noise_scheduler.to(self.accelerator.device)
+        self.noise_scheduler = noise_scheduler
+        
         self.hooks = [
             LoggerHook(
                 trainer=self,
@@ -86,13 +90,12 @@ class DiffusionTrainer(Trainer):
                 seed=ckpt_seed,
             ),
         ]
-        noise_scheduler.to(self.accelerator.device)
-        self.noise_scheduler = noise_scheduler
+        
         
     def compute_loss(self) -> Tensor:
         model = self.models[0]
         batch = self.ctx.batches[0]
-        t = torch.randint(0, self.noise_scheduler.num_steps, (1,1)).to(batch.device)
+        t = torch.randint(0, self.noise_scheduler.num_steps, (batch.shape[0],)).to(batch.device)
         corrupted_images, noise = self.noise_scheduler.corrupt(batch, t)
         predicted_noise = model(corrupted_images, t)
         loss = torch.nn.functional.mse_loss(predicted_noise, noise)

@@ -35,9 +35,11 @@ from noise_schedulers import DDPMNoiseScheduler
 
 
 scheduler = DDPMNoiseScheduler()
-scheduler.to("cuda")
-model = UNet2DModel.from_pretrained("google/ddpm-cat-256", use_safetensors=True).to("cuda")
+# scheduler.to("cuda")
+model = UNet2DModel.from_pretrained("google/ddpm-cat-256", use_safetensors=True)# .to("cuda")
+print(model)
 print(get_total_parameters(model))
+exit()
 
 sample_size = model.config.sample_size
 noise = torch.randn((1, 3, sample_size, sample_size), device="cuda")

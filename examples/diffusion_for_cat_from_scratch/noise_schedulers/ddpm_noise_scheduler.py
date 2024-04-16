@@ -30,9 +30,10 @@ class DDPMNoiseScheduler:
         return self.math[math_name][t].reshape(-1, 1, 1, 1)
     
     
-    def to(self, device: torch.device) -> None:
+    def to(self, device: torch.device) -> 'DDPMNoiseScheduler':
         for key in self.math.keys():
             self.math[key] = self.math[key].to(device)
+        return self
             
     
     def corrupt(
