@@ -12,7 +12,7 @@ batch_size = 8
 lr = 1e-4
 gradient_accumulation_interval = 4
 ckpt_interval = 1000
-image_peek_interval = 100
+image_peek_interval = 500
 
 config_name = get_file_name()
 
