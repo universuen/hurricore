@@ -7,7 +7,7 @@ from hurricane.utils import ConfigBase, get_file_name
 
 num_diffusion_steps = 1000
 image_size = 128
-num_epochs = 100
+num_epochs = 500
 batch_size = 32
 lr = 1e-4
 gradient_accumulation_interval = 1

@@ -7,7 +7,7 @@ from hurricane.utils import ConfigBase, get_file_name
 
 num_diffusion_steps = 1000
 image_size = 256
-num_epochs = 300
+num_epochs = 2000
 batch_size = 8
 lr = 1e-4
 gradient_accumulation_interval = 4
@@ -26,7 +26,7 @@ class DDPMNoiseSchedulerConfig(ConfigBase):
 class UNetConfig(ConfigBase):
     image_size = image_size
     layers_per_block = 2
-    block_out_channels = (64, 128, 128, 256, 512, 512)
+    block_out_channels = (64, 64, 128, 256, 512, 512)
 
 
 class LaunchConfig(ConfigBase):
