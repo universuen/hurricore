@@ -9,7 +9,7 @@ import torch.nn as nn
 from torchvision.models import resnet18
 from accelerate import Accelerator
 
-from hurricane.utils import Logger, launch, log_all_configs, import_config
+from hurricane.utils import Logger, launch, import_config
 from resnet_trainer import ResNetTrainer
 
 
@@ -28,8 +28,6 @@ def main():
     # setup logger and accelerator
     logger = Logger(**config.LoggerConfig())
     accelerator = Accelerator(**config.AcceleratorConfig())
-    if accelerator.is_main_process:
-        log_all_configs(logger)
     # setup dataset, model and dataloader
     transform = transforms.Compose(
         [

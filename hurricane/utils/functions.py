@@ -6,22 +6,14 @@ import inspect
 import requests
 from datetime import datetime
 from pathlib import Path
-from logging import Logger as LoggerType
 from typing import Iterable
 from importlib import util, import_module
 
 import torch
 from accelerate import notebook_launcher
 
-from hurricane.utils import ConfigBase
-
 
 launch = notebook_launcher
-
-
-def log_all_configs(logger: LoggerType) -> None:
-    for subclass in ConfigBase.__subclasses__():
-        logger.info(subclass())
 
 
 def get_list_mean(list_: list[int | float]) -> float:

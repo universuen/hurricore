@@ -5,7 +5,7 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from accelerate import Accelerator
 
-from hurricane.utils import Logger, launch, log_all_configs, import_config
+from hurricane.utils import Logger, launch, import_config
 
 from models import Generator, Discriminator
 from cat_dataset import CatDataset
@@ -26,8 +26,6 @@ def main():
     # setup logger and accelerator
     logger = Logger(**config.LoggerConfig())
     accelerator = Accelerator(**config.AcceleratorConfig())
-    if accelerator.is_main_process:
-        log_all_configs(logger)
     # setup models
     g_model = Generator(**config.GeneratorConfig())
     d_model = Discriminator(**config.DiscriminatorConfig())

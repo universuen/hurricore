@@ -10,7 +10,7 @@ from accelerate import Accelerator
 
 from hurricane.trainers import HFLLMTrainer
 from hurricane.collators import HFLLMITCollator
-from hurricane.utils import Logger, launch, log_all_configs, import_config
+from hurricane.utils import Logger, launch, import_config
 
 from zhihu_qa_dataset import ZhihuQADataset
 
@@ -31,7 +31,6 @@ def main():
     logger = Logger(**config.LoggerConfig())
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     if accelerator.is_main_process:
-        log_all_configs(logger)
         logger.info('Set TOKENIZERS_PARALLELISM=false to prevent dead lock.')
     # setup tokenizer, model, dataset and dataloader
     with accelerator.main_process_first():

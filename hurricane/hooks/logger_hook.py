@@ -8,6 +8,7 @@ from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
 from hurricane.utils import (
     DummyObject,
+    ConfigBase,
     auto_name,
     get_list_mean,
     get_params_details_table,
@@ -35,8 +36,9 @@ class LoggerHook(HookBase):
         self.logger = logger if trainer.accelerator.is_main_process else DummyObject()
         self._activate_msg_queue()
     
-    
     def on_training_start(self) -> None:
+        for subclass in ConfigBase.__subclasses__():
+            self.logger.info(subclass())
         self.logger.info('Training started')
         self.logger.info(f'Trainer:\n{self.trainer}')
         models = self.trainer.originals.models
