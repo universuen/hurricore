@@ -5,38 +5,52 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, get_file_name
 
 
-num_epochs = 100
-batch_size = 64
-lr = 5e-5
+image_size = 128
+num_epochs = 1000
+batch_size = 32
+lr = 1e-4
 gradient_accumulation_interval = 1
 ckpt_interval = 1000
+img_peek_interval = 500
 
 config_name = get_file_name()
 
 
+class UNetConfig(ConfigBase):
+    image_size = image_size
+    layers_per_block = 2
+    block_out_channels = (64, 64, 128, 256, 512, 512)
+
+
 class LaunchConfig(ConfigBase):
-    num_processes = 1
+    num_processes = 2
     use_port = "8000"
 
 
 class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'
+    training_dataset = data / 'afhq' / 'train'
+    validation_dataset = data / 'afhq' / 'val'
     logs = data / 'logs'
     checkpoints = data / 'checkpoints' / config_name
     tensor_boards = data / 'tensor_boards' / config_name
+    img_peek = data / 'img_peek' / config_name
 
     def __post_init__(self) -> None:
         for path in vars(self).values():
             path.mkdir(parents=True, exist_ok=True)
 
 
-class TrainerConfig(ConfigBase):
+class FlowTrainerConfig(ConfigBase):
     num_epochs = num_epochs
+    
+    img_peek_folder_path = PathConfig().img_peek
+    img_peek_interval = gradient_accumulation_interval * img_peek_interval
     
     log_interval = gradient_accumulation_interval
     
-    lr_scheduler_mode = 'per_epoch'
+    lr_scheduler_mode = 'per_step'
     
     tensor_board_folder_path = PathConfig().tensor_boards
     tensor_board_interval = gradient_accumulation_interval
@@ -50,8 +64,14 @@ class OptimizerConfig(ConfigBase):
     lr = lr
 
 
-class DatasetConfig(ConfigBase):
-    ...
+class TrainingCatDogDatasetConfig(ConfigBase):
+    path = PathConfig().training_dataset
+    image_size = image_size
+
+
+class ValidationCatDogDatasetConfig(ConfigBase):
+    path = PathConfig().validation_dataset
+    image_size = image_size
 
 
 class DataLoaderConfig(ConfigBase):
@@ -68,4 +88,4 @@ class LoggerConfig(ConfigBase):
 
 class AcceleratorConfig(ConfigBase):
     gradient_accumulation_steps = gradient_accumulation_interval
-    # mixed_precision = 'fp16'
+    mixed_precision = 'fp16'
