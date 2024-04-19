@@ -88,11 +88,11 @@ class FlowTrainer(Trainer):
         
     def compute_loss(self) -> Tensor:
         model = self.models[0]
-        cat_images, dog_images = self.ctx.batches[0]
-        batch_size = cat_images.shape[0]
-        expected_velocities = dog_images - cat_images
+        src_images, tgt_images = self.ctx.batches[0]
+        batch_size = src_images.shape[0]
+        expected_velocities = tgt_images - src_images
         time = torch.rand((batch_size, ), device=self.accelerator.device)
-        positions = cat_images + time.reshape(-1, 1, 1, 1) * expected_velocities
+        positions = src_images + time.reshape(-1, 1, 1, 1) * expected_velocities
         predicted_velocities = model(positions, time)
         loss = ((predicted_velocities - expected_velocities) ** 2).mean()
         return loss

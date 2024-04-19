@@ -8,11 +8,12 @@ from accelerate import Accelerator
 from hurricane.utils import Logger, launch, import_config
 
 from cat_dog_dataset import CatDogDataset
+from noise_cat_dataset import NoiseCatDataset
 from flow_trainer import FlowTrainer
 from unet import UNet
 
 # import config from module path
-config = import_config('configs.cat_to_dog')
+config = import_config('configs.cat_generation')
 
 """ Optional:
 import config from file path
@@ -28,8 +29,12 @@ def main():
     accelerator = Accelerator(**config.AcceleratorConfig())
     # setup dataset, model and dataloader
     with accelerator.main_process_first():
-        training_dataset = CatDogDataset(**config.TrainingCatDogDatasetConfig())
-        validation_dataset = CatDogDataset(**config.ValidationCatDogDatasetConfig())
+        if config.config_name == 'cat_to_dog':
+            training_dataset = CatDogDataset(**config.TrainingCatDogDatasetConfig())
+            validation_dataset = CatDogDataset(**config.ValidationCatDogDatasetConfig())
+        elif config.config_name == 'cat_generation':
+            training_dataset = NoiseCatDataset(**config.TrainingNoiseCatDatasetConfig())
+            validation_dataset = NoiseCatDataset(**config.ValidationNoiseCatDatasetConfig())
         model = UNet(**config.UNetConfig())
     training_data_loader = torch.utils.data.DataLoader(
         dataset=training_dataset, 
