@@ -36,6 +36,7 @@ class LoggerHook(HookBase):
         self.logger = logger if trainer.accelerator.is_main_process else DummyObject()
         self._activate_msg_queue()
     
+    
     def on_training_start(self) -> None:
         for subclass in ConfigBase.__subclasses__():
             self.logger.info(subclass())
@@ -46,17 +47,18 @@ class LoggerHook(HookBase):
             self.logger.info(f'{name} structure:\n{model}')
         params_table = get_params_details_table(*models)
         self.logger.info(f'Parameters details:\n{params_table}')
+        
+        self.start_time = time.time()
+        self.num_passed_iterations = 0
     
     
     def on_epoch_start(self) -> None:
-        self.step = 0
         self.step_losses = []
         self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} started')
-        self.start_time = time.time()
     
         
     def on_step_end(self) -> None:
-        self.step += 1
+        self.num_passed_iterations += 1
         if (self.trainer.ctx.global_step + 1) % self.interval == 0:
             self._collect_step_loss()
             self._log_states()
@@ -75,9 +77,12 @@ class LoggerHook(HookBase):
     
     def _get_remaining_time(self):
         elapsed_time = time.time() - self.start_time
-        iterator_length = self.trainer.ctx.iterator_length
-        batches_idx = self.trainer.ctx.batches_idx + 1
-        remaining_time = (iterator_length - batches_idx) * (elapsed_time / (self.step + 1e-6))
+        remaining_epochs = self.trainer.num_epochs - self.trainer.ctx.epoch - 1
+        remaining_iterations_in_epoch = self.trainer.ctx.iterator_length - self.trainer.ctx.batches_idx - 1
+        num_iterations = self.trainer.ctx.iterator_length
+        remaining_global_interations = remaining_epochs * num_iterations + remaining_iterations_in_epoch
+        avg_time_per_iteration = elapsed_time / (self.num_passed_iterations + 1e-6)
+        remaining_time = remaining_global_interations * avg_time_per_iteration
         days, remainder = divmod(remaining_time, 86400) 
         hours, remainder = divmod(remainder, 3600) 
         minutes, seconds = divmod(remainder, 60) 
