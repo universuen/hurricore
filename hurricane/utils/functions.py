@@ -8,6 +8,7 @@ import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
+from types import ModuleType
 from importlib import util, import_module
 
 import torch
@@ -86,7 +87,7 @@ def set_cuda_visible_devices(*device_indices: tuple[int]) -> None:
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
 
 
-def import_config(path: str, accept_cmd_args: bool = True):
+def import_config(path: str, accept_cmd_args: bool = True) -> ModuleType:
     if accept_cmd_args:
         help_msg = (
             "CONFIG can be any of the following formats:\n"
