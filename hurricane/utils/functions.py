@@ -101,7 +101,7 @@ def import_config(path: str, accept_cmd_args: bool = True):
     
     from hurricane.hooks import LoggerHook
     LoggerHook.msg_queue.append(
-        ('info', f'Importing config from {path}')
+        ('info', f'Imported config from {path}')
     )
     
     assert isinstance(path, str), "path must be a string"
