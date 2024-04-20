@@ -4,6 +4,7 @@ import os
 import sys
 import inspect
 import requests
+import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
@@ -85,15 +86,33 @@ def set_cuda_visible_devices(*device_indices: tuple[int]) -> None:
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(map(str, device_indices))
 
 
-def import_config(path: str):
+def import_config(path: str, accept_cmd_args: bool = True):
+    if accept_cmd_args:
+        help_msg = (
+            "CONFIG can be any of the following formats:\n"
+            "- python_module.config\n"
+            "- local/file/path/to/config.py\n"
+            "- https://url/to/config.py"
+        )
+        parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+        parser.add_argument('-c', '--config', type=str, default=path, help=help_msg)
+        args = parser.parse_args()
+        path = args.config
+    
+    from hurricane.hooks import LoggerHook
+    LoggerHook.msg_queue.append(
+        ('info', f'Importing config from {path}')
+    )
+    
     assert isinstance(path, str), "path must be a string"
+    
     temp_file_path = None
     if path.startswith("http"):
         # handle URL
         response = requests.get(path)
         if response.status_code != 200:
             raise ImportError(f"Cannot download the module from {path}")
-        with open(Path(__file__).parents[2] / '_temp_config.py', 'w') as tmp_file:
+        with open(Path(__file__).parents[2] / '_temp_config_from_url.py', 'w') as tmp_file:
             temp_file_path = tmp_file.name
             tmp_file.write(response.text)
             module_path = tmp_file.name

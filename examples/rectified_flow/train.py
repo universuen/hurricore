@@ -13,7 +13,7 @@ from flow_trainer import FlowTrainer
 from unet import UNet
 
 # import config from module path
-config = import_config('configs.cat_generation')
+config = import_config('configs.cat_to_dog')
 
 """ Optional:
 import config from file path

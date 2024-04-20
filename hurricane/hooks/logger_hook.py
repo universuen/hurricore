@@ -35,6 +35,19 @@ class LoggerHook(HookBase):
         # logger is only for main process
         self.logger = logger if trainer.accelerator.is_main_process else DummyObject()
         self._activate_msg_queue()
+        self._wrap_trainer_run_method_with_exception_logging()
+    
+    
+    def _wrap_trainer_run_method_with_exception_logging(self) -> None:
+        original_run_method = self.trainer.run
+
+        def wrapped_run_method(*args, **kwargs):
+            try:
+                original_run_method(*args, **kwargs)
+            except Exception as e:
+                self.logger.exception(e)
+
+        self.trainer.run = wrapped_run_method
     
     
     def on_training_start(self) -> None:
@@ -116,7 +129,7 @@ class LoggerHook(HookBase):
                         method, msg = self.msg_queue.pop(0)
                         getattr(self.logger, method)(msg)
                     except Exception as e:
-                        self.logger.error(f'Error in LoggerHook: {e}')
+                        self.logger.exception(e)
                 else:
                     time.sleep(0.01)
         Thread(target=listen_and_process, args=(self, ), daemon=True).start()
