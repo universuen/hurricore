@@ -12,6 +12,8 @@ num_epochs = 1000
 batch_size = 32
 lr = 1e-4
 gradient_accumulation_interval = 1
+log_interval = 10
+tensor_board_interval = 10
 ckpt_interval = 1000
 img_peek_interval = 500
 
@@ -49,12 +51,12 @@ class FlowTrainerConfig(ConfigBase):
     img_peek_folder_path = PathConfig().img_peek
     img_peek_interval = gradient_accumulation_interval * img_peek_interval
     
-    log_interval = gradient_accumulation_interval
+    log_interval = gradient_accumulation_interval * log_interval
     
     lr_scheduler_mode = 'per_step'
     
     tensor_board_folder_path = PathConfig().tensor_boards
-    tensor_board_interval = gradient_accumulation_interval
+    tensor_board_interval = gradient_accumulation_interval * tensor_board_interval
     
     ckpt_folder_path = PathConfig().checkpoints
     ckpt_interval = gradient_accumulation_interval * ckpt_interval

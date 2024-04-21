@@ -5,11 +5,19 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, get_file_name
 
 
-num_epochs = 3
+# hyperparameters
+num_epochs = 2
 batch_size = 8
 lr = 1e-4
+
+
+# intervals
 gradient_accumulation_interval = 1
-ckpt_interval = int(1e9)  # we don't save checkpoint while debugging
+ckpt_interval = int(1e9)
+log_interval = 1
+tensor_board_interval = 1
+
+
 config_name = get_file_name()
 
 
