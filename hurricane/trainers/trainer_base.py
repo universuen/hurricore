@@ -66,7 +66,7 @@ class TrainerBase:
     
     
     def build_iterator(self) -> Iterable:
-        self.ctx.iterator_length = max([len(dl) for dl in self.data_loaders])
+        self.ctx.num_steps_per_epoch = max([len(dl) for dl in self.data_loaders])
         return zip_longest(*self.data_loaders, fillvalue=None)
     
     
@@ -100,9 +100,9 @@ class TrainerBase:
     
     def _set_global_step(self) -> int:
         epoch = self.ctx.epoch
-        iterator_length = self.ctx.iterator_length
+        num_steps_per_epoch = self.ctx.num_steps_per_epoch
         batches_idx = self.ctx.batches_idx
-        self.ctx.global_step = epoch * iterator_length + batches_idx
+        self.ctx.global_step = epoch * num_steps_per_epoch + batches_idx
 
     
     def __repr__(self) -> str:

@@ -21,14 +21,14 @@ class GANLoggerHook(LoggerHook):
     
     def _log_states(self):
         idx = self.trainer.ctx.batches_idx + 1
-        iterator_length = self.trainer.ctx.iterator_length
+        num_steps_per_epoch = self.trainer.ctx.num_steps_per_epoch
         epoch = self.trainer.ctx.epoch + 1
-        progress = idx / iterator_length
+        progress = idx / num_steps_per_epoch
         remaining_time = self._get_remaining_time()
         
         self.logger.info(
             f"Epoch: {epoch}/{self.trainer.num_epochs} | "
-            f"Step: {idx}/{iterator_length} | "
+            f"Step: {idx}/{num_steps_per_epoch} | "
             f"G loss: {self.trainer.ctx.g_step_loss:.5f} | "
             f"D loss: {self.trainer.ctx.d_step_loss:.5f} |"
             f"Progress: {progress:.2%} | "

@@ -78,7 +78,6 @@ class LoggerHook(HookBase):
       
       
     def on_epoch_end(self) -> None: 
-        self._log_states()
         avg_loss = get_list_mean(self.step_losses)
         self.logger.info(f'Epoch {self.trainer.ctx.epoch + 1} finished with average loss: {avg_loss: .5f}')
     
@@ -91,8 +90,8 @@ class LoggerHook(HookBase):
     def _get_remaining_time(self):
         elapsed_time = time.time() - self.start_time
         remaining_epochs = self.trainer.num_epochs - self.trainer.ctx.epoch - 1
-        remaining_iterations_in_epoch = self.trainer.ctx.iterator_length - self.trainer.ctx.batches_idx - 1
-        num_iterations = self.trainer.ctx.iterator_length
+        remaining_iterations_in_epoch = self.trainer.ctx.num_steps_per_epoch - self.trainer.ctx.batches_idx - 1
+        num_iterations = self.trainer.ctx.num_steps_per_epoch
         remaining_global_interations = remaining_epochs * num_iterations + remaining_iterations_in_epoch
         avg_time_per_iteration = elapsed_time / (self.num_passed_iterations + 1e-6)
         remaining_time = remaining_global_interations * avg_time_per_iteration
@@ -107,9 +106,10 @@ class LoggerHook(HookBase):
         if len(self.step_losses) == 0:
             return
         idx = self.trainer.ctx.batches_idx + 1
-        iterator_length = self.trainer.ctx.iterator_length
+        num_epochs = self.trainer.num_epochs
+        num_steps_per_epoch = self.trainer.ctx.num_steps_per_epoch
         epoch = self.trainer.ctx.epoch + 1
-        progress = idx / iterator_length
+        progress = (self.trainer.ctx.global_step + 1) / (num_epochs * num_steps_per_epoch)
         remaining_time = self._get_remaining_time()
         
         free_memory, total_memory = mem_get_info()
@@ -117,12 +117,13 @@ class LoggerHook(HookBase):
         
         self.logger.info(
             f"Epoch: {epoch}/{self.trainer.num_epochs} | "
-            f"Step: {idx}/{iterator_length} | "
+            f"Step: {idx}/{num_steps_per_epoch} | "
             f"Loss: {self.step_losses[-1]:.5f} | "
             f"Progress: {progress:.2%} | "
             f"Time left: {remaining_time} | "
             f"GPU usage: {utilization()}% w. {used_memory / 1024 ** 3:.2f}GB"
         )
+    
     
     def _activate_msg_queue(self):
         def listen_and_process(self):
