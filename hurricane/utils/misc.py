@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from datetime import datetime
 from typing import Iterable
 
@@ -8,6 +9,13 @@ from accelerate import notebook_launcher
 
 
 launch = notebook_launcher
+
+
+def find_latest_checkpoint(checkpoints_folder_path: Path) -> Path:
+    checkpoints = checkpoints_folder_path.glob("ckpt_step_*")
+    steps = [int(checkpoint.name.split("_")[-1]) for checkpoint in checkpoints]
+    latest_step = max(steps)
+    return checkpoints_folder_path / f"ckpt_step_{latest_step}"
 
 
 def is_deepspeed_zero3(accelerator) -> bool:

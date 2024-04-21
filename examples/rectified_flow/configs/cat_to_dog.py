@@ -11,7 +11,7 @@ num_epochs = 1000
 batch_size = 16
 lr = 1e-4
 gradient_accumulation_interval = 1
-ckpt_interval = 5000
+ckpt_interval = 3000
 img_peek_interval = 1000
 
 config_name = get_file_name()

@@ -5,7 +5,8 @@ import numpy as np
 import imageio
 from rich.progress import track
 
-from hurricane.utils import import_config
+from hurricane.utils import import_config, find_latest_checkpoint
+
 from unet import UNet
 from navigator import Navigator
 from noise_cat_dataset import NoiseCatDataset
@@ -15,9 +16,10 @@ from cat_dog_dataset import CatDogDataset
 if __name__ == "__main__":
     config = import_config("configs.cat_to_dog")
     model = UNet(**config.UNetConfig())
-    model.load_state_dict(
-        torch.load(config.PathConfig().checkpoints / "ckpt_step_10000" / "pytorch_model.bin")
-    )
+    latest_ckpt_path = find_latest_checkpoint(config.PathConfig().checkpoints)
+    print(f'Loading checkpoint from {latest_ckpt_path}')
+    state_dict = torch.load(latest_ckpt_path / "pytorch_model.bin")
+    model.load_state_dict(state_dict)
     model.eval()
     navigator = Navigator(model, num_steps=100)
     if config.config_name == "cat_generation":
