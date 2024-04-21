@@ -13,8 +13,11 @@ from noise_cat_dataset import NoiseCatDataset
 from cat_dog_dataset import CatDogDataset
 
 
+CONFIG = "configs.cat_to_dog"
+
+
 if __name__ == "__main__":
-    config = import_config("configs.cat_to_dog")
+    config = import_config(CONFIG)
     model = UNet(**config.UNetConfig())
     latest_ckpt_path = find_latest_checkpoint(config.PathConfig().checkpoints)
     print(f'Loading checkpoint from {latest_ckpt_path}')
@@ -42,7 +45,6 @@ if __name__ == "__main__":
     image = dataset[0][1].unsqueeze(0)
     images = []
     for step in track(range(100), 'backward pass'):
-        step = 100 - step
         image = navigator.step(image, step, reversed=True)
         np_image = image.permute(0, 2, 3, 1).clamp(-1, 1).squeeze(0).detach().cpu().numpy()
         np_image = (np_image + 1) / 2 * 255 
