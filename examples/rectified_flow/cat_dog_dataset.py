@@ -21,7 +21,6 @@ class CatDogDataset(Dataset):
         self.paired_img_paths = list(zip(self.cat_img_paths, self.dog_img_paths))
         self.transform = Compose([
             Resize((image_size, image_size)),
-            RandomHorizontalFlip(0.5),
             ToTensor(),
             Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])

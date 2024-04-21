@@ -33,7 +33,7 @@ class ImgPeekHook(HookBase):
             model.eval()
             with torch.no_grad():
                 src_images = self.trainer.ctx.src_images.to(self.trainer.accelerator.device)
-                navigator = Navigator(model, num_steps=1000)
+                navigator = Navigator(model, num_steps=100)
                 tgt_images = navigator.navigate(src_images)
             tgt_images = ((tgt_images + 1) / 2).clamp(0, 1)
             image_grid = make_grid(tgt_images, nrow=3)

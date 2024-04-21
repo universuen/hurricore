@@ -44,6 +44,3 @@ def test_sync_batchnorm_hook():
                 return True
         return False
     assert all(check_sync_batchnorm(model) for model in trainer.models), "Not all BatchNorm modules are converted to SyncBatchNorm."
-
-
-test_sync_batchnorm_hook()

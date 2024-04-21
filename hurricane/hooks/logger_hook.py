@@ -2,7 +2,7 @@ import time
 from logging import Logger
 from threading import Thread
 
-from torch.cuda import memory_reserved
+from torch.cuda import mem_get_info, utilization
 
 from hurricane.hooks import HookBase
 from hurricane.trainers import TrainerBase
@@ -112,13 +112,16 @@ class LoggerHook(HookBase):
         progress = idx / iterator_length
         remaining_time = self._get_remaining_time()
         
+        free_memory, total_memory = mem_get_info()
+        used_memory = total_memory - free_memory
+        
         self.logger.info(
             f"Epoch: {epoch}/{self.trainer.num_epochs} | "
             f"Step: {idx}/{iterator_length} | "
             f"Loss: {self.step_losses[-1]:.5f} | "
             f"Progress: {progress:.2%} | "
             f"Time left: {remaining_time} | "
-            f"Memory used: {memory_reserved() / 1024 ** 3:.2f}GB"
+            f"GPU usage: {utilization()}% w. {used_memory / 1024 ** 3:.2f}GB"
         )
     
     def _activate_msg_queue(self):

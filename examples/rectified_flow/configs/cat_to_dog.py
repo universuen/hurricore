@@ -2,16 +2,17 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from hurricane.utils import ConfigBase, get_file_name
+from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
+set_cuda_visible_devices(2, 3)
 
 image_size = 128
 num_epochs = 1000
-batch_size = 32
+batch_size = 16
 lr = 1e-4
 gradient_accumulation_interval = 1
-ckpt_interval = 1000
-img_peek_interval = 500
+ckpt_interval = 5000
+img_peek_interval = 1000
 
 config_name = get_file_name()
 
@@ -19,7 +20,7 @@ config_name = get_file_name()
 class UNetConfig(ConfigBase):
     image_size = image_size
     layers_per_block = 2
-    block_out_channels = (64, 64, 128, 256, 512, 512)
+    block_out_channels = (128, 128, 256, 256, 512, 512)
 
 
 class LaunchConfig(ConfigBase):

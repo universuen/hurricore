@@ -22,7 +22,6 @@ class NoiseCatDataset(Dataset):
         self.noises = torch.randn(len(self.cat_img_paths), 3, image_size, image_size)
         self.transform = Compose([
             Resize((image_size, image_size)),
-            RandomHorizontalFlip(0.5),
             ToTensor(),
             Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])

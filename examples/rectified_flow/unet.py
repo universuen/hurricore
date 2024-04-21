@@ -33,4 +33,5 @@ class UNet(UNet2DModel):
         self.image_size = image_size
     
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+        t *= 1000  # scale 0-1 to 0-1000
         return super().forward(x, t).sample

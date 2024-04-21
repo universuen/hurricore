@@ -7,6 +7,7 @@ from accelerate import Accelerator
 import torch
 from torch import Tensor
 from torch.nn.modules import Module
+from torch.nn import functional
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
@@ -96,5 +97,5 @@ class FlowTrainer(Trainer):
         time = torch.rand((batch_size, ), device=self.accelerator.device)
         positions = src_images + time.reshape(-1, 1, 1, 1) * expected_velocities
         predicted_velocities = model(positions, time)
-        loss = ((predicted_velocities - expected_velocities) ** 2).mean()
+        loss = functional.mse_loss(predicted_velocities, expected_velocities)
         return loss
