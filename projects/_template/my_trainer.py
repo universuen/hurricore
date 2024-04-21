@@ -22,22 +22,24 @@ from hurricane.hooks import (
 
 class MyTrainer(Trainer):
     def __init__(
+        # basic
         self, 
         model: Module, 
         data_loader: DataLoader, 
         optimizer: Optimizer, 
         accelerator: Accelerator,
         num_epochs: int = 100,
-        
+        # logger hook
         logger: Logger = None,
         log_interval: int = 1,
-        
+        # lr scheduler hook
         lr_scheduler: LRScheduler = None,
         lr_scheduler_mode: str = 'per_epoch',
-        
+        # tensor board hook
         tensor_board_folder_path: Path = None,
         tensor_board_interval: int = 1,
-        
+        tensor_board_record_grad: bool = False,
+        # checkpoint hook
         ckpt_folder_path: Path = None,
         ckpt_interval: int = 100,
         ckpt_seed: int = 42,
@@ -63,7 +65,8 @@ class MyTrainer(Trainer):
             TensorBoardHook(
                 trainer=self,
                 folder_path=tensor_board_folder_path,
-                interval=tensor_board_interval,    
+                interval=tensor_board_interval,
+                record_grad=tensor_board_record_grad,
             ),
             CheckpointHook(
                 trainer=self,

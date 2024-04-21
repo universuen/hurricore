@@ -5,17 +5,16 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, get_file_name
 
 
-num_epochs = 100
-batch_size = 64
-lr = 5e-5
+num_epochs = 3
+batch_size = 8
+lr = 1e-4
 gradient_accumulation_interval = 1
-ckpt_interval = 1000
-
+ckpt_interval = int(1e9)  # we don't save checkpoint while debugging
 config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 4
+    num_processes = 1
     use_port = "8000"
 
 

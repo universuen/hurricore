@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 from torch.utils.data import Dataset
-from torchvision.transforms import Compose, ToTensor, Normalize, Resize, RandomHorizontalFlip
+from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 from PIL import Image
 
 
