@@ -18,7 +18,6 @@ class CatDogDataset(Dataset):
         self.path = Path(path)
         self.cat_img_paths = list(path.rglob('*cat*.jpg'))
         self.dog_img_paths = list(path.rglob('*dog*.jpg'))
-        self.paired_img_paths = list(zip(self.cat_img_paths, self.dog_img_paths))
         self.transform = Compose([
             Resize((image_size, image_size)),
             ToTensor(),
@@ -26,10 +25,11 @@ class CatDogDataset(Dataset):
         ])
     
     def __len__(self) -> int:
-        return len(self.paired_img_paths)
+        return len(self.cat_img_paths)
     
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
-        cat_img_path, dog_img_path = self.paired_img_paths[index]
+        cat_img_path = self.cat_img_paths[index]
+        dog_img_path = self.dog_img_paths[torch.randint(0, len(self.dog_img_paths), (1,)).item()]
         cat_image = Image.open(cat_img_path)
         dog_image = Image.open(dog_img_path)
         cat_image = self.transform(cat_image)
