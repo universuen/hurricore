@@ -71,7 +71,7 @@ class DataLoaderConfig(ConfigBase):
 
 class LoggerConfig(ConfigBase):
     name = config_name
-    level = logging.INFO
+    level = logging.DEBUG
     logs_dir = PathConfig().logs
     
 
