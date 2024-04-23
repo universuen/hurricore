@@ -60,7 +60,8 @@ class LRSchedulerHook(Hook):
                 for current, previous in zip(current_lrs, self._lr_records)
             ]
         ):
-            return
+            if self.trainer.ctx.global_step > 0:
+                return
         self._lr_records = current_lrs
         lr_schedulers = self.originals.lr_schedulers
         optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
