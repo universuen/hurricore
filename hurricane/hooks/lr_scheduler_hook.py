@@ -5,6 +5,10 @@ from hurricane.trainers import Trainer
 from hurricane.utils import Context, auto_name
 
 
+def _get_max_list_delta(a, b):
+    return max([abs(x - y) for x, y in zip(a, b)])
+
+
 class LRSchedulerHook(Hook):
     def __init__(
         self,
@@ -50,7 +54,12 @@ class LRSchedulerHook(Hook):
     
     def _update_lr_records(self):
         current_lrs = [lr_scheduler.get_last_lr() for lr_scheduler in self.lr_schedulers]
-        if all([current == previous for current, previous in zip(current_lrs, self._lr_records)]):
+        if all(
+            [
+                _get_max_list_delta(current, previous) < 1e-7 
+                for current, previous in zip(current_lrs, self._lr_records)
+            ]
+        ):
             return
         self._lr_records = current_lrs
         lr_schedulers = self.originals.lr_schedulers

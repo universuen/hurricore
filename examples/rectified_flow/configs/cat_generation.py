@@ -4,7 +4,7 @@ from pathlib import Path
 
 from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
-set_cuda_visible_devices(5, 6)
+set_cuda_visible_devices(0, 3)
 
 
 image_size = 128
