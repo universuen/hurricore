@@ -14,6 +14,8 @@ launch = notebook_launcher
 def find_latest_checkpoint(checkpoints_folder_path: Path) -> Path:
     checkpoints = checkpoints_folder_path.glob("ckpt_step_*")
     steps = [int(checkpoint.name.split("_")[-1]) for checkpoint in checkpoints]
+    if len(steps) == 0:
+        raise FileNotFoundError(f"No checkpoints found in {checkpoints_folder_path}")
     latest_step = max(steps)
     return checkpoints_folder_path / f"ckpt_step_{latest_step}"
 

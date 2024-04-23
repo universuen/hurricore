@@ -42,6 +42,7 @@ if __name__ == "__main__":
         np_image = np_image.astype(np.uint8)
         images.append(np_image)
     imageio.mimsave(config.PathConfig().data / "forward.gif", images, fps=30)
+    print(f'Forward image saved to {config.PathConfig().data / "forward.gif"}')
     
     image = dataset[0][1].unsqueeze(0).cuda()
     images = []
@@ -52,4 +53,4 @@ if __name__ == "__main__":
         np_image = np_image.astype(np.uint8)
         images.append(np_image)
     imageio.mimsave(config.PathConfig().data / "backward.gif", images, fps=30)
-    
+    print(f'Backward image saved to {config.PathConfig().data / "backward.gif"}')

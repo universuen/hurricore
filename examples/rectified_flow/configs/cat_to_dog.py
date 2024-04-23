@@ -5,7 +5,7 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
 
-set_cuda_visible_devices(0, 3)
+set_cuda_visible_devices(2, 3)
 image_size = 128
 num_epochs = 1000
 batch_size = 16
