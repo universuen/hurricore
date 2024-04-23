@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 from pathlib import Path
+from colorlog import ColoredFormatter
 
 
 class Logger(logging.Logger):
@@ -14,9 +15,16 @@ class Logger(logging.Logger):
     ) -> None:
         super().__init__(name, level=level)
         self.logs_dir = logs_dir
-        formatter = logging.Formatter(
+        formatter = ColoredFormatter(
             fmt='%(asctime)s [%(name)s][%(levelname)s]: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
+            log_colors={
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'bold_red',
+            }
         )
         s_handler = logging.StreamHandler(stream=sys.stdout)
         s_handler.setFormatter(formatter)

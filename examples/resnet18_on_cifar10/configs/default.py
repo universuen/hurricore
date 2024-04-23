@@ -12,7 +12,7 @@ config_name = get_file_name()
 
 
 class LaunchConfig(ConfigBase):
-    num_processes = 2
+    num_processes = 1
     use_port = "8009"
 
 

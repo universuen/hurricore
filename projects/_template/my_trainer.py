@@ -77,6 +77,4 @@ class MyTrainer(Trainer):
         ]
         
     def compute_loss(self) -> Tensor:
-        model = self.models[0]
-        batch = self.ctx.batches[0]
         ...

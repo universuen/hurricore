@@ -7,9 +7,11 @@ from accelerate import Accelerator
 
 from hurricane.utils import Logger, launch, import_config
 
+from my_trainer import MyTrainer
+
 
 # import config from module path
-config = import_config('configs.default')
+config = import_config('configs.debug')
 
 """ Optional:
 import config from file path
@@ -44,7 +46,15 @@ def main():
         T_max=num_steps_per_epoch * num_epochs // gradient_accumulation_steps,
     )
     # setup trainer and run
-    trainer = ...
+    trainer = MyTrainer(
+        model=model,
+        data_loader=data_loader,
+        optimizer=optimizer,
+        accelerator=accelerator,
+        lr_scheduler=lr_scheduler,
+        logger=logger,
+        **config.TrainerConfig(),
+    )
     trainer.run()
 
 if __name__ == '__main__':

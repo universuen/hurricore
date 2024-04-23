@@ -3,6 +3,7 @@ torch
 accelerate >= 0.29.3
 pytest
 tensorboard
+pynvml
 
 # examples dependencies
 transformers

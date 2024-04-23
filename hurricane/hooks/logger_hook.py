@@ -4,7 +4,7 @@ from threading import Thread
 
 from torch.cuda import mem_get_info, utilization
 
-from hurricane.hooks import HookBase
+from hurricane.hooks import Hook
 from hurricane.trainers import Trainer
 from hurricane.utils import (
     DummyObject,
@@ -15,7 +15,7 @@ from hurricane.utils import (
 )
 
 
-class LoggerHook(HookBase):
+class LoggerHook(Hook):
     
     msg_queue = []
     
