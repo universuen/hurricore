@@ -1,4 +1,4 @@
-from hurricane.hooks.hook_base import HookBase  # noqa: F401
+from hurricane.hooks.hook import Hook  # noqa: F401
 from hurricane.hooks.logger_hook import LoggerHook  # noqa: F401
 from hurricane.hooks.tensor_board_hook import TensorBoardHook  # noqa: F401
 from hurricane.hooks.lr_scheduler_hook import LRSchedulerHook  # noqa: F401

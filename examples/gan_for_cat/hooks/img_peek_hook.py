@@ -3,14 +3,14 @@ from pathlib import Path
 import torch
 from torchvision.utils import save_image, make_grid
 
-from hurricane.hooks import HookBase, LoggerHook, TensorBoardHook
-from hurricane.trainers import TrainerBase
+from hurricane.hooks import Hook, LoggerHook, TensorBoardHook
+from hurricane.trainers import Trainer
 
 
-class ImgPeekHook(HookBase):
+class ImgPeekHook(Hook):
     def __init__(
         self, 
-        trainer: TrainerBase,
+        trainer: Trainer,
         folder_path: Path,
         interval: int,
     ):

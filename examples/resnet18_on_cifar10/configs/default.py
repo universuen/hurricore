@@ -1,17 +1,13 @@
-from os import cpu_count
 import logging
 from pathlib import Path
 
-from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
+from hurricane.utils import ConfigBase, get_file_name
 
-
-# set_cuda_visible_devices(4, 5, 6, 7)
 
 num_epochs = 2
 batch_size = 256
 lr = 1e-3
 gradient_accumulation_interval = 2
-
 config_name = get_file_name()
 
 

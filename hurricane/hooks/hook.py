@@ -1,8 +1,8 @@
-from hurricane.trainers.trainer_base import TrainerBase
+from hurricane.trainers.trainer import Trainer
 
 
-class HookBase:
-    def __init__(self, trainer: TrainerBase) -> None:
+class Hook:
+    def __init__(self, trainer: Trainer) -> None:
         self.trainer = trainer
     
     def on_training_start(self) -> None:

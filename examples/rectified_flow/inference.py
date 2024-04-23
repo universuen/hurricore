@@ -18,13 +18,14 @@ CONFIG = "configs.cat_to_dog"
 
 if __name__ == "__main__":
     config = import_config(CONFIG)
-    model = UNet(**config.UNetConfig())
+    model = UNet(**config.UNetConfig()).cuda()
     latest_ckpt_path = find_latest_checkpoint(config.PathConfig().checkpoints)
     print(f'Loading checkpoint from {latest_ckpt_path}')
     state_dict = torch.load(latest_ckpt_path / "pytorch_model.bin")
     model.load_state_dict(state_dict)
     model.eval()
     navigator = Navigator(model, num_steps=100)
+    
     if config.config_name == "cat_generation":
         dataset = NoiseCatDataset(**config.ValidationNoiseCatDatasetConfig())
     elif config.config_name == "cat_to_dog":
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     else:
         raise ValueError(f"Unknown config_name: {config.config_name}")
     
-    image = dataset[0][0].unsqueeze(0)
+    image = dataset[0][0].unsqueeze(0).cuda()
     images = []
     for step in track(range(100), 'forward pass'):
         image = navigator.step(image, step)
@@ -42,7 +43,7 @@ if __name__ == "__main__":
         images.append(np_image)
     imageio.mimsave(config.PathConfig().data / "forward.gif", images, fps=30)
     
-    image = dataset[0][1].unsqueeze(0)
+    image = dataset[0][1].unsqueeze(0).cuda()
     images = []
     for step in track(range(100), 'backward pass'):
         image = navigator.step(image, step, reversed=True)

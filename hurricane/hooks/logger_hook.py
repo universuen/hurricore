@@ -5,7 +5,7 @@ from threading import Thread
 from torch.cuda import mem_get_info, utilization
 
 from hurricane.hooks import HookBase
-from hurricane.trainers import TrainerBase
+from hurricane.trainers import Trainer
 from hurricane.utils import (
     DummyObject,
     ConfigBase,
@@ -21,7 +21,7 @@ class LoggerHook(HookBase):
     
     def __init__(
         self, 
-        trainer: TrainerBase,
+        trainer: Trainer,
         logger: Logger,
         interval: int = 1, 
     ) -> None:
@@ -29,7 +29,6 @@ class LoggerHook(HookBase):
         # check validity
         assert interval > 0, 'Log interval must be greater than 0.'
         assert logger is not None, 'Invalid logger.'
-        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup self
         self.interval = interval
         # logger is only for main process

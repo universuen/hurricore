@@ -4,14 +4,14 @@ from time import sleep
 import torch
 from torch.utils.data import RandomSampler
 
-from hurricane.hooks import HookBase, LoggerHook
-from hurricane.trainers import TrainerBase
+from hurricane.hooks import Hook, LoggerHook
+from hurricane.trainers import Trainer
 
 
-class CheckpointHook(HookBase):
+class CheckpointHook(Hook):
     def __init__(
         self, 
-        trainer: TrainerBase,
+        trainer: Trainer,
         folder_path: Path = None,
         interval: int = 100,
         seed: int = 42,
@@ -20,7 +20,6 @@ class CheckpointHook(HookBase):
         # check validity
         assert interval > 0, 'Checkpoint interval must be greater than 0.'
         assert folder_path is not None and folder_path.is_dir(), 'Invalid checkpoint folder path.'
-        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # re-prepare dataloader with seedable sampler if 
         conditions = [
             any(isinstance(dl.sampler, RandomSampler) for dl in trainer.originals.data_loaders),

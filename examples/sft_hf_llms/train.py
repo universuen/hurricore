@@ -9,8 +9,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
 
 from hurricane.trainers import HFLLMTrainer
-from hurricane.collators import HFLLMITCollator
-from hurricane.utils import Logger, launch, import_config
+from hurricane.utils import Logger, launch, import_config, HFLLMITCollator
 
 from zhihu_qa_dataset import ZhihuQADataset
 

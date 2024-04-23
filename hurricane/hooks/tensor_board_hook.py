@@ -5,17 +5,17 @@ from threading import Thread
 from torch.utils.tensorboard import SummaryWriter
 from tensorboard import program
 
-from hurricane.hooks import HookBase, LoggerHook
-from hurricane.trainers import TrainerBase
+from hurricane.hooks import Hook, LoggerHook
+from hurricane.trainers import Trainer
 from hurricane.utils import DummyObject, auto_name
 
 
-class TensorBoardHook(HookBase):
+class TensorBoardHook(Hook):
     msg_queue = []
     
     def __init__(
         self, 
-        trainer: TrainerBase,
+        trainer: Trainer,
         folder_path: Path = None,
         interval: int = 1,
         record_grad: bool = False,
@@ -24,7 +24,6 @@ class TensorBoardHook(HookBase):
         # check validity
         assert interval > 0, 'TensorBoard interval must be greater than 0.'
         assert folder_path is not None and folder_path.is_dir(), 'Invalid TensorBoard folder path.'
-        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup self
         self.interval = interval
         self.folder_path = folder_path

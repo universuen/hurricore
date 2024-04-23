@@ -22,7 +22,7 @@ from hurricane.hooks import (
 
 class MyTrainer(Trainer):
     def __init__(
-        # basic
+        # basic configs
         self, 
         model: Module, 
         data_loader: DataLoader, 

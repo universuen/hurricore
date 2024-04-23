@@ -1,14 +1,14 @@
 from torch.optim.lr_scheduler import LRScheduler
 
-from hurricane.hooks import HookBase, LoggerHook, TensorBoardHook
-from hurricane.trainers import TrainerBase
+from hurricane.hooks import Hook, LoggerHook, TensorBoardHook
+from hurricane.trainers import Trainer
 from hurricane.utils import Context, auto_name
 
 
-class LRSchedulerHook(HookBase):
+class LRSchedulerHook(Hook):
     def __init__(
         self,
-        trainer: TrainerBase,
+        trainer: Trainer,
         lr_schedulers: list[LRScheduler] = None,
         mode: str = 'per_epoch',
     ) -> None:
@@ -17,7 +17,6 @@ class LRSchedulerHook(HookBase):
         assert mode in ['per_epoch', 'per_step'], 'Invalid mode.'
         for lr_scheduler in lr_schedulers:
             assert lr_scheduler is not None, 'Invalid learning rate scheduler.'
-        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         # setup trainer
         self.originals = Context(
             lr_schedulers=lr_schedulers,

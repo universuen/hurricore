@@ -1,14 +1,14 @@
 import torch
 from transformers import PreTrainedTokenizer
 
-from hurricane.hooks import HookBase, LoggerHook
-from hurricane.trainers.trainer_base import TrainerBase
+from hurricane.hooks import Hook, LoggerHook
+from hurricane.trainers import Trainer
 
 
-class HFLLMPeekHook(HookBase):
+class HFLLMPeekHook(Hook):
     def __init__(
         self, 
-        trainer: TrainerBase,
+        trainer: Trainer,
         prompts: list[str] = None, 
         tokenizer: PreTrainedTokenizer = None,
         interval: int = 1,
@@ -18,7 +18,6 @@ class HFLLMPeekHook(HookBase):
         assert interval > 0, 'Peek interval must be greater than 0.'
         assert prompts is not None and len(prompts) > 0, 'Invalid prompts.'
         assert tokenizer is not None, 'Invalid tokenizer.'
-        assert hasattr(trainer, 'accelerator'), 'Trainer must have an accelerator.'
         assert len(trainer.originals.models) == 1, 'Only one model is supported.'
         # setup self
         self.prompts = prompts

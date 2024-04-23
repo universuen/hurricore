@@ -1,7 +1,6 @@
 from os import cpu_count
 import logging
 from pathlib import Path
-from accelerate import DataLoaderConfiguration
 
 from hurricane.utils import ConfigBase, get_file_name
 
@@ -11,7 +10,6 @@ batch_size = 12
 lr = 5e-5
 model_name = "facebook/opt-350m"
 gradient_accumulation_interval = 8
-
 config_name = get_file_name()
 
 
