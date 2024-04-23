@@ -120,7 +120,7 @@ class LoggerHook(Hook):
             f"Loss: {self.step_losses[-1]:.5f} | "
             f"Progress: {progress:.2%} | "
             f"Time left: {remaining_time} | "
-            f"GPU usage: {utilization()}% w. {used_memory / 1024 ** 3:.2f}GB"
+            f"GPU usage: {utilization()}% w. {used_memory / 1024 ** 3:.2f} GB"
         )
     
     
