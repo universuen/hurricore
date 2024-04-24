@@ -24,9 +24,9 @@ if __name__ == "__main__":
     state_dict = torch.load(latest_ckpt_path / "pytorch_model.bin")
     model.load_state_dict(state_dict)
     model.eval()
-    navigator = Navigator(model, num_steps=1000)
+    navigator = Navigator(model, num_steps=100)
     
-    if config.config_name == "cat_generation":
+    if "cat_generation" in config.config_name:
         dataset = NoiseCatDataset(**config.ValidationNoiseCatDatasetConfig())
     elif config.config_name == "cat_to_dog":
         dataset = CatDogDataset(**config.ValidationCatDogDatasetConfig())
