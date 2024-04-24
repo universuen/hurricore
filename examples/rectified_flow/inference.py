@@ -24,7 +24,7 @@ if __name__ == "__main__":
     state_dict = torch.load(latest_ckpt_path / "pytorch_model.bin")
     model.load_state_dict(state_dict)
     model.eval()
-    navigator = Navigator(model, num_steps=100)
+    navigator = Navigator(model, num_steps=1000)
     
     if config.config_name == "cat_generation":
         dataset = NoiseCatDataset(**config.ValidationNoiseCatDatasetConfig())
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     
     image = dataset[0][0].unsqueeze(0).cuda()
     images = []
-    for step in track(range(100), 'forward pass'):
+    for step in track(range(navigator.num_steps), 'forward pass'):
         image = navigator.step(image, step)
         np_image = image.permute(0, 2, 3, 1).clamp(-1, 1).squeeze(0).detach().cpu().numpy()
         np_image = (np_image + 1) / 2 * 255 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     
     image = dataset[0][1].unsqueeze(0).cuda()
     images = []
-    for step in track(range(100), 'backward pass'):
+    for step in track(range(navigator.num_steps), 'backward pass'):
         image = navigator.step(image, step, reversed=True)
         np_image = image.permute(0, 2, 3, 1).clamp(-1, 1).squeeze(0).detach().cpu().numpy()
         np_image = (np_image + 1) / 2 * 255 
