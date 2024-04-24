@@ -13,7 +13,7 @@ from noise_cat_dataset import NoiseCatDataset
 from cat_dog_dataset import CatDogDataset
 
 
-CONFIG = "configs.cat_generation"
+CONFIG = "configs.cat_to_dog"
 
 
 if __name__ == "__main__":

@@ -32,9 +32,11 @@ def main():
         if config.config_name == 'cat_to_dog':
             training_dataset = CatDogDataset(**config.TrainingCatDogDatasetConfig())
             validation_dataset = CatDogDataset(**config.ValidationCatDogDatasetConfig())
-        elif config.config_name == 'cat_generation':
+        elif 'cat_generation' in config.config_name:
             training_dataset = NoiseCatDataset(**config.TrainingNoiseCatDatasetConfig())
             validation_dataset = NoiseCatDataset(**config.ValidationNoiseCatDatasetConfig())
+        else:
+            raise ValueError(f'Invalid config_name: {config.config_name}')
         model = UNet(**config.UNetConfig())
     training_data_loader = torch.utils.data.DataLoader(
         dataset=training_dataset, 

@@ -5,16 +5,16 @@ from pathlib import Path
 from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
 
-set_cuda_visible_devices(1, 2)
-image_size = 128
-num_epochs = 1000
-batch_size = 16
+set_cuda_visible_devices(0, 3)
+image_size = 256
+num_epochs = 2000
+batch_size = 8
 lr = 1e-4
-gradient_accumulation_interval = 1
+gradient_accumulation_interval = 2
 log_interval = 10
 tensor_board_interval = 10
-ckpt_interval = 3000
-img_peek_interval = 1000
+ckpt_interval = 1000
+img_peek_interval = 500
 config_name = get_file_name()
 
 
@@ -26,14 +26,13 @@ class UNetConfig(ConfigBase):
 
 class LaunchConfig(ConfigBase):
     num_processes = 2
-    use_port = "8000"
+    use_port = "8001"
 
 
 class PathConfig(ConfigBase):
     project = Path(__file__).parents[1]
     data = project / 'data'
-    training_dataset = data / 'afhq' / 'train'
-    validation_dataset = data / 'afhq' / 'val'
+    dataset = data / 'afhq'
     logs = data / 'logs'
     checkpoints = data / 'checkpoints' / config_name
     tensor_boards = data / 'tensor_boards' / config_name
@@ -66,13 +65,15 @@ class OptimizerConfig(ConfigBase):
     lr = lr
 
 
-class TrainingCatDogDatasetConfig(ConfigBase):
-    path = PathConfig().training_dataset
+class TrainingNoiseCatDatasetConfig(ConfigBase):
+    path = PathConfig().dataset
+    seed = 0
     image_size = image_size
 
 
-class ValidationCatDogDatasetConfig(ConfigBase):
-    path = PathConfig().validation_dataset
+class ValidationNoiseCatDatasetConfig(ConfigBase):
+    path = PathConfig().dataset
+    seed = 1
     image_size = image_size
 
 

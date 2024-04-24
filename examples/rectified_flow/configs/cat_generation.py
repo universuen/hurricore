@@ -7,7 +7,7 @@ from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
 set_cuda_visible_devices(0, 3)
 image_size = 128
-num_epochs = 1000
+num_epochs = 700
 batch_size = 32
 lr = 1e-4
 gradient_accumulation_interval = 1
