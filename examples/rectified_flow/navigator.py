@@ -16,9 +16,7 @@ class Navigator:
     @torch.no_grad()
     def navigate(self, x: Tensor) -> Tensor:
         for step in range(self.num_steps):
-            t = torch.full((x.size(0), ), step * self.step_size, device=x.device)
-            velocity = self.flow_model(x, t)
-            x += velocity * self.step_size
+            x = self.step(x, step)
         return x
 
     @torch.no_grad()
@@ -28,6 +26,5 @@ class Navigator:
         t = torch.full((x.size(0), ), step * self.step_size, device=x.device)
         velocity = self.flow_model(x, t)
         if reversed:
-            return x - velocity * self.step_size
-        else:
-            return x + velocity * self.step_size
+            velocity *= -1
+        return x + velocity * self.step_size
