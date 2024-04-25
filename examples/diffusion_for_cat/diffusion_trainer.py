@@ -61,7 +61,6 @@ class DiffusionTrainer(Trainer):
         
         noise_scheduler = noise_scheduler.to(self.accelerator.device)
         self.noise_scheduler = noise_scheduler
-        
         self.hooks = [
             LoggerHook(
                 trainer=self,

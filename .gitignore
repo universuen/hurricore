@@ -13,3 +13,6 @@ data/
 
 # general test file
 tests/playground.py
+
+# egg-info
+*.egg-info/

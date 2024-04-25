@@ -20,7 +20,7 @@ from hurricore.hooks import (
 )
 
 
-class MyTrainer(Trainer):
+class DemoTrainer(Trainer):
     def __init__(
         # basic configs
         self, 
