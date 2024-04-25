@@ -1,4 +1,3 @@
-import _path_setup  # noqa: F401
 import torch
 import cv2
 from tqdm import tqdm

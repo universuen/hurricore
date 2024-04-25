@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 from logging import Logger
 from pathlib import Path
 

@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 import torch
 import torchvision
 from torch.optim import AdamW

@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 import shutil
 from pathlib import Path
 from copy import deepcopy

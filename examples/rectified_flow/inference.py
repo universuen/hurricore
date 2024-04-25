@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 import torch
 import numpy as np
 import imageio

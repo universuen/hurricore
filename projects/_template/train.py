@@ -1,13 +1,9 @@
-import _path_setup  # noqa: F401
-
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from accelerate import Accelerator
 
 from hurricore.utils import Logger, launch, import_config
-
-from demo_trainer import DemoTrainer
 
 
 # import config from module path
@@ -46,15 +42,7 @@ def main():
         T_max=num_steps_per_epoch * num_epochs // gradient_accumulation_steps,
     )
     # setup trainer and run
-    trainer = DemoTrainer(
-        model=model,
-        data_loader=data_loader,
-        optimizer=optimizer,
-        accelerator=accelerator,
-        lr_scheduler=lr_scheduler,
-        logger=logger,
-        **config.TrainerConfig(),
-    )
+    trainer = ...
     trainer.run()
 
 if __name__ == '__main__':

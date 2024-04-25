@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 from pathlib import Path
 import cv2
 import os

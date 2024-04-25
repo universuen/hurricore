@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR

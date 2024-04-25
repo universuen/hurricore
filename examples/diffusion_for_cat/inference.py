@@ -1,5 +1,3 @@
-import _path_setup
-
 import torch
 from torchvision.utils import make_grid, save_image
 from tqdm import tqdm

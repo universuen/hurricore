@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 from torch.optim import AdamW

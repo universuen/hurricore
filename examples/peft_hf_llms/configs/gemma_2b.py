@@ -1,5 +1,3 @@
-import _path_setup
-
 from os import cpu_count
 import logging
 from pathlib import Path

@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 import os
 
 from torch.utils.data import DataLoader

@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 from logging import Logger
 from pathlib import Path
 
@@ -11,7 +9,7 @@ from torch.optim.lr_scheduler import LRScheduler
 
 from torch.utils.data import DataLoader
 
-from hurricore.trainers import Trainer
+from hurricore.trainers import Trainer as HurricoreTrainer
 from hurricore.hooks import (
     LoggerHook, 
     LRSchedulerHook, 
@@ -20,7 +18,7 @@ from hurricore.hooks import (
 )
 
 
-class DemoTrainer(Trainer):
+class Trainer(HurricoreTrainer):
     def __init__(
         # basic configs
         self, 

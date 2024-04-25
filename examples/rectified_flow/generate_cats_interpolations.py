@@ -1,5 +1,3 @@
-import _path_setup  # noqa: F401
-
 import torch
 from torchvision.utils import make_grid
 import numpy as np
