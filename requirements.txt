@@ -6,10 +6,10 @@ tensorboard
 pynvml
 
 # examples dependencies
-transformers
-datasets
-peft
-torchvision
-opencv-python
-rich
-imageio
+# transformers
+# datasets
+# peft
+# torchvision
+# opencv-python
+# rich
+# imageio
