@@ -5,7 +5,7 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from accelerate import Accelerator
 
-from hurricane.utils import Logger, launch, import_config
+from hurricore.utils import Logger, launch, import_config
 
 from cat_dog_dataset import CatDogDataset
 from noise_cat_dataset import NoiseCatDataset

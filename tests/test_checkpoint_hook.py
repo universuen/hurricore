@@ -10,8 +10,8 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricane.trainers import Trainer
-from hurricane.hooks import CheckpointHook
+from hurricore.trainers import Trainer
+from hurricore.hooks import CheckpointHook
 
 
 temp_folder_path = Path(__file__).parents[1] / '_temp_checkpoints'

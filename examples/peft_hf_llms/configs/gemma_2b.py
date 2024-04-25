@@ -6,7 +6,7 @@ from pathlib import Path
 
 from peft import LoraConfig, TaskType
 
-from hurricane.utils import ConfigBase, get_file_name
+from hurricore.utils import ConfigBase, get_file_name
 
 
 num_epochs = 100

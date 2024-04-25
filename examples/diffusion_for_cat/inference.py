@@ -4,7 +4,7 @@ import torch
 from torchvision.utils import make_grid, save_image
 from tqdm import tqdm
 
-from hurricane.utils import import_config
+from hurricore.utils import import_config
 
 from unet import UNet
 from noise_schedulers import DDPMNoiseScheduler

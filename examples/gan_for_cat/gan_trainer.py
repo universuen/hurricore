@@ -6,8 +6,8 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricane.trainers import Trainer
-from hurricane.hooks import CheckpointHook, LRSchedulerHook, SyncBatchNormHook
+from hurricore.trainers import Trainer
+from hurricore.hooks import CheckpointHook, LRSchedulerHook, SyncBatchNormHook
 
 from hooks import GANLoggerHook, ImgPeekHook, GANTensorBoardHook
 from models import Generator, Discriminator

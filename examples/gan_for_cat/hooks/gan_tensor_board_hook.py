@@ -1,4 +1,4 @@
-from hurricane.hooks import TensorBoardHook
+from hurricore.hooks import TensorBoardHook
 
 
 class GANTensorBoardHook(TensorBoardHook):

@@ -8,8 +8,8 @@ from torch.utils.data import DataLoader
 from accelerate import Accelerator
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
-from hurricane.trainers import Trainer
-from hurricane.hooks import(
+from hurricore.trainers import Trainer
+from hurricore.hooks import(
     HFLLMPeekHook, 
     LoggerHook, 
     LRSchedulerHook, 

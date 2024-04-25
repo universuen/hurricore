@@ -3,7 +3,7 @@ import _path_setup  # noqa: F401
 import shutil
 from pathlib import Path
 
-from hurricane.utils import import_config
+from hurricore.utils import import_config
 
 dummy_config_str = """
 from hurricane.utils import ConfigBase

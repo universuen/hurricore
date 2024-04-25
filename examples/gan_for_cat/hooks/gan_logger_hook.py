@@ -1,7 +1,7 @@
 from torch.cuda import memory_reserved
 
-from hurricane.hooks.logger_hook import LoggerHook
-from hurricane.utils import get_list_mean
+from hurricore.hooks.logger_hook import LoggerHook
+from hurricore.utils import get_list_mean
 
 
 class GANLoggerHook(LoggerHook):

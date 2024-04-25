@@ -3,7 +3,7 @@ import torch
 import cv2
 from tqdm import tqdm
 
-from hurricane.utils import import_config
+from hurricore.utils import import_config
 
 from models import Generator
 

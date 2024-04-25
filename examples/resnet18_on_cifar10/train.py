@@ -9,7 +9,7 @@ import torch.nn as nn
 from torchvision.models import resnet18
 from accelerate import Accelerator
 
-from hurricane.utils import Logger, launch, import_config
+from hurricore.utils import Logger, launch, import_config
 from resnet_trainer import ResNetTrainer
 
 

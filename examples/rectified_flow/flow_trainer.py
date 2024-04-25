@@ -13,8 +13,8 @@ from torch.optim.lr_scheduler import LRScheduler
 
 from torch.utils.data import Dataset, DataLoader
 
-from hurricane.trainers import Trainer
-from hurricane.hooks import (
+from hurricore.trainers import Trainer
+from hurricore.hooks import (
     LoggerHook, 
     LRSchedulerHook, 
     TensorBoardHook, 

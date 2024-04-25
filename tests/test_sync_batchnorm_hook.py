@@ -6,8 +6,8 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricane.trainers import Trainer
-from hurricane.hooks import SyncBatchNormHook
+from hurricore.trainers import Trainer
+from hurricore.hooks import SyncBatchNormHook
 
 
 class _TestTrainer(Trainer):

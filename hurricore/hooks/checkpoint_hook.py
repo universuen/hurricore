@@ -4,8 +4,8 @@ from time import sleep
 import torch
 from torch.utils.data import RandomSampler
 
-from hurricane.hooks import Hook, LoggerHook
-from hurricane.trainers import Trainer
+from hurricore.hooks import Hook, LoggerHook
+from hurricore.trainers import Trainer
 
 
 class CheckpointHook(Hook):

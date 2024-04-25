@@ -2,7 +2,7 @@ from os import cpu_count
 import logging
 from pathlib import Path
 
-from hurricane.utils import ConfigBase, get_file_name, set_cuda_visible_devices
+from hurricore.utils import ConfigBase, get_file_name, set_cuda_visible_devices
 
 
 set_cuda_visible_devices(1, 2)

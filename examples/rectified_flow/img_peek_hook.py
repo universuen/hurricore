@@ -4,8 +4,8 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.utils import save_image, make_grid
 
-from hurricane.hooks import Hook, LoggerHook, TensorBoardHook
-from hurricane.trainers import Trainer
+from hurricore.hooks import Hook, LoggerHook, TensorBoardHook
+from hurricore.trainers import Trainer
 
 from navigator import Navigator
 

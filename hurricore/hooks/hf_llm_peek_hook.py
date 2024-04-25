@@ -1,8 +1,8 @@
 import torch
 from transformers import PreTrainedTokenizer
 
-from hurricane.hooks import Hook, LoggerHook
-from hurricane.trainers import Trainer
+from hurricore.hooks import Hook, LoggerHook
+from hurricore.trainers import Trainer
 
 
 class HFLLMPeekHook(Hook):

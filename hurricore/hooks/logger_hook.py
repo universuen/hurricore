@@ -4,9 +4,9 @@ from threading import Thread
 
 from torch.cuda import mem_get_info, utilization
 
-from hurricane.hooks import Hook
-from hurricane.trainers import Trainer
-from hurricane.utils import (
+from hurricore.hooks import Hook
+from hurricore.trainers import Trainer
+from hurricore.utils import (
     DummyObject,
     ConfigBase,
     auto_name,

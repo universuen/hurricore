@@ -1,8 +1,8 @@
 from torch.optim.lr_scheduler import LRScheduler
 
-from hurricane.hooks import Hook, LoggerHook, TensorBoardHook
-from hurricane.trainers import Trainer
-from hurricane.utils import Context, auto_name
+from hurricore.hooks import Hook, LoggerHook, TensorBoardHook
+from hurricore.trainers import Trainer
+from hurricore.utils import Context, auto_name
 
 
 def _get_max_list_delta(a, b):

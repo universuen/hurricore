@@ -1,4 +1,4 @@
-from hurricane.trainers.trainer import Trainer
+from hurricore.trainers.trainer import Trainer
 
 
 class Hook:

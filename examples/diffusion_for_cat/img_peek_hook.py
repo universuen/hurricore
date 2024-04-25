@@ -3,8 +3,8 @@ from pathlib import Path
 import torch
 from torchvision.utils import save_image, make_grid
 
-from hurricane.hooks import Hook, LoggerHook, TensorBoardHook
-from hurricane.trainers import Trainer
+from hurricore.hooks import Hook, LoggerHook, TensorBoardHook
+from hurricore.trainers import Trainer
 
 
 class ImgPeekHook(Hook):

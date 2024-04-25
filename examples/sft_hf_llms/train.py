@@ -8,8 +8,8 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from accelerate import Accelerator
 
-from hurricane.trainers import HFLLMTrainer
-from hurricane.utils import Logger, launch, import_config, HFLLMITCollator
+from hurricore.trainers import HFLLMTrainer
+from hurricore.utils import Logger, launch, import_config, HFLLMITCollator
 
 from zhihu_qa_dataset import ZhihuQADataset
 

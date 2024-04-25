@@ -1,6 +1,6 @@
 from torch.nn import SyncBatchNorm
 
-from hurricane.hooks import Hook
+from hurricore.hooks import Hook
 
 
 class SyncBatchNormHook(Hook):

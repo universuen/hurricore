@@ -7,7 +7,7 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from hurricane.utils import Context
+from hurricore.utils import Context
 
 
 class Trainer:

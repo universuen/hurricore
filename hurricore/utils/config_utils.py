@@ -34,7 +34,7 @@ def import_config(path: str, accept_cmd_args: bool = True) -> ModuleType:
         args = parser.parse_args()
         path = args.config
     
-    from hurricane.hooks import LoggerHook
+    from hurricore.hooks import LoggerHook
     LoggerHook.msg_queue.append(
         ('info', f'Imported config from {path}')
     )

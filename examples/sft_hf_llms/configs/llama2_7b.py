@@ -4,7 +4,7 @@ from pathlib import Path
 
 from accelerate import DeepSpeedPlugin
 
-from hurricane.utils import ConfigBase, get_file_name
+from hurricore.utils import ConfigBase, get_file_name
 
 
 num_epochs = 10

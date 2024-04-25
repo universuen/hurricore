@@ -6,8 +6,8 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricane.trainers import Trainer
-from hurricane.hooks import HFLLMPeekHook, LoggerHook
+from hurricore.trainers import Trainer
+from hurricore.hooks import HFLLMPeekHook, LoggerHook
 
 
 class _TestTrainer(Trainer):

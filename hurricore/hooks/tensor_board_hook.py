@@ -5,9 +5,9 @@ from threading import Thread
 from torch.utils.tensorboard import SummaryWriter
 from tensorboard import program
 
-from hurricane.hooks import Hook, LoggerHook
-from hurricane.trainers import Trainer
-from hurricane.utils import DummyObject, auto_name
+from hurricore.hooks import Hook, LoggerHook
+from hurricore.trainers import Trainer
+from hurricore.utils import DummyObject, auto_name
 
 
 class TensorBoardHook(Hook):

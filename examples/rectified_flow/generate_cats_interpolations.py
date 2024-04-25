@@ -6,7 +6,7 @@ import numpy as np
 import imageio
 from rich.progress import track
 
-from hurricane.utils import import_config, find_latest_checkpoint
+from hurricore.utils import import_config, find_latest_checkpoint
 
 from unet import UNet
 from navigator import Navigator
