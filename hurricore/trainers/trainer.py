@@ -32,8 +32,7 @@ class Trainer:
         self.optimizers = all_accelerated_objects[len(models) + len(data_loaders):]
         self.accelerator = accelerator
         # setup context and number of epochs
-        self.ctx = Context()
-        self.num_epochs = num_epochs
+        self.ctx = Context(num_epochs=num_epochs)
         # initialize hooks list
         self.hooks = []
     
@@ -46,7 +45,7 @@ class Trainer:
         for hook in self.hooks:
             hook.on_training_start()
         # iterate over epochs
-        for epoch in range(self.ctx.epoch, self.num_epochs):
+        for epoch in range(self.ctx.epoch, self.ctx.num_epochs):
             # update context variables
             self.ctx.epoch = epoch
             # execute hooks on epoch start

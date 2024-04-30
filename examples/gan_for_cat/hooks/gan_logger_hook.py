@@ -27,7 +27,7 @@ class GANLoggerHook(LoggerHook):
         remaining_time = self._get_remaining_time()
         
         self.logger.info(
-            f"Epoch: {epoch}/{self.trainer.num_epochs} | "
+            f"Epoch: {epoch}/{self.trainer.ctx.num_epochs} | "
             f"Step: {idx}/{num_steps_per_epoch} | "
             f"G loss: {self.trainer.ctx.g_step_loss:.5f} | "
             f"D loss: {self.trainer.ctx.d_step_loss:.5f} |"

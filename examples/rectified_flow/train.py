@@ -17,7 +17,7 @@ config = import_config('configs.cat_to_dog')
 import config from file path
 `config = import_config('projects/_project_template/configs/default.py')`
 import config from url
-`config = import_config('https://raw.githubusercontent.com/universuen/hurricane/main/projects/_project_template/configs/default.py')`
+`config = import_config('https://raw.githubusercontent.com/universuen/hurricore/main/projects/_project_template/configs/default.py')`
 """
 
 

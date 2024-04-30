@@ -20,7 +20,7 @@ config = import_config('configs.gemma_2b')
 import config from file path
 `config = import_config('examples/peft_hf_llms/configs/gemma_2b.py')`
 import config from url
-`config = import_config('https://raw.githubusercontent.com/universuen/hurricane/main/examples/peft_hf_llms/configs/gemma_2b.py')`
+`config = import_config('https://raw.githubusercontent.com/universuen/hurricore/main/examples/peft_hf_llms/configs/gemma_2b.py')`
 """
 
 

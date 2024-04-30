@@ -88,7 +88,7 @@ class LoggerHook(Hook):
     
     def _get_remaining_time(self):
         elapsed_time = time.time() - self.start_time
-        remaining_epochs = self.trainer.num_epochs - self.trainer.ctx.epoch - 1
+        remaining_epochs = self.trainer.ctx.num_epochs - self.trainer.ctx.epoch - 1
         remaining_iterations_in_epoch = self.trainer.ctx.num_steps_per_epoch - self.trainer.ctx.batches_idx - 1
         num_iterations = self.trainer.ctx.num_steps_per_epoch
         remaining_global_interations = remaining_epochs * num_iterations + remaining_iterations_in_epoch
@@ -105,7 +105,7 @@ class LoggerHook(Hook):
         if len(self.step_losses) == 0:
             return
         idx = self.trainer.ctx.batches_idx + 1
-        num_epochs = self.trainer.num_epochs
+        num_epochs = self.trainer.ctx.num_epochs
         num_steps_per_epoch = self.trainer.ctx.num_steps_per_epoch
         epoch = self.trainer.ctx.epoch + 1
         progress = (self.trainer.ctx.global_step + 1) / (num_epochs * num_steps_per_epoch)
@@ -115,7 +115,7 @@ class LoggerHook(Hook):
         used_memory = total_memory - free_memory
         
         self.logger.info(
-            f"Epoch: {epoch}/{self.trainer.num_epochs} | "
+            f"Epoch: {epoch}/{self.trainer.ctx.num_epochs} | "
             f"Step: {idx}/{num_steps_per_epoch} | "
             f"Loss: {self.step_losses[-1]:.5f} | "
             f"Progress: {progress:.2%} | "

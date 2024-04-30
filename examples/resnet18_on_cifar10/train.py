@@ -18,7 +18,7 @@ config = import_config('configs.default')
 import config from file path
 `config = import_config('examples/resnet18_on_cifar10/configs/default.py')`
 import config from url
-`config = import_config('https://raw.githubusercontent.com/universuen/hurricane/main/examples/resnet18_on_cifar10/configs/default.py')`
+`config = import_config('https://raw.githubusercontent.com/universuen/hurricore/main/examples/resnet18_on_cifar10/configs/default.py')`
 """
 
 

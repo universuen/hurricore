@@ -18,7 +18,7 @@ config = import_config('configs.opt_350m')
 import config from file path
 `config = import_config('examples/sft_hf_llms/configs/opt_350m.py')`
 import config from url
-`config = import_config('https://raw.githubusercontent.com/universuen/hurricane/main/examples/sft_hf_llms/configs/opt_350m.py')`
+`config = import_config('https://raw.githubusercontent.com/universuen/hurricore/main/examples/sft_hf_llms/configs/opt_350m.py')`
 """
 
 

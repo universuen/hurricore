@@ -4,7 +4,7 @@ from pathlib import Path
 from hurricore.utils import import_config
 
 dummy_config_str = """
-from hurricane.utils import ConfigBase
+from hurricore.utils import ConfigBase
 
 
 class ConfigA(ConfigBase):
@@ -34,7 +34,7 @@ def test_import_config():
     assert config.ConfigB.c == 2, "path import is not working."
     assert config.ConfigB.d == 3, "path import is not working."
     # test url import
-    url = 'https://raw.githubusercontent.com/universuen/hurricane/main/projects/_template/configs/default.py'
+    url = 'https://raw.githubusercontent.com/universuen/hurricore/main/projects/_template/configs/default.py'
     config = import_config(url, accept_cmd_args=False)
     assert config.TrainerConfig is not None, "url import is not working."
     # test module import

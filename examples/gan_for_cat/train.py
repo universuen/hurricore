@@ -16,7 +16,7 @@ config = import_config('configs.for_256px')
 import config from file path
 `config = import_config('examples/gan_for_cat/configs/for_256px.py')`
 import config from url
-`config = import_config('https://raw.githubusercontent.com/universuen/hurricane/main/examples/gan_for_cat/configs/for_256px.py')`
+`config = import_config('https://raw.githubusercontent.com/universuen/hurricore/main/examples/gan_for_cat/configs/for_256px.py')`
 """
 
 
