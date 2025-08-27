@@ -1,33 +1,27 @@
-from typing import Any, Dict, Iterator
+import re
+
+from hurricore.utils.attribute_dict import AttributeDict
 
 
-class ConfigBase(Dict):
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__()
-        for name, value in self.__class__.__dict__.items():
-            if not name.startswith("__") and not callable(value):
-                setattr(self, name, value)
-        self.__dict__.update(kwargs)
+class ConfigBase(AttributeDict):
+    """
+    Base class for all config classes. It initializes instance attributes from class attributes.
+    It is also a subclass of AttributeDict which provides convenient access to instance attributes via dot notation.
+    """
+    def __init__(self, **kwargs) -> None:
+        for name, value in vars(self.__class__).items():
+            if re.match(r'^__.*__$', name) or callable(value):
+                continue
+            self[name] = value
+        super().__init__(**kwargs)
         self.__post_init__()
 
+
     def __repr__(self) -> str:
-        attributes = ', '.join([f"{name}={value!r}" for name, value in self.__dict__.items()])
-        return f"{self.__class__.__name__}({attributes})"
+        class_name = self.__class__.__name__
+        attributes = ',\n\t'.join([f"{name}={value!r}" for name, value in self.items()])
+        return f"{class_name}(\n\t{attributes}\n)"
+
     
     def __post_init__(self) -> None:
         pass
-
-    def __iter__(self) -> Iterator:
-        return iter(self.__dict__)
-
-    def __getitem__(self, key: str) -> Any:
-        return self.__dict__[key]
-
-    def keys(self) -> Dict[str, Any].keys:
-        return self.__dict__.keys()
-
-    def values(self) -> Dict[str, Any].values:
-        return self.__dict__.values()
-
-    def items(self) -> Dict[str, Any].items:
-        return self.__dict__.items()

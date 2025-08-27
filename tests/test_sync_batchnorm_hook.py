@@ -4,11 +4,11 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricore.trainers import Trainer
+from hurricore.trainers import HurricoreTrainer
 from hurricore.hooks import SyncBatchNormHook
 
 
-class _TestTrainer(Trainer):
+class _TestTrainer(HurricoreTrainer):
     def __init__(self):
         super().__init__(
             models=[

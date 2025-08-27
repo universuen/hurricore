@@ -1,90 +1,73 @@
 from pathlib import Path
-from time import sleep
 
-import torch
-from torch.utils.data import RandomSampler
-
-from hurricore.hooks import Hook, LoggerHook
-from hurricore.trainers import Trainer
+from hurricore.hooks import HurricoreHook
+from hurricore.trainers import HurricoreTrainer
+from hurricore.utils import env, find_latest_checkpoint_folder, Checkpointer
 
 
-class CheckpointHook(Hook):
+class CheckpointHook(HurricoreHook):
     def __init__(
         self, 
-        trainer: Trainer,
+        trainer: HurricoreTrainer,
         folder_path: Path = None,
         interval: int = 100,
         seed: int = 42,
     ) -> None:
         super().__init__(trainer)
-        # check validity
-        assert interval > 0, 'Checkpoint interval must be greater than 0.'
-        assert folder_path is not None and folder_path.is_dir(), 'Invalid checkpoint folder path.'
-        # re-prepare dataloader with seedable sampler if 
-        conditions = [
-            any(isinstance(dl.sampler, RandomSampler) for dl in trainer.originals.data_loaders),
-            trainer.accelerator.dataloader_config.use_seedable_sampler is False,
-        ]
-        if all(conditions) is True:
-            torch.manual_seed(seed)
-            LoggerHook.msg_queue.append(('info', 'To ensure reproducibility, dataloaders are reprepared with seedable sampler.'))
-            trainer.accelerator.dataloader_config.use_seedable_sampler = True
-            trainer.data_loaders = [
-                trainer.accelerator.prepare(dl) 
-                for dl in trainer.originals.data_loaders
-            ]
-        
-        # register trainer context for checkpointing
-        trainer.accelerator.register_for_checkpointing(trainer.ctx)
-        # setup self
-        self.folder_path = folder_path
+        # Setup self attributes
         self.interval = interval
+        self.folder_path = Path(folder_path)
+        self.folder_path.mkdir(parents=True, exist_ok=True)
+        self.seed = seed
     
+
+    def __post_init__(self) -> None:
+        # Setup checkpointer
+        self.checkpointer = Checkpointer(self.trainer.accelerator)
+        # Re-prepare dataloader with seedable sampler if necessary
+        self.trainer.data_loaders = [
+            self.checkpointer.reprepare_data_loader(dl, self.seed)
+            for dl in self.trainer.originals.data_loaders
+        ]
+        # Register trainer context for checkpointing
+        self.checkpointer.register_state(self.trainer.context)
+        env.checkpointer = self.checkpointer
+        
     
-    def on_training_start(self) -> None:
-        # check available checkpoint
-        ckpt_dirs = [d for d in self.folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
-        if len(ckpt_dirs) == 0:
+    def execute_on_training_start(self) -> None:
+        # Check available checkpoint
+        ckpt_paths = [
+            d for d in self.folder_path.iterdir() 
+            if d.is_dir() and d.name.startswith('ckpt_step_')
+        ]
+        if len(ckpt_paths) == 0:
             return 
-        # load latest checkpoint
-        steps = [int(d.name.split('_')[-1]) for d in ckpt_dirs]
-        latest_step = max(steps)
-        latest_ckpt_dir = self.folder_path / f'ckpt_step_{latest_step}'
-        self.trainer.accelerator.load_state(latest_ckpt_dir)
-        # should step into the next batch
-        self.trainer.ctx.batches_idx += 1
-        # recover dataloaders states
+        # Load latest checkpoint
+        latest_ckpt_path = find_latest_checkpoint_folder(self.folder_path)
+        env.logger.info(f'Loading checkpoint: {latest_ckpt_path}')
+        self.checkpointer.load_state(latest_ckpt_path)
+        # Step into the next batch
+        self.trainer.context.batch_idx += 1
+        # Recover dataloaders states
         for dl in self.trainer.data_loaders:
-            dl.set_epoch(self.trainer.ctx.epoch)
-            dl.skip_batches = self.trainer.ctx.batches_idx
-        # recover hooks
-        for hook in self.trainer.hooks:
-            if hasattr(hook, 'recover_from_checkpoint'):
-                hook.recover_from_checkpoint()
+            dl.set_epoch(self.trainer.context.epoch)
+            dl.skip_batches = self.trainer.context.batch_idx
+        # Recover hooks
+        self.checkpointer.excute_actions()
         self.trainer.accelerator.wait_for_everyone()
-        # log
-        LoggerHook.msg_queue.append(('info', f'Resumed training from checkpoint: {latest_ckpt_dir}'))
+        # Log
+        env.logger.info(f'Resumed training from checkpoint: {latest_ckpt_path}')
     
     
-    def on_step_end(self) -> None:
-        step = self.trainer.ctx.global_step + 1
-        if step % self.interval == 0:
-            self._save_checkpoint()
+    def execute_on_step_end(self) -> None:
+        step = self.trainer.context.global_step + 1
+        if step % self.interval == 0 or step == self.trainer.context.total_steps:
+            ckpt_path = self.folder_path / f'ckpt_step_{step}'
+            env.logger.info(f'Saving checkpoint at step {step}')
+            self.checkpointer.save_state(ckpt_path)
+            env.logger.info(f'Checkpoint saved at: {ckpt_path}')
 
 
-    def on_epoch_end(self) -> None:
+    def execute_on_epoch_end(self) -> None:
         for dl in self.trainer.data_loaders:
             dl.skip_batches = 0
-        if self.trainer.ctx.epoch + 1 == self.trainer.ctx.num_epochs:
-            '''
-            This cannot be put in `on_training_end` because LoggerHook will
-            shut down its message queue before `on_training_end` is called.
-            '''
-            self._save_checkpoint()
-            sleep(1)
-
-    def _save_checkpoint(self) -> None:
-        step = self.trainer.ctx.global_step + 1
-        ckpt_path = self.folder_path / f'ckpt_step_{step}'
-        self.trainer.accelerator.save_state(ckpt_path, safe_serialization=False)
-        LoggerHook.msg_queue.append(('info', f'Saved checkpoint at: {ckpt_path}'))

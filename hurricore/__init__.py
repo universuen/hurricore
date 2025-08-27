@@ -1,3 +1,5 @@
-from hurricore import trainers  # noqa: F401
-from hurricore import hooks  # noqa: F401
-from hurricore import utils  # noqa: F401
+from hurricore.trainers import *  # noqa
+from hurricore.hooks import *  # noqa
+from hurricore.utils import *  # noqa
+from hurricore.models import *  # noqa
+from hurricore.criterions import *  # noqa

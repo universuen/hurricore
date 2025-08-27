@@ -4,6 +4,7 @@
 
 # cache
 __pycache__/
+.pytest_cache/
 
 # virtual environment
 /venv/
@@ -11,8 +12,13 @@ __pycache__/
 # space-intensive data
 data/
 
-# general test file
-tests/playground.py
-
 # egg-info
 *.egg-info/
+
+# misc
+*.png
+*.jpg
+*.jpeg
+*.onnx
+*.pyc
+

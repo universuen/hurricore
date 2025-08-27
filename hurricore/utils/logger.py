@@ -10,7 +10,7 @@ class Logger(logging.Logger):
             self,
             name: str,
             level: int | str = logging.INFO,
-            logs_dir: Path = None,
+            logs_dir: Path | None = None,
     ) -> None:
         super().__init__(name, level=level)
         self.logs_dir = logs_dir
@@ -24,12 +24,13 @@ class Logger(logging.Logger):
         self.addHandler(s_handler)
 
         if logs_dir is not None:
-            logs_dir.mkdir(exist_ok=True)
+            logs_dir.mkdir(exist_ok=True, parents=True)
             log_file = logs_dir / f'{name}.log'
             f_handler = logging.FileHandler(log_file, 'a')
             f_handler.setFormatter(formatter)
             f_handler.setLevel(level)
             self.addHandler(f_handler)
+
 
     def set_level(self, level: int | str) -> None:
         self.setLevel(level)

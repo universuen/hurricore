@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hurricore"
+version = "1.0.0"
+description = "A deep learning framework based on PyTorch and Accelerate."
+readme = { file = "README.md", content-type = "text/markdown" }
+license = "MIT"
+authors = [
+    { name = "universuen", email = "universuen@gmail.com" }
+]
+dependencies = [
+    "torch",
+    "accelerate",
+    "pytest",
+    "tensorboard",
+    "pynvml",
+    # "protobuf=3.20.2",
+    "lmdb",
+    "scikit-learn",
+    "torchmetrics",
+    "matplotlib",
+    "openai",
+    "rapidocr_onnxruntime",
+    "transformers",
+    "qwen_vl_utils",
+    "deepspeed==0.15.4",
+    # "vllm==0.8.1",
+    "nvitop",
+]
+
+[project.urls]
+Homepage = "https://github.com/universuen/hurricore"
+
+[tool.setuptools]
+packages = { find = { include = ["hurricore"] } }
+
+[tool.pyright]
+include = ["hurricore"]
+exclude = [
+    "**/__pycache__",
+    "**/data",
+]
+
+[project.optional-dependencies]
+projects = [
+    "pandas",
+    "peft",
+    "onnx",
+    "diffusers",
+    "datasets",
+    "gradio",
+    "torchvision"
+]

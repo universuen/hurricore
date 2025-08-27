@@ -1,80 +1,62 @@
-from os import cpu_count
 import logging
 from pathlib import Path
 
 from hurricore.utils import ConfigBase, get_file_name
 
 
-# hyperparameters
-num_epochs = 2
-batch_size = 8
-lr = 1e-4
-
-
-# intervals
-gradient_accumulation_interval = 1
-ckpt_interval = int(1e9)
-log_interval = 1
-tensor_board_interval = 1
-
-
 config_name = get_file_name()
 
 
-class LaunchConfig(ConfigBase):
-    num_processes = 1
-    use_port = "8000"
-
-
 class PathConfig(ConfigBase):
-    project = Path(__file__).parents[1]
-    data = project / 'data'
-    logs = data / 'logs'
-    checkpoints = data / 'checkpoints' / config_name
-    tensor_boards = data / 'tensor_boards' / config_name
+    project: Path = Path(__file__).parents[1]
+    data: Path = project / 'data'
+    logs: Path = data / 'logs'
+    datasets: Path = data / 'datasets'
+    checkpoints: Path = data / 'checkpoints' / config_name
+    tensor_boards: Path = data / 'tensorboards' / config_name
+    histories: Path = data / 'histories' / config_name
+    results: Path = data / 'results' / config_name
+    others: Path = data / 'others'
 
     def __post_init__(self) -> None:
-        for path in vars(self).values():
-            path.mkdir(parents=True, exist_ok=True)
+        for path in self.values():
+            if isinstance(path, Path):
+                path.mkdir(parents=True, exist_ok=True)
 
 
-class TrainerConfig(ConfigBase):
-    # basic
-    num_epochs = num_epochs
-    # logger hook
-    log_interval = gradient_accumulation_interval
-    # lr scheduler hook
-    lr_scheduler_mode = 'per_step'
-    # tensor board hook
-    tensor_board_folder_path = PathConfig().tensor_boards
-    tensor_board_interval = gradient_accumulation_interval
-    tensor_board_record_grad = False
-    # checkpoint hook
-    ckpt_folder_path = PathConfig().checkpoints
-    ckpt_interval = gradient_accumulation_interval * ckpt_interval
-    ckpt_seed = 42
-    
-
-class OptimizerConfig(ConfigBase):
-    lr = lr
-
-
-class DatasetConfig(ConfigBase):
+class ModelConfig(ConfigBase):
     ...
 
 
-class DataLoaderConfig(ConfigBase):
-    batch_size = batch_size
-    shuffle = True
-    num_workers = cpu_count()
+class TrainingDatasetConfig(ConfigBase):
+    ...
 
 
-class LoggerConfig(ConfigBase):
-    name = config_name
-    level = logging.DEBUG
-    logs_dir = PathConfig().logs
-    
+class ValidationDatasetConfig(ConfigBase):
+    ...
+
 
 class AcceleratorConfig(ConfigBase):
-    gradient_accumulation_steps = gradient_accumulation_interval
-    # mixed_precision = 'fp16'
+    gradient_accumulation_steps: int = 1
+    mixed_precision: str = 'bf16'
+
+
+class TrainerConfig(ConfigBase):
+    # Basic configs
+    num_epochs: int = 3
+    per_device_batch_size: int = 1
+    learning_rate: float = 1e-4
+    gradient_clipping_norm: float = 1.0
+    gradient_clipping_value: float = None
+    data_folder_path: Path = PathConfig().data
+    # Hook specific configs
+    experiment_name: str = config_name
+    log_level: int = logging.INFO
+    log_interval: int = 1 * AcceleratorConfig().gradient_accumulation_steps
+    tensor_board_record_param_and_grad: bool = True
+    evaluation_interval: int = 100 * AcceleratorConfig().gradient_accumulation_steps
+    ckpt_interval: int = 500 * AcceleratorConfig().gradient_accumulation_steps
+
+
+class RuntimeConfig(ConfigBase):
+    ...

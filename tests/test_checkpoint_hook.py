@@ -8,14 +8,14 @@ from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
 
-from hurricore.trainers import Trainer
+from hurricore.trainers import HurricoreTrainer
 from hurricore.hooks import CheckpointHook
 
 
 temp_folder_path = Path(__file__).parents[1] / '_temp_checkpoints'
 
 
-class _TestTrainer(Trainer):
+class _TestTrainer(HurricoreTrainer):
     def __init__(self):
         model = nn.Linear(1, 1)
         super().__init__(
@@ -29,13 +29,38 @@ class _TestTrainer(Trainer):
         self.iterated_results = []
     
     
-    def training_step(self) -> torch.Tensor:
+    def step(self) -> torch.Tensor:
         batch = self.accelerator.gather(
-            self.ctx.batches[0]
+            self.context.batch
         ).sort()[0]
         self.iterated_results.append(batch)
         return torch.tensor(0.0)
     
+
+class _TestTrainerWithMultipleDataLoader(HurricoreTrainer):
+    def __init__(self):
+        model = nn.Linear(1, 1)
+        super().__init__(
+            models=[model],
+            optimizers=[AdamW(model.parameters(), lr=1e-3)],
+            data_loaders=[
+                DataLoader(range(10), batch_size=1, shuffle=True), 
+                DataLoader(range(5), batch_size=1, shuffle=True)
+            ],
+            accelerator=Accelerator(),
+            num_epochs=2,
+        )
+        self.hooks = [CheckpointHook(self, folder_path=temp_folder_path, interval=5)]
+        self.iterated_results = []
+    
+    
+    def step(self) -> torch.Tensor:
+        batch = self.accelerator.gather(
+            self.context.batch
+        )
+        self.iterated_results.append(batch)
+        return torch.tensor(0.0)
+
 
 def test_checkpoint_hook_dataloader():
     # set up test folder
@@ -61,7 +86,7 @@ def test_checkpoint_hook_dataloader():
     # test reproducibility on the 2nd epoch
     trainer = _TestTrainer()
     trainer.run()
-    assert len(trainer.iterated_results) == 5, "Continued number of batches is not correct."
+    assert len(trainer.iterated_results) == 5, f"Continued number of batches is not correct. Expected 5, got {len(trainer.iterated_results)}."
     new_results = trainer.iterated_results.copy()
     assert new_results == original_results[15:], "Continued batches do not match the original."
 
@@ -84,6 +109,55 @@ def test_checkpoint_hook_dataloader():
     if trainer.accelerator.is_main_process:
         shutil.rmtree(temp_folder_path)
     trainer.accelerator.wait_for_everyone()
+
+
+def test_checkpoint_hook_multiple_dataloaders():
+    # set up test folder
+    temp_folder_path.mkdir(parents=True, exist_ok=True)
+    trainer = _TestTrainerWithMultipleDataLoader()
+    if trainer.accelerator.is_main_process:
+        shutil.rmtree(temp_folder_path)
+        temp_folder_path.mkdir(parents=True)
+    trainer.accelerator.wait_for_everyone()
+    
+    trainer.run()
+    assert len(trainer.iterated_results) == 20, "Not all batches are iterated."
+    original_results = trainer.iterated_results.copy()
+    
+    # remove all but the 5th and the 15th
+    if trainer.accelerator.is_main_process:
+        ckpt_dirs = [d for d in temp_folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
+        for ckpt_dir in ckpt_dirs:
+            if ckpt_dir.name not in ['ckpt_step_5', 'ckpt_step_15']:
+                shutil.rmtree(ckpt_dir)
+    trainer.accelerator.wait_for_everyone()
+    
+    # test reproducibility on the 2nd epoch
+    trainer = _TestTrainerWithMultipleDataLoader()
+    trainer.run()
+    assert len(trainer.iterated_results) == 5, f"Continued number of batches is not correct. Expected 5, got {len(trainer.iterated_results)}."
+    new_results = trainer.iterated_results.copy()
+    assert new_results == original_results[15:], "Continued batches do not match the original."
+
+    # remove all but the 5th
+    if trainer.accelerator.is_main_process:
+        ckpt_dirs = [d for d in temp_folder_path.iterdir() if d.is_dir() and d.name.startswith('ckpt_step_')]
+        for ckpt_dir in ckpt_dirs:
+            if ckpt_dir.name not in ['ckpt_step_5']:
+                shutil.rmtree(ckpt_dir)
+    trainer.accelerator.wait_for_everyone()
+    
+    # test reproducibility on the 1st epoch
+    trainer = _TestTrainerWithMultipleDataLoader()
+    trainer.run()
+    assert len(trainer.iterated_results) == 15, "Continued number of batches is not correct."
+    new_results = trainer.iterated_results.copy()
+    assert new_results == original_results[5:], "Continued batches do not match the original."
+    
+    # clean up
+    if trainer.accelerator.is_main_process:
+        shutil.rmtree(temp_folder_path)
+    trainer.accelerator.wait_for_everyone()
     
 
 def test_checkpoint_hook_context():
@@ -96,7 +170,7 @@ def test_checkpoint_hook_context():
     trainer.accelerator.wait_for_everyone()
         
     trainer.run()
-    original_context = deepcopy(trainer.ctx)
+    original_context = deepcopy(trainer.context)
     
     # remove all but the 5th and the 15th
     if trainer.accelerator.is_main_process:
@@ -109,7 +183,7 @@ def test_checkpoint_hook_context():
     # test reproducibility on the 2nd epoch
     trainer = _TestTrainer()
     trainer.run()
-    new_context = deepcopy(trainer.ctx)
+    new_context = deepcopy(trainer.context)
     for key in vars(original_context).keys():
         new_value = getattr(new_context, key)
         original_value = getattr(original_context, key)
@@ -131,7 +205,7 @@ def test_checkpoint_hook_context():
     # test reproducibility on the 1st epoch
     trainer = _TestTrainer()
     trainer.run()
-    new_context = deepcopy(trainer.ctx)
+    new_context = deepcopy(trainer.context)
     for key in vars(original_context).keys():
         assert new_value == original_value, \
             (
@@ -144,3 +218,9 @@ def test_checkpoint_hook_context():
     if trainer.accelerator.is_main_process:
         shutil.rmtree(temp_folder_path)
     trainer.accelerator.wait_for_everyone()
+
+
+if __name__ == "__main__":
+    test_checkpoint_hook_multiple_dataloaders()
+    test_checkpoint_hook_dataloader()
+    test_checkpoint_hook_context()

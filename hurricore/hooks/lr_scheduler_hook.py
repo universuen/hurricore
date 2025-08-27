@@ -1,82 +1,51 @@
+from __future__ import annotations
+
 from torch.optim.lr_scheduler import LRScheduler
 
-from hurricore.hooks import Hook, LoggerHook, TensorBoardHook
-from hurricore.trainers import Trainer
-from hurricore.utils import Context, auto_name
+from hurricore.hooks import HurricoreHook
+from hurricore.trainers import HurricoreTrainer
+from hurricore.utils import assign_args
 
 
-def _get_max_list_delta(a, b):
-    return max([abs(x - y) for x, y in zip(a, b)])
-
-
-class LRSchedulerHook(Hook):
+class LRSchedulerHook(HurricoreHook):
     def __init__(
         self,
-        trainer: Trainer,
+        trainer: HurricoreTrainer,
         lr_schedulers: list[LRScheduler] = None,
-        mode: str = 'per_epoch',
+        modes: list[str] = None,
     ) -> None:
         super().__init__(trainer)
-        # check validity
-        assert mode in ['per_epoch', 'per_step'], 'Invalid mode.'
+        self._validate_inputs(lr_schedulers, modes)
+        self.modes = modes
+        assign_args(self.init_context, locals())
+    
+
+    def __post_init__(self) -> None:
+        self.lr_schedulers: list[LRScheduler] = []
+        for lr_scheduler in self.init_context.lr_schedulers:
+            self.trainer.accelerator.register_for_checkpointing(lr_scheduler)
+            self.lr_schedulers.append(lr_scheduler)
+
+
+    def _validate_inputs(self, lr_schedulers: list[LRScheduler], modes: list[str]) -> None:
+        assert len(lr_schedulers) == len(modes), 'Length of lr_schedulers and modes should be the same.'
+        for mode in modes:
+            assert mode in ['per_epoch', 'per_step'], 'Invalid mode.'
         for lr_scheduler in lr_schedulers:
             assert lr_scheduler is not None, 'Invalid learning rate scheduler.'
-        # setup trainer
-        self.originals = Context(
-            lr_schedulers=lr_schedulers,
-        )
-        trainer.accelerator.step_scheduler_with_optimizer = (mode == 'per_step')
-        LoggerHook.msg_queue.append(('info', f'Set `accelerator.step_scheduler_with_optimizer` to {mode == "per_step"}'))
-        # setup self
-        self.mode = mode
-        self.lr_schedulers = [
-            trainer.accelerator.prepare(lr_scheduler) 
-            for lr_scheduler in lr_schedulers
-        ]
-        self._lr_records = [lr_scheduler.get_last_lr() for lr_scheduler in self.lr_schedulers]
-    
-    
-    def on_epoch_end(self) -> None:
-        if self.mode != 'per_epoch':
-            return
-        for lr_scheduler in self.lr_schedulers:
-            lr_scheduler.step()
-        self._update_lr_records()
+            
 
-    
-    def on_step_end(self) -> None:
-        if self.mode != 'per_step':
+    def execute_on_epoch_end(self) -> None:
+        self._step_schedulers('per_epoch')
+
+
+    def execute_on_step_end(self) -> None:
+        if not self.trainer.accelerator.sync_gradients:
             return
-        for lr_scheduler in self.lr_schedulers:
-            lr_scheduler.step()
-        self._update_lr_records()
-    
-    
-    def _update_lr_records(self):
-        current_lrs = [lr_scheduler.get_last_lr() for lr_scheduler in self.lr_schedulers]
-        if all(
-            [
-                _get_max_list_delta(current, previous) < 1e-7 
-                for current, previous in zip(current_lrs, self._lr_records)
-            ]
-        ):
-            if self.trainer.ctx.global_step > 0:
-                return
-        self._lr_records = current_lrs
-        lr_schedulers = self.originals.lr_schedulers
-        optimizers = [lr_scheduler.optimizer for lr_scheduler in lr_schedulers]
-        for name, lr_scheduler in zip(auto_name(optimizers), lr_schedulers):
-            lr_string = '|'.join([f"{lr:.7f}" for lr in lr_scheduler.get_last_lr()])
-            msg = f"{name} LR: {lr_string}"
-            LoggerHook.msg_queue.append(('info', msg))
-            for idx, lr in enumerate(lr_scheduler.get_last_lr()):
-                TensorBoardHook.msg_queue.append(
-                    (
-                        'add_scalar',
-                        {
-                            'tag': f'Learning Rate/{name} group_{idx}',
-                            'scalar_value': lr,
-                            'global_step': self.trainer.ctx.global_step,
-                        }
-                    )
-                )
+        self._step_schedulers('per_step')
+
+
+    def _step_schedulers(self, mode: str) -> None:
+        for lr_scheduler, scheduler_mode in zip(self.lr_schedulers, self.modes):
+            if scheduler_mode == mode:
+                lr_scheduler.step()

@@ -5,15 +5,15 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from accelerate import Accelerator
 
-from hurricore.trainers import Trainer
+from hurricore.trainers import HurricoreTrainer
 from hurricore.hooks import LRSchedulerHook
 
 
-class _TestTrainer(Trainer):
+class _TestTrainer(HurricoreTrainer):
     def __init__(
         self,
         num_processes = 1,
-        # gradient_accumulation_interval = 10,
+        # gradient_accumulation_steps = 10,
         batch_size = 8,
         num_epochs = 2,
     ):
@@ -22,17 +22,11 @@ class _TestTrainer(Trainer):
         super().__init__(
             models=[model],
             optimizers=[optimizer],
-            data_loaders=[
-                DataLoader(
-                    range(100), 
-                    batch_size=batch_size, 
-                    shuffle=True
-                ),
-            ],
+            data_loaders=[DataLoader(range(100), batch_size=batch_size, shuffle=True)],
             accelerator=Accelerator(),
             num_epochs=num_epochs,
         )
-        num_batches = len(self.data_loaders[0])
+        num_batches = len(self.data_loader)
         self.hooks = [
             LRSchedulerHook(
                 trainer=self,
@@ -43,13 +37,13 @@ class _TestTrainer(Trainer):
                         eta_min=0.0,
                     )
                 ],
-                mode='per_step'
+                modes=['per_step']
             )
         ]
         self.iterated_results = []
     
     
-    def training_step(self) -> torch.Tensor:
+    def step(self) -> torch.Tensor:
         self.optimizers[0].step()
         return torch.tensor(0.0)
     
@@ -57,10 +51,14 @@ class _TestTrainer(Trainer):
 def test_lr_scheduler_hook():
     trainer = _TestTrainer()
     trainer.run()
-    lr_scheduler = trainer.get_hook(LRSchedulerHook).originals.lr_schedulers[0]
+    lr_scheduler = trainer.hooks["LRSchedulerHook"].lr_schedulers[0]
     current_lr = lr_scheduler.get_last_lr()[0]
     assert current_lr == 0.0, \
         (
             f"Learning rate is not scheduled as expected.\n"
             f"\tExpected 0.0, got {current_lr}."
         )
+
+
+if __name__ == '__main__':
+    test_lr_scheduler_hook()
