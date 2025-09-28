@@ -10,10 +10,10 @@ class Logger(logging.Logger):
             self,
             name: str,
             level: int | str = logging.INFO,
-            logs_dir: Path | None = None,
+            log_file_path: str | Path = None,
     ) -> None:
         super().__init__(name, level=level)
-        self.logs_dir = logs_dir
+        self.log_file_path = log_file_path
         formatter = logging.Formatter(
             fmt='%(asctime)s [%(name)s][%(levelname)s]: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S',
@@ -23,10 +23,10 @@ class Logger(logging.Logger):
         s_handler.setLevel(level)
         self.addHandler(s_handler)
 
-        if logs_dir is not None:
-            logs_dir.mkdir(exist_ok=True, parents=True)
-            log_file = logs_dir / f'{name}.log'
-            f_handler = logging.FileHandler(log_file, 'a')
+        if log_file_path is not None:
+            # Create the log file directory if it doesn't exist
+            log_file_path.parent.mkdir(parents=True, exist_ok=True)
+            f_handler = logging.FileHandler(log_file_path, 'a')
             f_handler.setFormatter(formatter)
             f_handler.setLevel(level)
             self.addHandler(f_handler)

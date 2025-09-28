@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from accelerate import Accelerator
 
 from hurricore.utils import load_config
-from my_trainer import MyTrainer
+from my_trainers.my_trainer import MyTrainer
 
 if TYPE_CHECKING:
     from configs import debug as config
@@ -18,7 +18,6 @@ import config from file path
 import config from url
 `config = load_config('https://raw.githubusercontent.com/universuen/hurricore/main/projects/_project_template/configs/default.py')`
 """
-
 
 def main():
     # Setup accelerator

@@ -233,9 +233,9 @@ def find_latest_checkpoint_folder(checkpoints_folder_path: Path | str) -> Path:
     return checkpoints_folder_path / f"ckpt_step_{latest_step}"
 
 
-def is_deepspeed_zero3(accelerator) -> bool:
-    if accelerator.state.deepspeed_plugin is not None \
-    and accelerator.state.deepspeed_plugin.zero_stage == 3:
+def deepspeed_zero3_enabled() -> bool:
+    if env.accelerator.state.deepspeed_plugin is not None \
+    and env.accelerator.state.deepspeed_plugin.zero_stage == 3:
         return True
     return False
 

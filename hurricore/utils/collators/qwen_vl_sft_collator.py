@@ -17,7 +17,6 @@ class QwenVLSFTCollator(LLMSFTCollator):
             prompt_prefix: str = "<|im_start|>user",
             response_prefix: str = "<|im_start|>assistant",
             generation_mode: bool = False,
-            # tokenize: bool = True,
             ignore_warnings: bool = False,
             attach_labels: bool = True,
         ) -> None:
@@ -28,7 +27,6 @@ class QwenVLSFTCollator(LLMSFTCollator):
             prompt_prefix=prompt_prefix,
             response_prefix=response_prefix,
             generation_mode=generation_mode,
-            # tokenize=tokenize,
             ignore_warnings=ignore_warnings,
             attach_labels=attach_labels,
         )
@@ -67,6 +65,7 @@ class QwenVLSFTCollator(LLMSFTCollator):
                     {"role": "assistant", "content": ["I don't want to tell you."]},
                 ],
                 [
+                    {"role": "system", "content": "You are a secret keeper."},
                     {"role": "user", "content": "What's your name?"},
                     {"role": "assistant", "content": "I don't want to tell you."},
                 ],

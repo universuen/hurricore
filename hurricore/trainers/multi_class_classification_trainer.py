@@ -48,10 +48,15 @@ class MultiClassClassificationTrainer(StandardTrainer):
                 )
             )
         )
-    
 
-    def compute_loss(self, batch: Any) -> torch.Tensor:
-        model_inputs, labels = batch
+
+    def compute_loss(self, batch: dict) -> torch.Tensor:
+        assert type(batch) is dict, f"Invalid batch type: {type(batch)}"
+        assert "model_inputs" in batch.keys(), f"`model_inputs` not in batch keys: {batch.keys()}"
+        assert type(batch['model_inputs']) is dict, f"Invalid model_inputs type: {type(batch['model_inputs'])}. Expected dict"
+        assert "labels" in batch.keys(), f"`labels` not in batch keys: {batch.keys()}"
+        assert type(batch['labels']) is torch.Tensor, f"Invalid labels type: {type(batch['labels'])}. Expected torch.Tensor"
+        model_inputs, labels = batch['model_inputs'], batch['labels']
         logits = self.model(**model_inputs) if type(model_inputs) is dict else self.model(model_inputs)
         assert logits.shape[-1] == self.init_context.num_classes, f"Logits shape: {logits.shape}, num_classes: {self.init_context.num_classes}"
         loss = self.criterion(logits, labels)

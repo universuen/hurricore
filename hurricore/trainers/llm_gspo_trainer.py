@@ -10,7 +10,9 @@ from hurricore.trainers import LLMGRPOTrainer
 
 class LLMGSPOTrainer(LLMGRPOTrainer):
 
-    def compute_loss(self, batch: Any) -> torch.Tensor:
+    def compute_loss(self, batch: dict) -> torch.Tensor:
+        assert type(batch) is dict, f"Expected batch to be a dict, got {type(batch)}"
+        assert "torch_model_inputs" in batch, f"Expected batch to contain 'torch_model_inputs', but got {batch.keys()}"
         # Get grouped completions and advantages
         grouped_completions, grouped_rewards = self.get_grouped_completions_with_rewards(batch)
 
@@ -20,7 +22,7 @@ class LLMGSPOTrainer(LLMGRPOTrainer):
         # Compute initial policy probabilities
         init_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
             model=self.model,
-            encoded_prompts=batch["encoded_prompts"],
+            torch_model_inputs=batch["torch_model_inputs"],
             grouped_completions=grouped_completions,
         )
         
@@ -28,7 +30,7 @@ class LLMGSPOTrainer(LLMGRPOTrainer):
         with torch.no_grad():
             ref_token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.ref_model,
-                encoded_prompts=batch["encoded_prompts"],
+                torch_model_inputs=batch["torch_model_inputs"],
                 grouped_completions=grouped_completions,
             )[0] if self.ref_model is not None else torch.zeros_like(init_token_log_probs)
 
@@ -38,7 +40,7 @@ class LLMGSPOTrainer(LLMGRPOTrainer):
             # Re-compute current policy probabilities for the same completions if not the first step
             token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.model,
-                encoded_prompts=batch["encoded_prompts"],
+                torch_model_inputs=batch["torch_model_inputs"],
                 grouped_completions=grouped_completions,
             )[0] if i > 0 else init_token_log_probs
 

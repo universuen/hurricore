@@ -68,12 +68,14 @@ class StandardTrainer(HurricoreTrainer):
         self._attach_to_hurricore_trainer()
 
 
-    def setup_data_loaders(self) -> None:
+    def setup_data_loaders(self, num_workers: int = None) -> None:
+        if num_workers is None:
+            num_workers = os.cpu_count() // self.init_context.accelerator.num_processes
         self.init_context.training_data_loader = DataLoader(  # noqa
             dataset=self.init_context.training_dataset,
             batch_size=self.init_context.per_device_batch_size,
             shuffle=True,
-            num_workers=os.cpu_count() // self.init_context.accelerator.num_processes,
+            num_workers=num_workers,
             pin_memory=True,
             collate_fn=self.init_context.collate_fn,
         )
@@ -81,7 +83,7 @@ class StandardTrainer(HurricoreTrainer):
             dataset=self.init_context.validation_dataset,
             batch_size=self.init_context.per_device_batch_size,
             shuffle=False,
-            num_workers=os.cpu_count() // self.init_context.accelerator.num_processes,
+            num_workers=num_workers,
             pin_memory=True,
             collate_fn=self.init_context.collate_fn,
         )
@@ -112,7 +114,7 @@ class StandardTrainer(HurricoreTrainer):
                     experiment_name=self.init_context.experiment_name,
                     level=self.init_context.log_level,
                     log_trainable_params=self.init_context.log_trainable_params,
-                    folder_path=self.init_context.data_folder_path / 'logs',
+                    log_file_path=self.init_context.data_folder_path / 'logs' / f'{self.init_context.experiment_name}.log',
                     interval=self.init_context.log_interval,
                 ),
                 LRSchedulerHook(

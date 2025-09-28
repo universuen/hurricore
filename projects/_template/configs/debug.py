@@ -4,7 +4,7 @@ from pathlib import Path
 from hurricore.utils import ConfigBase, get_file_name
 
 
-config_name = get_file_name()
+experiment_name = get_file_name()
 
 
 class PathConfig(ConfigBase):
@@ -12,10 +12,10 @@ class PathConfig(ConfigBase):
     data: Path = project / 'data'
     logs: Path = data / 'logs'
     datasets: Path = data / 'datasets'
-    checkpoints: Path = data / 'checkpoints' / config_name
-    tensor_boards: Path = data / 'tensorboards' / config_name
-    histories: Path = data / 'histories' / config_name
-    results: Path = data / 'results' / config_name
+    checkpoints: Path = data / 'checkpoints' / experiment_name
+    tensor_boards: Path = data / 'tensorboards' / experiment_name
+    histories: Path = data / 'histories' / experiment_name
+    results: Path = data / 'results' / experiment_name
     others: Path = data / 'others'
 
     def __post_init__(self) -> None:
@@ -50,7 +50,7 @@ class TrainerConfig(ConfigBase):
     gradient_clipping_value: float = None
     data_folder_path: Path = PathConfig().data
     # Hook specific configs
-    experiment_name: str = config_name
+    experiment_name: str = experiment_name
     log_level: int = logging.INFO
     log_interval: int = 1 * AcceleratorConfig().gradient_accumulation_steps
     tensor_board_record_param_and_grad: bool = True

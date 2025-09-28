@@ -15,7 +15,6 @@ class LLMSFTCollator:
             prompt_prefix: str = "<|im_start|>user",
             response_prefix: str = "<|im_start|>assistant",
             generation_mode: bool = False,
-            # tokenize: bool = True,
             ignore_warnings: bool = False,
             attach_labels: bool = True,
         ) -> None:
@@ -24,7 +23,6 @@ class LLMSFTCollator:
         self.prompt_prefix = prompt_prefix
         self.response_prefix = response_prefix
         self.generation_mode = generation_mode
-        # self.tokenize = tokenize
         self.ignore_warnings = ignore_warnings
         self.attach_labels = attach_labels
 
@@ -40,6 +38,7 @@ class LLMSFTCollator:
                     {"role": "assistant", "content": "I'm fine."},
                 ],
                 [
+                    {"role": "system", "content": "You are a secret keeper."},
                     {"role": "user", "content": "What's your name?"},
                     {"role": "assistant", "content": "I don't want to tell you."},
                 ],

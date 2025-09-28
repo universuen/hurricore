@@ -9,7 +9,7 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 
-from hurricore.utils import AttributeDict, HurricoreHookList
+from hurricore.utils import AttributeDict, HurricoreHookList, env
 
 if TYPE_CHECKING:
     from hurricore.hooks import HurricoreHook
@@ -55,6 +55,7 @@ class HurricoreTrainer:
         gradient_clipping_norm: float | None = None,
         hooks: list[HurricoreHook] | None = None,
     ) -> None:
+        env.accelerator = accelerator
         # Backup original objects
         self.originals = _Originals(
             models=models,

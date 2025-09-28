@@ -4,6 +4,8 @@ os.environ["VLLM_CONFIGURE_LOGGING"] = "0"
 from vllm import LLM, SamplingParams
 from transformers import PreTrainedModel
 
+from hurricore.utils import deepspeed_zero3_enabled
+
 
 class VLLMRollout:
     def __init__(
@@ -13,6 +15,7 @@ class VLLMRollout:
     ) -> None:
         self.model = model
         self.vllm_kwargs = vllm_kwargs or dict()
+        os.environ["RANK"] = os.environ.get("RANK", "0")
         os.environ["LOCAL_RANK"] = os.environ.get("LOCAL_RANK", "0")
         os.environ["WORLD_SIZE"] = os.environ.get("WORLD_SIZE", "1")
 
@@ -28,9 +31,16 @@ class VLLMRollout:
 
     def update_weights(self, model: PreTrainedModel = None) -> None:
         model = model or self.model
-        for param_name, param in model.named_parameters():
-            inner_model = self.vllm.llm_engine.model_executor.driver_worker.model_runner.model
-            inner_model.load_weights([(param_name, param.data)])
+        if deepspeed_zero3_enabled():
+            import deepspeed
+            for param_name, param in model.named_parameters():
+                with deepspeed.zero.GatheredParameters([param]):
+                    inner_model = self.vllm.llm_engine.model_executor.driver_worker.model_runner.model
+                    inner_model.load_weights([(param_name, param.data)])
+        else:
+            for param_name, param in model.named_parameters():
+                inner_model = self.vllm.llm_engine.model_executor.driver_worker.model_runner.model
+                inner_model.load_weights([(param_name, param.data)])
         self.vllm.reset_prefix_cache()
     
 

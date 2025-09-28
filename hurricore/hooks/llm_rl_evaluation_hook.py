@@ -73,8 +73,11 @@ class LLMRLEvaluationHook(HurricoreHook):
             else:
                 env.logger.warning("No checkpoint hook found")
 
-        env.logger.info(f'Validation reward: {avg_reward}')
-        env.logger.info(f'Validation response length: {avg_rsp_len}')
+        env.logger.info(
+            f"Validation reward: {avg_reward:.2f} "
+            f"(best: {self.records.best_reward:.2f} at step {self.records.best_step})"
+        )
+        env.logger.info(f'Validation response length: {avg_rsp_len: .2f}')
 
         env.tensor_board_writer.add_scalar(
             tag='Reward/Validation',

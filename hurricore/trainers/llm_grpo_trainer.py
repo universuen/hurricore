@@ -72,8 +72,7 @@ class LLMGRPOTrainer(StandardTrainer):
         # Set ref model
         self.ref_model = None
         if beta > 0:
-            if ref_model is None:
-                ref_model = copy.deepcopy(model)
+            ref_model = ref_model or copy.deepcopy(model)
             self.ref_model = ref_model.to(self.accelerator.device)
         # Set hyper parameters
         self.beta = beta
@@ -83,7 +82,7 @@ class LLMGRPOTrainer(StandardTrainer):
         # Enable gradient checkpointing
         if gradient_checkpointing_enable:
             model.gradient_checkpointing_enable()
-        # Set vLLM parameters
+        # Setup vLLM parameters
         self.use_vllm = use_vllm
         if use_vllm:
             vllm_kwargs = vllm_kwargs or dict()
@@ -91,7 +90,6 @@ class LLMGRPOTrainer(StandardTrainer):
             # This param is frequently used, so we save it as a separate variable
             self.vllm_tensor_parallel_size = vllm_kwargs.get("tensor_parallel_size", 1)  
             self.vllm_kwargs = {
-                "max_model_len": 16 * 1024,
                 "gpu_memory_utilization": 0.5,
                 "max_num_seqs": per_device_batch_size * group_size * self.vllm_tensor_parallel_size,
                 "tensor_parallel_size": self.vllm_tensor_parallel_size,
@@ -108,12 +106,15 @@ class LLMGRPOTrainer(StandardTrainer):
 
 
     def setup_vllm_rollout(self) -> None:
+        os.environ["RANK"] = str(self.accelerator.process_index)
         os.environ["LOCAL_RANK"] = str(self.accelerator.local_process_index)
         os.environ["WORLD_SIZE"] = str(self.accelerator.num_processes)
+        self.accelerator.wait_for_everyone()
         self.vllm_rollout = VLLMRollout(
             model=self.original_model,
             vllm_kwargs=self.vllm_kwargs,
         )
+        self.accelerator.wait_for_everyone()
         self.vllm_rollout.sleep()
         self.vllm_tp_group, _ = torch.distributed.new_subgroups_by_enumeration(
             [
@@ -146,35 +147,35 @@ class LLMGRPOTrainer(StandardTrainer):
         ) -> tuple[list[list[str]], torch.Tensor]:
         group_size = group_size or self.group_size
         # Generate completions for each group
-        assert "encoded_prompts" in batch.keys(), "encoded_prompts not found in batch"
-        assert "targets" in batch, "targets not found in batch"
-        encoded_prompts = batch["encoded_prompts"]
+        assert type(batch) is dict, f"Expected batch to be a dict, got {type(batch)}: {batch}"
+        assert "torch_model_inputs" in batch.keys(), f"torch_model_inputs not found in batch keys: {batch.keys()}"
+        assert "targets" in batch.keys(), f"targets not found in batch keys: {batch.keys()}"
+        torch_model_inputs = batch["torch_model_inputs"]
         targets = batch["targets"]
 
         if self.use_vllm:
-            # Move model to CPU for weight update
-            self.original_model.to("cpu")
             assert "vllm_prompts" in batch.keys(), "vllm_prompts not found in batch"
             vllm_prompts = batch["vllm_prompts"]
             # Wake up vLLM and update weights
             self.vllm_rollout.wake_up()
+            # self.accelerator.wait_for_everyone()
             self.vllm_rollout.update_weights(model=self.original_model)
+            self.accelerator.wait_for_everyone()
             # Prepare flatten grouped prompts
             flatten_grouped_vllm_prompts = vllm_prompts * group_size
             # Get completions
             flatten_grouped_completions = self.get_vllm_completions(flatten_grouped_vllm_prompts)
             # Put vLLM back to sleep and move model back to GPU
             self.vllm_rollout.sleep()
-            self.original_model.to(self.accelerator.device)
         else:
-            flatten_grouped_encoded_prompts = {
+            flatten_grouped_torch_model_inputs = {
                 k: v.repeat(group_size, 1) 
-                for k, v in encoded_prompts.items()
+                for k, v in torch_model_inputs.items()
             }
-            flatten_grouped_completions = self.get_native_completions(flatten_grouped_encoded_prompts)
+            flatten_grouped_completions = self.get_native_completions(flatten_grouped_torch_model_inputs)
 
         # Reshape completions
-        batch_size = len(encoded_prompts["input_ids"])
+        batch_size = len(torch_model_inputs["input_ids"])
         grouped_completions = [
             flatten_grouped_completions[i * batch_size:(i + 1) * batch_size] 
             for i in range(len(flatten_grouped_completions) // batch_size)
@@ -192,6 +193,8 @@ class LLMGRPOTrainer(StandardTrainer):
 
 
     def compute_loss(self, batch: dict) -> torch.Tensor:
+        assert type(batch) is dict, f"Expected batch to be a dict, got {type(batch)}"
+        assert "torch_model_inputs" in batch, f"Expected batch to contain 'torch_model_inputs', but got {batch.keys()}"
         # Get grouped completions and advantages
         grouped_completions, grouped_rewards = self.get_grouped_completions_with_rewards(batch)
 
@@ -201,7 +204,7 @@ class LLMGRPOTrainer(StandardTrainer):
         # Compute initial policy probabilities
         init_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
             model=self.model,
-            encoded_prompts=batch["encoded_prompts"],
+            torch_model_inputs=batch["torch_model_inputs"],
             grouped_completions=grouped_completions,
         )
 
@@ -209,7 +212,7 @@ class LLMGRPOTrainer(StandardTrainer):
         with torch.no_grad():
             ref_token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.ref_model,
-                encoded_prompts=batch["encoded_prompts"],
+                torch_model_inputs=batch["torch_model_inputs"],
                 grouped_completions=grouped_completions,
             )[0] if self.ref_model is not None else torch.zeros_like(init_token_log_probs)
         
@@ -219,7 +222,7 @@ class LLMGRPOTrainer(StandardTrainer):
             # Re-compute current policy probabilities for the same completions if not the first step
             token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.model,
-                encoded_prompts=batch["encoded_prompts"],
+                torch_model_inputs=batch["torch_model_inputs"],
                 grouped_completions=grouped_completions,
             )[0] if i > 0 else init_token_log_probs
             
@@ -265,14 +268,14 @@ class LLMGRPOTrainer(StandardTrainer):
 
     
     @torch.no_grad()
-    def get_native_completions(self, encoded_prompts: dict) -> list[str]:
+    def get_native_completions(self, torch_model_inputs: dict) -> list[str]:
         self.model.gradient_checkpointing_disable()
         generated_ids = self.original_model.generate(
-            **encoded_prompts, 
+            **torch_model_inputs, 
             generation_config=GenerationConfig(**self.native_generation_config),
         )
         completions_ids = [
-            out_ids[len(in_ids):] for in_ids, out_ids in zip(encoded_prompts["input_ids"], generated_ids)
+            out_ids[len(in_ids):] for in_ids, out_ids in zip(torch_model_inputs["input_ids"], generated_ids)
         ]
         completions = self.tokenizer.batch_decode(
             completions_ids, 
@@ -316,7 +319,7 @@ class LLMGRPOTrainer(StandardTrainer):
     def get_token_log_probs_with_masks(
             self, 
             model: PreTrainedModel, 
-            encoded_prompts: dict,
+            torch_model_inputs: dict,
             completions: list[str], 
         ) -> tuple[torch.Tensor, torch.Tensor]:
         encoded_completions = self.tokenizer(
@@ -328,11 +331,11 @@ class LLMGRPOTrainer(StandardTrainer):
         completion_length = encoded_completions["input_ids"].shape[1]
         model_inputs = {
             "input_ids": torch.cat(
-                (encoded_prompts["input_ids"], encoded_completions["input_ids"]), 
+                (torch_model_inputs["input_ids"], encoded_completions["input_ids"]), 
                 dim=-1,
             ).to(torch.long),
             "attention_mask": torch.cat(
-                (encoded_prompts["attention_mask"], encoded_completions["attention_mask"]), 
+                (torch_model_inputs["attention_mask"], encoded_completions["attention_mask"]), 
                 dim=-1,
             ).to(torch.long),
         }
@@ -354,7 +357,7 @@ class LLMGRPOTrainer(StandardTrainer):
     def get_grouped_token_log_probs_with_masks(
             self, 
             model, 
-            encoded_prompts: dict,
+            torch_model_inputs: dict,
             grouped_completions: list[list[str]],
         ) -> tuple[torch.Tensor, torch.Tensor]:
         assert len(grouped_completions) == self.group_size, f"Expected {self.group_size} completions, got {len(grouped_completions)}"
@@ -365,7 +368,7 @@ class LLMGRPOTrainer(StandardTrainer):
         for completions in grouped_completions:
             completion_log_probs, attention_masks = self.get_token_log_probs_with_masks(
                 model=model, 
-                encoded_prompts=encoded_prompts, 
+                torch_model_inputs=torch_model_inputs, 
                 completions=completions,
             )
             completion_length = completion_log_probs.shape[1]

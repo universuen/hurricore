@@ -155,8 +155,8 @@ class LoggingHook(HurricoreHook):
         trainer: HurricoreTrainer,
         experiment_name: str,
         interval: int = 1, 
-        level=logging.INFO,
-        folder_path: Path = None,
+        level: int = logging.INFO,
+        log_file_path: str | Path = None,
         log_trainable_params: bool = False,
     ) -> None:
         super().__init__(
@@ -164,26 +164,29 @@ class LoggingHook(HurricoreHook):
             experiment_name=experiment_name,
             interval=interval,
             level=level,
-            folder_path=folder_path,
+            log_file_path=log_file_path,
             log_trainable_params=log_trainable_params,
         )
         assert interval > 0, 'Log interval must be greater than 0.'
-        assert isinstance(folder_path, Path), f'Invalid logging folder path. Expected Path, but got {type(folder_path)}.'
+        log_file_path = Path(log_file_path)
         self.interval = interval
         self.extra_log_bar_data = dict()
     
 
     def execute_on_trainer_init_end(self) -> None:
-        logger = Logger(
+        self.logger = Logger(
             name=self.init_context.experiment_name,
             level=self.init_context.level,
-            logs_dir=self.init_context.folder_path,
+            log_file_path=self.init_context.log_file_path,
+        ) if self.trainer.accelerator.is_main_process else Dummy()
+        self.process_logger = Logger(
+            name=f"{self.init_context.experiment_name}|process_{self.trainer.accelerator.process_index}",
+            level=self.init_context.level,
+            log_file_path=self.init_context.log_file_path,
         )
-        self.logger = logger if self.trainer.accelerator.is_main_process else Dummy()
-        self.all_process_logger = logger
         # Attach logger to Environment for global access
         env.logger = self.logger
-        env.all_process_logger = self.all_process_logger
+        env.process_logger = self.process_logger
         # Wrap trainer run method with exception logging
         self._wrap_trainer_run_method_with_exception_logging()
         self.logger.info(f'Loaded config from {env.config_path}')
@@ -206,8 +209,8 @@ class LoggingHook(HurricoreHook):
             try:
                 original_run_method(*args, **kwargs)
             except Exception as e:
-                self.all_process_logger.error(f'Exception occurred on device {self.trainer.accelerator.process_index}')
-                self.all_process_logger.exception(e)
+                self.process_logger.error(f'Exception occurred on device {self.trainer.accelerator.process_index}')
+                self.process_logger.exception(e)
                 raise 
         self.trainer.run = wrapped_run_method
     

@@ -34,7 +34,7 @@ class LLMTrainer(StandardTrainer):
         env.logger.info(f"`transformers` version: {transformers.__version__}")
     
 
-    def compute_loss(self, batch: Any) -> torch.Tensor:
+    def compute_loss(self, batch: dict) -> torch.Tensor:
         model_inputs = batch
         loss = self.model(**model_inputs, use_cache=False).loss
         return loss
