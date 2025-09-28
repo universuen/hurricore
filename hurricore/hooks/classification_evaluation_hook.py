@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from hurricore.hooks import HurricoreHook
 from hurricore.trainers import HurricoreTrainer
-from hurricore.utils import env, assign_args, ClassificationEvaluator, make_table
+from hurricore.utils import env, ClassificationEvaluator, make_table
 
 
 class ClassificationEvaluationHook(HurricoreHook):
@@ -17,13 +17,17 @@ class ClassificationEvaluationHook(HurricoreHook):
             evaluator: ClassificationEvaluator,
             interval: int = 10,
         ) -> None:
-        super().__init__(trainer)
+        super().__init__(
+            trainer=trainer,
+            data_loader=data_loader,
+            evaluator=evaluator,
+            interval=interval,
+        )
         self.evaluator = evaluator
         self.interval = interval
-        assign_args(self.init_context, locals())
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         self.data_loader = self.trainer.accelerator.prepare(self.init_context.data_loader)
         if self.trainer.accelerator.is_main_process:
             self.data_loader = tqdm(self.data_loader)

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from accelerate import Accelerator
 
 from hurricore.utils import load_config
-from trainers.my_trainer import MyTrainer
+from my_trainer import MyTrainer
 
 if TYPE_CHECKING:
     from configs import debug as config

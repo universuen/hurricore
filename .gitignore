@@ -21,4 +21,4 @@ data/
 *.jpeg
 *.onnx
 *.pyc
-
+.DS_Store

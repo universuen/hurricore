@@ -27,11 +27,11 @@ class LLMGRPOTrainer(StandardTrainer):
         # New in this class
         tokenizer: PreTrainedTokenizerBase,
         ref_model: PreTrainedModel = None,
-        beta: float = 0.04,
+        beta: float = 0.0,
         epsilon: float = 0.2,
         native_generation_config: dict | None = None,
         group_size: int = 8,
-        num_updates_per_batch: int = 3,
+        num_updates_per_batch: int = 1,
         gradient_checkpointing_enable: bool = True,
         use_vllm: bool = False,
         vllm_kwargs: dict | None = None,
@@ -60,7 +60,7 @@ class LLMGRPOTrainer(StandardTrainer):
         )
         # Set default generation config
         self.native_generation_config = {
-            "max_new_tokens": 1024,
+            "max_new_tokens": 4096,
             "temperature": 1.0,
             "do_sample": True,
             "use_cache": True,
@@ -70,9 +70,11 @@ class LLMGRPOTrainer(StandardTrainer):
         # Set tokenizer
         self.tokenizer = tokenizer
         # Set ref model
-        if ref_model is None:
-            ref_model = copy.deepcopy(model)
-        self.ref_model = ref_model.to(self.accelerator.device)
+        self.ref_model = None
+        if beta > 0:
+            if ref_model is None:
+                ref_model = copy.deepcopy(model)
+            self.ref_model = ref_model.to(self.accelerator.device)
         # Set hyper parameters
         self.beta = beta
         self.epsilon = epsilon
@@ -97,7 +99,7 @@ class LLMGRPOTrainer(StandardTrainer):
             }
             self.vllm_kwargs.update(vllm_kwargs)
             self.vllm_sampling_params = {
-                "max_tokens": 1024,
+                "max_tokens": 4096,
                 "temperature": 1.0,
             }
             self.vllm_sampling_params.update(vllm_sampling_params)
@@ -106,7 +108,7 @@ class LLMGRPOTrainer(StandardTrainer):
 
 
     def setup_vllm_rollout(self) -> None:
-        os.environ["LOCAL_RANK"] = str(self.accelerator.process_index)
+        os.environ["LOCAL_RANK"] = str(self.accelerator.local_process_index)
         os.environ["WORLD_SIZE"] = str(self.accelerator.num_processes)
         self.vllm_rollout = VLLMRollout(
             model=self.original_model,
@@ -196,40 +198,39 @@ class LLMGRPOTrainer(StandardTrainer):
         # Compute advantages
         grouped_advantages = self.compute_grouped_advantages(grouped_rewards).to(self.accelerator.device)
         
-        # Compute initial policy probabilities and detach to use as "old" probabilities
-        with torch.no_grad():
-            old_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
-                model=self.model,
-                encoded_prompts=batch["encoded_prompts"],
-                grouped_completions=grouped_completions,
-            )
+        # Compute initial policy probabilities
+        init_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
+            model=self.model,
+            encoded_prompts=batch["encoded_prompts"],
+            grouped_completions=grouped_completions,
+        )
 
         # Get reference model probabilities (frozen)
         with torch.no_grad():
-            ref_token_log_probs, _ = self.get_grouped_token_log_probs_with_masks(
+            ref_token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.ref_model,
                 encoded_prompts=batch["encoded_prompts"],
                 grouped_completions=grouped_completions,
-            )
+            )[0] if self.ref_model is not None else torch.zeros_like(init_token_log_probs)
         
         # Inner Update Loop
         total_loss = 0.0
-        for _ in range(self.num_updates_per_batch):
-            # Re-compute current policy probabilities for the same completions
-            token_log_probs, _ = self.get_grouped_token_log_probs_with_masks(
+        for i in range(self.num_updates_per_batch):
+            # Re-compute current policy probabilities for the same completions if not the first step
+            token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.model,
                 encoded_prompts=batch["encoded_prompts"],
                 grouped_completions=grouped_completions,
-            )
+            )[0] if i > 0 else init_token_log_probs
             
             # Compute KL divergence against the reference model
             kl_divergence = self.compute_kl_divergence(
                 ref_log_probs=ref_token_log_probs,
                 log_probs=token_log_probs,
-            )
+            ) if self.ref_model is not None else torch.zeros_like(token_log_probs)
 
             # Compute token losses
-            ratios = (token_log_probs - old_token_log_probs).exp()
+            ratios = (token_log_probs - init_token_log_probs.detach()).exp()
             clipped_ratios = torch.clamp(ratios, 1 - self.epsilon, 1 + self.epsilon)
             
             token_losses = -torch.min(
@@ -265,6 +266,7 @@ class LLMGRPOTrainer(StandardTrainer):
     
     @torch.no_grad()
     def get_native_completions(self, encoded_prompts: dict) -> list[str]:
+        self.model.gradient_checkpointing_disable()
         generated_ids = self.original_model.generate(
             **encoded_prompts, 
             generation_config=GenerationConfig(**self.native_generation_config),
@@ -277,6 +279,8 @@ class LLMGRPOTrainer(StandardTrainer):
             skip_special_tokens=True, 
             clean_up_tokenization_spaces=False,
         )
+        if self.init_context.gradient_checkpointing_enable:
+            self.model.gradient_checkpointing_enable()
         return completions
     
 

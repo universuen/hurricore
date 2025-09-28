@@ -4,7 +4,7 @@ from warnings import warn
 
 from transformers import PreTrainedTokenizer, BatchEncoding
 
-from hurricore.utils import find_all_sublist_indices, assign_args
+from hurricore.utils import find_all_sublist_indices
 
 
 class LLMSFTCollator:
@@ -15,14 +15,21 @@ class LLMSFTCollator:
             prompt_prefix: str = "<|im_start|>user",
             response_prefix: str = "<|im_start|>assistant",
             generation_mode: bool = False,
-            tokenize: bool = True,
+            # tokenize: bool = True,
             ignore_warnings: bool = False,
             attach_labels: bool = True,
         ) -> None:
-        assign_args(self, locals())
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+        self.prompt_prefix = prompt_prefix
+        self.response_prefix = response_prefix
+        self.generation_mode = generation_mode
+        # self.tokenize = tokenize
+        self.ignore_warnings = ignore_warnings
+        self.attach_labels = attach_labels
 
 
-    def __call__(self, conversations: list[list[dict]]) -> BatchEncoding | list[str]:
+    def __call__(self, conversations: list[list[dict]], tokenize: bool = True) -> BatchEncoding | list[str]:
         """
         Example:
             conversations = [
@@ -55,7 +62,7 @@ class LLMSFTCollator:
             tokenize=False, 
             add_generation_prompt=self.generation_mode,
         )
-        if not self.tokenize:
+        if not tokenize:
             return text_inputs
         
         model_inputs = self.tokenizer(

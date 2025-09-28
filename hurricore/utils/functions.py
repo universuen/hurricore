@@ -412,7 +412,7 @@ def get_device_memory_info() -> tuple[int, int]:
 
 def build_label_indices_map(
         dataset: Dataset, 
-        get_label: callable = lambda x: x[1],
+        get_label_fn: callable = lambda x: x[1],
         batch_size: int = 32,
     ) -> dict[str, int]:
     data_loader = DataLoader(
@@ -424,7 +424,7 @@ def build_label_indices_map(
     label_index = defaultdict(list)
     for i, batch in enumerate(tqdm(data_loader, desc="Building label indices map")):
         for j, item in enumerate(batch):
-            label = get_label(item)
+            label = get_label_fn(item)
             label_index[label].append(i * batch_size + j)
     # Sort the indices
     for label in label_index:
@@ -435,13 +435,13 @@ def build_label_indices_map(
 def split_dataset(
         dataset: Dataset, 
         training_ratio: float = 0.8,
-        get_label: Callable = None,
+        get_label_fn: Callable = None,
         batch_size: int = 32,
         random_seed: int = 42,
     ) -> tuple[Dataset, Dataset]:
     random.seed(random_seed)
-    if get_label is None:
-        print("get_label function not provided. Using random split.")
+    if get_label_fn is None:
+        print("get_label_fn not provided. Using random split.")
         all_indices = list(range(len(dataset)))
         random.shuffle(all_indices)
         num_training_indices = int(training_ratio * len(all_indices))
@@ -451,7 +451,7 @@ def split_dataset(
         print("Using label-based split.")
         label_index = build_label_indices_map(
             dataset=dataset, 
-            get_label=get_label, 
+            get_label_fn=get_label_fn, 
             batch_size=batch_size
         )
         training_indices = []

@@ -17,7 +17,7 @@ class QwenVLSFTCollator(LLMSFTCollator):
             prompt_prefix: str = "<|im_start|>user",
             response_prefix: str = "<|im_start|>assistant",
             generation_mode: bool = False,
-            tokenize: bool = True,
+            # tokenize: bool = True,
             ignore_warnings: bool = False,
             attach_labels: bool = True,
         ) -> None:
@@ -28,7 +28,7 @@ class QwenVLSFTCollator(LLMSFTCollator):
             prompt_prefix=prompt_prefix,
             response_prefix=response_prefix,
             generation_mode=generation_mode,
-            tokenize=tokenize,
+            # tokenize=tokenize,
             ignore_warnings=ignore_warnings,
             attach_labels=attach_labels,
         )
@@ -55,7 +55,7 @@ class QwenVLSFTCollator(LLMSFTCollator):
     def __call__(
             self, 
             conversations: list[list[dict]],
-            tokenize: bool = None,
+            tokenize: bool = True,
         ) -> BatchFeature | dict:
         """
         Example:
@@ -82,7 +82,6 @@ class QwenVLSFTCollator(LLMSFTCollator):
             )
 
         raw_model_inputs = self.get_raw_model_inputs(conversations)
-        tokenize = self.tokenize if tokenize is None else tokenize
         if not tokenize:
             return raw_model_inputs
         model_inputs = self.processor(

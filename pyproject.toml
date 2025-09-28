@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hurricore"
-version = "1.0.0"
+version = "0.1.1"
 description = "A deep learning framework based on PyTorch and Accelerate."
 readme = { file = "README.md", content-type = "text/markdown" }
 license = "MIT"
@@ -41,8 +41,9 @@ packages = { find = { include = ["hurricore"] } }
 include = ["hurricore"]
 exclude = [
     "**/__pycache__",
-    "**/data",
+    "projects/*/data",
 ]
+typeCheckingMode = "off"
 
 [project.optional-dependencies]
 projects = [

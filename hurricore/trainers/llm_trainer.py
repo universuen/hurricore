@@ -3,9 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 import torch
+import transformers
 from transformers import PreTrainedModel
 
 from hurricore.trainers import StandardTrainer
+from hurricore.utils import env
 
 
 class LLMTrainer(StandardTrainer):
@@ -29,6 +31,7 @@ class LLMTrainer(StandardTrainer):
             gradient_checkpointing_enable=gradient_checkpointing_enable,
             **kwargs
         )
+        env.logger.info(f"`transformers` version: {transformers.__version__}")
     
 
     def compute_loss(self, batch: Any) -> torch.Tensor:

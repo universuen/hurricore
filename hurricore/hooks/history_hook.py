@@ -19,7 +19,11 @@ class HistoryHook(HurricoreHook):
             folder_path: Path,
             interval: int = 1,
         ) -> None:
-        super().__init__(trainer)     
+        super().__init__(
+            trainer=trainer,
+            folder_path=folder_path,
+            interval=interval,
+        )     
         # check validity
         assert isinstance(folder_path, Path), f'Invalid History folder path. Expected Path, but got {type(folder_path)}.'
         folder_path.mkdir(parents=True, exist_ok=True)
@@ -27,7 +31,7 @@ class HistoryHook(HurricoreHook):
         self.interval = interval
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         self.recoder = HistoryRecorder(self.folder_path) if self.trainer.accelerator.is_main_process else Dummy()
         env.history_recorder = self.recoder
 

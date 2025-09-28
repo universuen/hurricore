@@ -11,8 +11,8 @@ import base64
 class OpenAIChat:
     def __init__(
         self,
-        model_name: str = "gpt-4.1",
-        system_prompt: str | None = None,
+        model_name: str = "gpt-5",
+        system_prompt: str | Image.Image | list[str | Image.Image] | None = None,
         multi_turn: bool = False,
         api_key: str | None = os.getenv("OPENAI_API_KEY"),
         base_url: str | None = os.getenv("OPENAI_API_BASE_URL"),
@@ -31,12 +31,12 @@ class OpenAIChat:
         self.messgages = [
             {
                 "role": "system",
-                "content": self.system_prompt,
+                "content": self._build_content(self.system_prompt),
             }
         ] if self.system_prompt is not None else []
 
 
-    def _build_content(self, content_sequence: list[str | Image.Image]) -> list[dict]:
+    def _build_content(self, content_sequence: str | Image.Image | list[str | Image.Image]) -> list[dict]:
         content = []
         if not isinstance(content_sequence, list):
             content_sequence = [content_sequence]

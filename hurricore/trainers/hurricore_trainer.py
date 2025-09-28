@@ -86,7 +86,7 @@ class HurricoreTrainer:
         self.gradient_clipping_norm = gradient_clipping_norm
         # Setup hooks
         self.hooks: HurricoreHookList[HurricoreHook] = HurricoreHookList(hooks or [])
-        [hook.__post_init__() for hook in self.hooks]
+        [hook.execute_on_trainer_init_end() for hook in self.hooks]
 
 
     @staticmethod

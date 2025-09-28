@@ -4,7 +4,6 @@ from torch.optim.lr_scheduler import LRScheduler
 
 from hurricore.hooks import HurricoreHook
 from hurricore.trainers import HurricoreTrainer
-from hurricore.utils import assign_args
 
 
 class LRSchedulerHook(HurricoreHook):
@@ -14,13 +13,16 @@ class LRSchedulerHook(HurricoreHook):
         lr_schedulers: list[LRScheduler] = None,
         modes: list[str] = None,
     ) -> None:
-        super().__init__(trainer)
+        super().__init__(
+            trainer=trainer,
+            lr_schedulers=lr_schedulers,
+            modes=modes,
+        )
         self._validate_inputs(lr_schedulers, modes)
         self.modes = modes
-        assign_args(self.init_context, locals())
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         self.lr_schedulers: list[LRScheduler] = []
         for lr_scheduler in self.init_context.lr_schedulers:
             self.trainer.accelerator.register_for_checkpointing(lr_scheduler)

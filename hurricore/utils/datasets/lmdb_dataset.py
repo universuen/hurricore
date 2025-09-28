@@ -4,6 +4,7 @@ import os
 import datetime
 import json
 import shutil
+import warnings
 from typing import Any
 from pathlib import Path
 import pickle
@@ -60,12 +61,20 @@ class LMDBDataset(Dataset):
         return self._length
 
 
-    def __getitem__(self, index: int) -> Any:
+    def __getitem__(self, index_or_indices: int) -> Any:
         # Lazy initialization: if the environments are not open, open them.
         # This will be called once per worker process.
         if self.lmdb_envs is None:
             self._init_envs()
 
+        if isinstance(index_or_indices, slice):
+            # Create a range of integer indices from the slice
+            indices = range(*index_or_indices.indices(len(self)))
+            # Recursively call __getitem__ for each integer index and return a list
+            return [self[i] for i in indices]
+
+        index = index_or_indices
+        
         if index < 0:
             index = len(self) + index
         if index >= len(self):
@@ -91,7 +100,6 @@ class LMDBDataset(Dataset):
         return item
 
 
-    
     @classmethod
     def build(
         cls, 
@@ -99,10 +107,12 @@ class LMDBDataset(Dataset):
         tgt_lmdb_path: str | Path, 
         drop_none_values: bool = True,
         num_workers: int = os.cpu_count(),
-        get_label: callable = None,
+        get_label_fn: callable = None,
         flush_interval: int = 1000,
         estimated_sample_size: int = 10 * (1024 ** 2),  # 10 MB
     ) -> 'LMDBDataset':
+        if get_label_fn is None:
+            warnings.warn("No label function provided, meta information will be incomplete.")
         tgt_lmdb_path = Path(tgt_lmdb_path)
         if tgt_lmdb_path.exists():
             shutil.rmtree(tgt_lmdb_path)
@@ -136,7 +146,7 @@ class LMDBDataset(Dataset):
                     index=i,
                     drop_none_values=drop_none_values,
                     data_queue=data_queue,
-                    get_label=get_label,
+                    get_label_fn=get_label_fn,
                 )
                 for i in tqdm(range(num_samples), desc="Submitting Tasks")
             )
@@ -199,14 +209,14 @@ class LMDBDataset(Dataset):
         index: int,
         drop_none_values: bool,
         data_queue: Queue,
-        get_label: callable,
+        get_label_fn: callable,
     ) -> Any:
         try:
             item = src_dataset[index]
             if drop_none_values and item is None:
                 return None
             data_queue.put((index, item))
-            return None if get_label is None else get_label(item)
+            return None if get_label_fn is None else get_label_fn(item)
         except Exception as e:
             # Handle potential errors during item retrieval
             print(f"Error processing index {index}: {e}")

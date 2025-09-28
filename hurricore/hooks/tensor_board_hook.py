@@ -25,7 +25,13 @@ class TensorBoardHook(HurricoreHook):
         record_param_and_grad: bool = False,
         auto_launch: bool = False,
     ) -> None:
-        super().__init__(trainer)
+        super().__init__(
+            trainer=trainer,
+            interval=interval,
+            folder_path=folder_path,
+            record_param_and_grad=record_param_and_grad,
+            auto_launch=auto_launch,
+        )
         # check validity
         assert isinstance(folder_path, Path), f'Invalid TensorBoard folder path. Expected Path, but got {type(folder_path)}.'
         folder_path.mkdir(parents=True, exist_ok=True)
@@ -36,7 +42,7 @@ class TensorBoardHook(HurricoreHook):
         self.interval = interval
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         self.writer = SummaryWriter(log_dir=self.folder_path) if self.trainer.accelerator.is_main_process else Dummy()
         self.thread_pool_executor = ThreadPoolExecutor() if self.trainer.accelerator.is_main_process else Dummy()
         env.tensor_board_writer = self.writer

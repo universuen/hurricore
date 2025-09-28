@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from hurricore.hooks import HurricoreHook
 from hurricore.trainers import HurricoreTrainer
-from hurricore.utils import env, assign_args, AttributeDict
+from hurricore.utils import env, AttributeDict
 
 
 class LLMRLEvaluationHook(HurricoreHook):
@@ -14,12 +14,15 @@ class LLMRLEvaluationHook(HurricoreHook):
             data_loader: DataLoader,
             interval: int = 10,
         ):
-        super().__init__(trainer)
+        super().__init__(
+            trainer=trainer,
+            data_loader=data_loader,
+            interval=interval,
+        )
         self.interval = interval
-        assign_args(self.init_context, locals())
-    
 
-    def __post_init__(self) -> None:
+
+    def execute_on_trainer_init_end(self) -> None:
         self.data_loader = self.trainer.accelerator.prepare(self.init_context.data_loader)
         self.records = AttributeDict(
             best_reward=float("-inf"),

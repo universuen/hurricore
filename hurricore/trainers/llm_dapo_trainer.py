@@ -15,28 +15,18 @@ class LLMDAPOTrainer(LLMGRPOTrainer):
         # New in this class
         epsilon_low: float = 0.2,
         epsilon_high: float = 0.28,
-        # Task specific hyper parameters
-        num_epochs: int = 3,
-        per_device_batch_size: int = 1,
-        learning_rate: float = 1e-6,
         **kwargs,
     ) -> None:
         
         super().__init__(
             epsilon_low=epsilon_low,
             epsilon_high=epsilon_high,
-            num_epochs=num_epochs,
-            per_device_batch_size=per_device_batch_size,
-            learning_rate=learning_rate,
             ref_model=Dummy(),
             **kwargs,
         )
         
-        self.tokenizer = self.init_context.tokenizer
         self.epsilon_low = self.init_context.epsilon_low
         self.epsilon_high = self.init_context.epsilon_high
-        self.num_groups = self.init_context.num_groups
-        self.num_updates_per_batch = self.init_context.num_updates_per_batch
 
 
     def compute_loss(self, batch: Any) -> torch.Tensor:
@@ -46,26 +36,25 @@ class LLMDAPOTrainer(LLMGRPOTrainer):
         # Compute advantages
         grouped_advantages = self.compute_grouped_advantages(grouped_rewards).to(self.accelerator.device)
         
-        # Compute initial policy probabilities and detach to use as "old" probabilities
-        with torch.no_grad():
-            old_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
-                model=self.model,
-                encoded_prompts=batch["encoded_prompts"],
-                grouped_completions=grouped_completions,
-            )
+        # Compute initial policy probabilities
+        init_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
+            model=self.model,
+            encoded_prompts=batch["encoded_prompts"],
+            grouped_completions=grouped_completions,
+        )
 
         # Inner Update Loop
         total_loss = 0.0
-        for _ in range(self.num_updates_per_batch):
-            # Re-compute current policy probabilities for the same completions
-            token_log_probs, _ = self.get_grouped_token_log_probs_with_masks(
+        for i in range(self.num_updates_per_batch):
+            # Re-compute current policy probabilities for the same completions if not the first step
+            token_log_probs = self.get_grouped_token_log_probs_with_masks(
                 model=self.model,
                 encoded_prompts=batch["encoded_prompts"],
                 grouped_completions=grouped_completions,
-            )
+            )[0] if i > 0 else init_token_log_probs
             
             # Compute token losses using the PPO objective
-            ratios = (token_log_probs - old_token_log_probs).exp()
+            ratios = (token_log_probs - init_token_log_probs.detach()).exp()
             clipped_ratios = torch.clamp(ratios, 1 - self.epsilon_low, 1 + self.epsilon_high)
             token_losses = - torch.min(
                 ratios * grouped_advantages.unsqueeze(-1), 

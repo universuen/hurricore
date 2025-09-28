@@ -11,14 +11,20 @@ class HurricoreHook:
     This class provides hook points that will be called during different stages of training.
     Subclasses should override the execute_on_* methods to implement custom behavior.
     """
-    def __init__(self, trainer, name: str = None) -> None:
+    def __init__(
+        self, 
+        trainer, 
+        name: str = None,
+        **kwargs,
+    ) -> None:
         """Initialize the hook with the trainer."""
         self.trainer: HurricoreTrainer = trainer
         self.init_context = AttributeDict()
+        self.init_context.update({k: v for k, v in locals().items() if k not in ("self", "kwargs")} | kwargs)
         self.name = name or self.__class__.__name__
 
     
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         """Called after HurricoreTrainer is initialized."""
         pass
 

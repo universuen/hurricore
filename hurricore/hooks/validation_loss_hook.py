@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from hurricore.hooks import HurricoreHook, CheckpointHook
 from hurricore.trainers import HurricoreTrainer
-from hurricore.utils import env, AttributeDict, assign_args
+from hurricore.utils import env, AttributeDict
 
 
 class ValidationLossHook(HurricoreHook):
@@ -18,12 +18,13 @@ class ValidationLossHook(HurricoreHook):
     ) -> None:
         super().__init__(
             trainer=trainer,
+            data_loader=data_loader,
+            interval=interval,
         )
         self.interval = interval
-        assign_args(self.init_context, locals())
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         self.data_loader = self.trainer.accelerator.prepare(self.init_context.data_loader)
         self.records = AttributeDict(
             best_loss=float("inf"),

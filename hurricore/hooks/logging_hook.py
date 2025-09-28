@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import time
 import logging
 from threading import Thread
@@ -7,6 +8,7 @@ from collections import deque
 from pathlib import Path
 
 import torch
+import accelerate
 from accelerate import Accelerator
 
 from hurricore.hooks import HurricoreHook
@@ -22,7 +24,6 @@ from hurricore.utils import (
     get_device_utilization,
     get_device_memory_info,
     get_trainable_layer_names,
-    assign_args,
 )
 
 
@@ -158,15 +159,21 @@ class LoggingHook(HurricoreHook):
         folder_path: Path = None,
         log_trainable_params: bool = False,
     ) -> None:
-        super().__init__(trainer)
+        super().__init__(
+            trainer=trainer,
+            experiment_name=experiment_name,
+            interval=interval,
+            level=level,
+            folder_path=folder_path,
+            log_trainable_params=log_trainable_params,
+        )
         assert interval > 0, 'Log interval must be greater than 0.'
         assert isinstance(folder_path, Path), f'Invalid logging folder path. Expected Path, but got {type(folder_path)}.'
         self.interval = interval
-        assign_args(self.init_context, locals())
         self.extra_log_bar_data = dict()
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         logger = Logger(
             name=self.init_context.experiment_name,
             level=self.init_context.level,
@@ -206,6 +213,10 @@ class LoggingHook(HurricoreHook):
     
     
     def execute_on_training_start(self) -> None:
+        self.logger.info("Components versions:")
+        self.logger.info(f"\t`python`: {sys.version}")
+        self.logger.info(f'\t`torch`: {torch.__version__}')
+        self.logger.info(f"\t`accelerate`: {accelerate.__version__}")
         for subclass in ConfigBase.__subclasses__():
             self.logger.info(f"{subclass.__name__}\n{subclass()}")
         self.logger.info(f'Running with {self.trainer.accelerator.num_processes} processes')

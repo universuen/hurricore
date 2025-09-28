@@ -13,7 +13,12 @@ class CheckpointHook(HurricoreHook):
         interval: int = 100,
         seed: int = 42,
     ) -> None:
-        super().__init__(trainer)
+        super().__init__(
+            trainer=trainer,
+            folder_path=folder_path,
+            interval=interval,
+            seed=seed,
+        )
         # Setup self attributes
         self.interval = interval
         self.folder_path = Path(folder_path)
@@ -21,7 +26,7 @@ class CheckpointHook(HurricoreHook):
         self.seed = seed
     
 
-    def __post_init__(self) -> None:
+    def execute_on_trainer_init_end(self) -> None:
         # Setup checkpointer
         self.checkpointer = Checkpointer(self.trainer.accelerator)
         # Re-prepare dataloader with seedable sampler if necessary
