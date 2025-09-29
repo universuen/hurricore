@@ -5,6 +5,10 @@ from hurricore.utils import HistoryRecorder
 from configs import debug as config
 
 
-if __name__ == '__main__':
+def main() -> None:
     histories = HistoryRecorder.load(config.PathConfig().histories)
     print(histories)
+
+
+if __name__ == "__main__":
+    main()

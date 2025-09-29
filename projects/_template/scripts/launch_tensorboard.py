@@ -10,7 +10,7 @@ TARGET_CONFIG_NAMES = [
     "debug",
 ]
 
-if __name__ == '__main__':
+def main() -> None:
     folder_path = Path(__file__).parents[1] / 'data' / 'tensorboards'
     temp_folder_path = folder_path / '_temp'
 
@@ -36,3 +36,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Keyboard interrupt")
         shutil.rmtree(temp_folder_path)
+
+
+if __name__ == "__main__":
+    main()

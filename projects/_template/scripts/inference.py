@@ -8,7 +8,7 @@ from configs import debug as config
 
 
 @torch.no_grad()
-def main():
+def main() -> None:
     model_ckpt_folder_path = find_latest_checkpoint_folder(config.PathConfig().checkpoints) # noqa
     ...
 
