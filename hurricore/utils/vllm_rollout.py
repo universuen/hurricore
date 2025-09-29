@@ -72,7 +72,7 @@ if __name__ == "__main__":
     from PIL import Image
     from accelerate import Accelerator
 
-    from hurricore.utils import QwenVLSFTCollator, decouple_vlm_inputs_to_vllm_format
+    from hurricore.utils import QwenVLSFTCollator, convert_vlm_inputs_to_vllm_prompts
 
 
     accelerator = Accelerator()
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         ]
     ]
     data = collator(samples)
-    vllm_model_inputs = decouple_vlm_inputs_to_vllm_format(
+    vllm_model_inputs = convert_vlm_inputs_to_vllm_prompts(
         text_inputs=data["text_inputs"],
         image_inputs=data["image_inputs"],
     )

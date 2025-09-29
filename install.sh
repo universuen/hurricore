@@ -26,7 +26,7 @@ if pip3 list | grep -Fq $PACKAGE_NAME
 then
     printf "\033[33mWarning: Package '%s' is already installed, skipping installation.\033[0m\n" "$PACKAGE_NAME"
 else
-    pip3 install -e .[projects] -i https://mirrors.tencent.com/pypi/simple/
+    pip3 install -e .[projects]
     rm -rf ${PACKAGE_NAME}.egg-info
     printf "\033[32mPackage '%s' installed successfully.\033[0m\n" "$PACKAGE_NAME"
 fi

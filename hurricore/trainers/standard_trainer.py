@@ -58,6 +58,7 @@ class StandardTrainer(HurricoreTrainer):
             experiment_name = datetime.now().strftime('%Y%m%d_%H%M')
         if type(data_folder_path) is not Path:
             data_folder_path = Path(data_folder_path)
+        data_folder_path.mkdir(parents=True, exist_ok=True)
         
         self.init_context = AttributeDict()
         self.init_context.update({k: v for k, v in locals().items() if k not in ("self", "kwargs")} | kwargs)

@@ -35,7 +35,7 @@ def split_list_into_chunks(original_list, chunk_size):
 
 
 
-def decouple_vlm_inputs_to_vllm_format(
+def convert_vlm_inputs_to_vllm_prompts(
         text_inputs: list[str],
         image_inputs: list[Image.Image],
         image_token: str = "<|image_pad|>",
@@ -434,7 +434,7 @@ def build_label_indices_map(
 
 def split_dataset(
         dataset: Dataset, 
-        training_ratio: float = 0.8,
+        training_ratio: float = 0.9,
         get_label_fn: Callable = None,
         batch_size: int = 32,
         random_seed: int = 42,
