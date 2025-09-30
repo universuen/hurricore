@@ -161,16 +161,17 @@ class LMDBDataset(Dataset):
             data_queue.put(None)
             writer_thread.join()
 
+        tgt_dataset = cls(tgt_lmdb_path)
         meta_info = {
             "creation_time": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-            "num_samples": sum(label_statistics.values()),
+            "num_samples": len(tgt_dataset),
             "label_statistics": dict(sorted(label_statistics.items(), key=lambda item: item[1], reverse=True)),
         }
         with open(tgt_lmdb_path / "meta.json", "w") as f:
             json.dump(meta_info, f, indent=4, ensure_ascii=False)
 
         # Return the built LMDBDataset
-        return cls(tgt_lmdb_path)
+        return tgt_dataset
 
 
     @classmethod
