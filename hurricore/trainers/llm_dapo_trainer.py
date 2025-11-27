@@ -19,14 +19,12 @@ class LLMDAPOTrainer(LLMGRPOTrainer):
     ) -> None:
         
         super().__init__(
-            epsilon_low=epsilon_low,
-            epsilon_high=epsilon_high,
             ref_model=Dummy(),
             **kwargs,
         )
         
-        self.epsilon_low = self.init_context.epsilon_low
-        self.epsilon_high = self.init_context.epsilon_high
+        self.epsilon_low = epsilon_low
+        self.epsilon_high = epsilon_high
 
 
     def compute_loss(self, batch: dict) -> torch.Tensor:

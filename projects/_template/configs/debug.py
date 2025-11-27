@@ -53,7 +53,7 @@ class TrainerConfig(ConfigBase):
     experiment_name: str = experiment_name
     log_level: int = logging.INFO
     log_interval: int = 1 * AcceleratorConfig().gradient_accumulation_steps
-    tensor_board_record_param_and_grad: bool = True
+    tensorboard_record_param_and_grad: bool = True
     evaluation_interval: int = 100 * AcceleratorConfig().gradient_accumulation_steps
     ckpt_interval: int = 500 * AcceleratorConfig().gradient_accumulation_steps
 

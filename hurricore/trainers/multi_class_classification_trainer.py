@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Any
+from typing import Literal
 
 import torch
 
@@ -23,14 +23,14 @@ class MultiClassClassificationTrainer(StandardTrainer):
         **kwargs,
     ) -> None:
         super().__init__(
-            num_classes=num_classes,
-            evaluation_average_method=evaluation_average_method,
-            threshold=threshold,
             num_epochs=num_epochs,
             per_device_batch_size=per_device_batch_size,
             learning_rate=learning_rate,
             **kwargs,
         )
+        self.num_classes = num_classes
+        self.evaluation_average_method = evaluation_average_method
+        self.threshold = threshold
         self.criterion = torch.nn.CrossEntropyLoss()
     
 
@@ -42,9 +42,9 @@ class MultiClassClassificationTrainer(StandardTrainer):
                 data_loader=self.init_context.validation_data_loader,
                 interval=self.init_context.evaluation_interval,  
                 evaluator=MultiClassEvaluator(
-                    num_classes=self.init_context.num_classes,
-                    average=self.init_context.evaluation_average_method,
-                    threshold=self.init_context.threshold,
+                    num_classes=self.num_classes,
+                    average=self.evaluation_average_method,
+                    threshold=self.threshold,
                 )
             )
         )
@@ -58,6 +58,6 @@ class MultiClassClassificationTrainer(StandardTrainer):
         assert type(batch['labels']) is torch.Tensor, f"Invalid labels type: {type(batch['labels'])}. Expected torch.Tensor"
         model_inputs, labels = batch['model_inputs'], batch['labels']
         logits = self.model(**model_inputs) if type(model_inputs) is dict else self.model(model_inputs)
-        assert logits.shape[-1] == self.init_context.num_classes, f"Logits shape: {logits.shape}, num_classes: {self.init_context.num_classes}"
+        assert logits.shape[-1] == self.num_classes, f"Logits shape: {logits.shape}, num_classes: {self.num_classes}"
         loss = self.criterion(logits, labels)
         return loss

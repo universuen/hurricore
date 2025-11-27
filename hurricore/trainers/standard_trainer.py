@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import math
 import logging
 from pathlib import Path
@@ -10,7 +9,8 @@ from typing import Any, Callable
 from accelerate import Accelerator
 import torch
 from torch import nn
-from torch.optim import AdamW
+from torch.optim import AdamW, Optimizer
+from torch.optim.lr_scheduler import LRScheduler
 from transformers import get_cosine_schedule_with_warmup
 
 from torch.utils.data import Dataset, DataLoader
@@ -28,6 +28,41 @@ from hurricore.utils import AttributeDict, HurricoreHookList
 
 
 class StandardTrainer(HurricoreTrainer):
+
+    class InitContext(AttributeDict):
+        """
+        This class is only used for variable type hint during initialization.
+        """
+        # User provided args
+        accelerator: Accelerator
+        model: nn.Module
+        data_folder_path: Path
+        training_dataset: Dataset
+        validation_dataset: Dataset
+        collate_fn: Callable | None
+        num_epochs: int
+        per_device_batch_size: int
+        num_data_loader_workers: int
+        learning_rate: float
+        gradient_clipping_norm: float | None
+        gradient_clipping_value: float | None
+        learning_rate_warmup_ratio: float
+        experiment_name: str | None
+        log_level: int
+        log_interval: int
+        log_trainable_params: bool
+        tensorboard_record_param_and_grad: bool
+        evaluation_interval: int
+        ckpt_interval: int
+
+        # Populated args
+        training_data_loader: DataLoader
+        validation_data_loader: DataLoader
+        optimizer: Optimizer
+        lr_scheduler: LRScheduler
+        hooks: HurricoreHookList
+    
+
     def __init__(
         self, 
         # Basic configs
@@ -39,10 +74,11 @@ class StandardTrainer(HurricoreTrainer):
         collate_fn: Callable | None = None,
         num_epochs: int = 3,
         per_device_batch_size: int = 1,
+        num_data_loader_workers: int = 8,
         learning_rate: float = 5e-5,
         gradient_clipping_norm: float | None = None,
         gradient_clipping_value: float | None = None,
-        warmup_ratio: float = 0.1,
+        learning_rate_warmup_ratio: float = 0.1,
         # Hook specific configs
         experiment_name: str | None = None,
         log_level: int = logging.INFO,
@@ -51,7 +87,6 @@ class StandardTrainer(HurricoreTrainer):
         tensorboard_record_param_and_grad: bool = False,
         evaluation_interval: int = 100,
         ckpt_interval: int = 500,
-        **kwargs,
     ) -> None:
         
         if experiment_name is None:
@@ -60,33 +95,31 @@ class StandardTrainer(HurricoreTrainer):
             data_folder_path = Path(data_folder_path)
         data_folder_path.mkdir(parents=True, exist_ok=True)
         
-        self.init_context = AttributeDict()
-        self.init_context.update({k: v for k, v in locals().items() if k not in ("self", "kwargs")} | kwargs)
+        self.init_context = self.InitContext()
+        self.init_context.update({k: v for k, v in locals().items() if k != "self"})
         self.setup_data_loaders()
         self.setup_optimizer()
         self.setup_lr_scheduler()
         self.setup_hooks()
-        self._attach_to_hurricore_trainer()
+        self.initialize_hurricore_trainer()
 
 
-    def setup_data_loaders(self, num_workers: int = None) -> None:
-        if num_workers is None:
-            num_workers = os.cpu_count() // self.init_context.accelerator.num_processes
+    def setup_data_loaders(self) -> None:
         self.init_context.training_data_loader = DataLoader(  # noqa
             dataset=self.init_context.training_dataset,
             batch_size=self.init_context.per_device_batch_size,
-            shuffle=True,
-            num_workers=num_workers,
-            pin_memory=True,
             collate_fn=self.init_context.collate_fn,
+            shuffle=True,
+            num_workers=self.init_context.num_data_loader_workers,
+            pin_memory=True,
         )
         self.init_context.validation_data_loader = DataLoader(  # noqa
             dataset=self.init_context.validation_dataset,
             batch_size=self.init_context.per_device_batch_size,
-            shuffle=False,
-            num_workers=num_workers,
-            pin_memory=True,
             collate_fn=self.init_context.collate_fn,
+            shuffle=False,
+            num_workers=self.init_context.num_data_loader_workers,
+            pin_memory=True,
         )
 
 
@@ -103,7 +136,7 @@ class StandardTrainer(HurricoreTrainer):
         self.init_context.lr_scheduler = get_cosine_schedule_with_warmup(  # noqa
             optimizer=self.init_context.optimizer,
             num_training_steps=num_training_steps,
-            num_warmup_steps=int(num_training_steps * self.init_context.warmup_ratio),
+            num_warmup_steps=int(num_training_steps * self.init_context.learning_rate_warmup_ratio),
         )
         
 
@@ -148,7 +181,7 @@ class StandardTrainer(HurricoreTrainer):
         )
 
 
-    def _attach_to_hurricore_trainer(self) -> None:
+    def initialize_hurricore_trainer(self) -> None:
         super().__init__(
             models=[self.init_context.model], 
             data_loaders=[self.init_context.training_data_loader], 

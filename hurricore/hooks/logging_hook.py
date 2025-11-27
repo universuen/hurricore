@@ -288,6 +288,6 @@ class LoggingHook(HurricoreHook):
             f"Util.: {device_utilization:.1f}% "
             f"{used_memory / 1024 ** 3:.1f}/{total_memory / 1024 ** 3:.1f} GB"
         )
-        for key, value in self.extra_log_bar_data.items():
-            states += f' | {key}: {value}'
+        extra_states = ' | '.join(f'{key}: {value}' for key, value in self.extra_log_bar_data.items())
+        states += f' | {extra_states}' if extra_states else '' 
         self.logger.info(states)

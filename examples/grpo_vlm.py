@@ -2,11 +2,12 @@ import random
 from pathlib import Path
 
 from accelerate import Accelerator, DeepSpeedPlugin
-from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers import AutoProcessor, AutoModelForImageTextToText
 from PIL import Image
 
 from hurricore.trainers import LLMGRPOTrainer
-from hurricore.utils import QwenVLSFTCollator, split_dataset, convert_vlm_inputs_to_vllm_prompts
+from hurricore.collators import VLMGRPOCollator
+from hurricore.utils import split_dataset
 
 
 class RandomColorDataset:
@@ -34,7 +35,7 @@ class RandomColorGRPOTrainer(LLMGRPOTrainer):
         return 0.0
 
 
-class RandomColorCollator(QwenVLSFTCollator):
+class RandomColorCollator(VLMGRPOCollator):
     def __call__(self, batch: list[dict]) -> dict:
         conversations = []
         targets = []
@@ -55,13 +56,10 @@ class RandomColorCollator(QwenVLSFTCollator):
             conversations.append(conversation)
             targets.append(item["answer"])
 
-        return {
-            "vllm_prompts": convert_vlm_inputs_to_vllm_prompts(
-                **super().__call__(conversations, tokenize=False),
-            ),
-            "torch_model_inputs": super().__call__(conversations),
-            "targets": targets,
-        }
+        return super().__call__(
+            conversations=conversations,
+            targets=targets,
+        )
 
 
 def main():
@@ -75,8 +73,8 @@ def main():
     )
 
     with accelerator.main_process_first():
-        processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
-        model = AutoModelForVision2Seq.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+        processor = AutoProcessor.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
+        model = AutoModelForImageTextToText.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
         dataset = RandomColorDataset(num_samples=10000)
         training_dataset, validation_dataset = split_dataset(
             dataset=dataset,
@@ -97,6 +95,7 @@ def main():
             processor=processor,
             generation_mode=True,
         ),
+        use_vllm=True,
     )
     trainer.run()
 

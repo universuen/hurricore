@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Any
+from typing import Literal
 
 import torch
 
@@ -23,14 +23,14 @@ class MultiLabelClassificationTrainer(StandardTrainer):
         **kwargs,
     ) -> None:
         super().__init__(
-            num_labels=num_labels,
-            evaluation_average_method=evaluation_average_method,
-            threshold=threshold,
             num_epochs=num_epochs,
             per_device_batch_size=per_device_batch_size,
             learning_rate=learning_rate,
             **kwargs,
         )
+        self.num_labels = num_labels
+        self.evaluation_average_method = evaluation_average_method
+        self.threshold = threshold
         self.criterion = torch.nn.CrossEntropyLoss()
     
 
@@ -42,9 +42,9 @@ class MultiLabelClassificationTrainer(StandardTrainer):
                 data_loader=self.init_context.validation_data_loader,
                 interval=self.init_context.evaluation_interval,  
                 evaluator=ClassificationEvaluator(
-                    num_labels=self.init_context.num_labels,
-                    average=self.init_context.evaluation_average_method,
-                    threshold=self.init_context.threshold,
+                    num_labels=self.num_labels,
+                    average=self.evaluation_average_method,
+                    threshold=self.threshold,
                 ),
             )
         )
@@ -58,6 +58,6 @@ class MultiLabelClassificationTrainer(StandardTrainer):
         assert type(batch['labels']) is torch.Tensor, f"Invalid labels type: {type(batch['labels'])}. Expected torch.Tensor"
         model_inputs, labels = batch['model_inputs'], batch['labels']
         logits = self.model(**model_inputs) if type(model_inputs) is dict else self.model(model_inputs)
-        assert logits.shape[-1] == self.init_context.num_labels, f"Logits shape: {logits.shape}, num_labels: {self.init_context.num_labels}"
+        assert logits.shape[-1] == self.num_labels, f"Logits shape: {logits.shape}, num_labels: {self.num_labels}"
         loss = self.criterion(logits, labels)
         return loss

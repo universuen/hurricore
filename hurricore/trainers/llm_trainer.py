@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 
 import torch
 import transformers
@@ -28,7 +27,6 @@ class LLMTrainer(StandardTrainer):
             num_epochs=num_epochs,
             per_device_batch_size=per_device_batch_size,
             learning_rate=learning_rate,
-            gradient_checkpointing_enable=gradient_checkpointing_enable,
             **kwargs
         )
         env.logger.info(f"`transformers` version: {transformers.__version__}")

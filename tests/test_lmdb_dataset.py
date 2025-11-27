@@ -1,7 +1,7 @@
 from pathlib import Path
 import shutil
 
-from hurricore.utils import LMDBDataset
+from hurricore.datasets import LMDBDataset
 
 
 def test_lmdb_dataset():

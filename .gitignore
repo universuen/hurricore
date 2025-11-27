@@ -16,9 +16,11 @@ data/
 *.egg-info/
 
 # misc
+gemini-go
+public_cache/
 *.png
 *.jpg
 *.jpeg
 *.onnx
 *.pyc
-.DS_Store
+

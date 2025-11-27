@@ -44,15 +44,6 @@ class LLMGRPOTrainer(StandardTrainer):
     ) -> None:
         super().__init__(
             model=model,
-            tokenizer=tokenizer,
-            ref_model=ref_model,
-            beta=beta,
-            epsilon=epsilon,
-            native_generation_config=native_generation_config,
-            group_size=group_size,
-            num_updates_per_batch=num_updates_per_batch,
-            gradient_checkpointing_enable=gradient_checkpointing_enable,
-            use_vllm=use_vllm,
             num_epochs=num_epochs,
             per_device_batch_size=per_device_batch_size,
             learning_rate=learning_rate,
@@ -79,6 +70,7 @@ class LLMGRPOTrainer(StandardTrainer):
         self.epsilon = epsilon
         self.group_size = group_size
         self.num_updates_per_batch = num_updates_per_batch
+        self.gradient_checkpointing_enable = gradient_checkpointing_enable
         # Enable gradient checkpointing
         if gradient_checkpointing_enable:
             model.gradient_checkpointing_enable()
@@ -154,17 +146,17 @@ class LLMGRPOTrainer(StandardTrainer):
         targets = batch["targets"]
 
         if self.use_vllm:
-            assert "vllm_prompts" in batch.keys(), "vllm_prompts not found in batch"
-            vllm_prompts = batch["vllm_prompts"]
+            assert "vllm_conversations" in batch.keys(), "vllm_conversations not found in batch"
+            vllm_conversations = batch["vllm_conversations"]
             # Wake up vLLM and update weights
             self.vllm_rollout.wake_up()
             # self.accelerator.wait_for_everyone()
             self.vllm_rollout.update_weights(model=self.original_model)
             self.accelerator.wait_for_everyone()
             # Prepare flatten grouped prompts
-            flatten_grouped_vllm_prompts = vllm_prompts * group_size
+            flatten_grouped_vllm_conversations = vllm_conversations * group_size
             # Get completions
-            flatten_grouped_completions = self.get_vllm_completions(flatten_grouped_vllm_prompts)
+            flatten_grouped_completions = self.get_vllm_completions(flatten_grouped_vllm_conversations)
             # Put vLLM back to sleep and move model back to GPU
             self.vllm_rollout.sleep()
         else:
@@ -282,21 +274,21 @@ class LLMGRPOTrainer(StandardTrainer):
             skip_special_tokens=True, 
             clean_up_tokenization_spaces=False,
         )
-        if self.init_context.gradient_checkpointing_enable:
+        if self.gradient_checkpointing_enable:
             self.model.gradient_checkpointing_enable()
         return completions
     
 
     @torch.no_grad()
-    def get_vllm_completions(self, vllm_prompts: list) -> list[str]:
+    def get_vllm_completions(self, vllm_conversations: list) -> list[str]:
         # Gather prompts from all processes
-        vllm_batch_size = len(vllm_prompts)
+        vllm_batch_size = len(vllm_conversations)
         gathered_prompts = [None for _ in range(self.vllm_tensor_parallel_size)]
-        torch.distributed.all_gather_object(gathered_prompts, vllm_prompts, group=self.vllm_tp_group)
-        all_vllm_prompts = sum(gathered_prompts, [])
+        torch.distributed.all_gather_object(gathered_prompts, vllm_conversations, group=self.vllm_tp_group)
+        all_vllm_conversations = sum(gathered_prompts, [])
         # Generate completions
-        all_completions = self.vllm_rollout.generate(
-            vllm_prompts=all_vllm_prompts,
+        all_completions = self.vllm_rollout(
+            vllm_conversations=all_vllm_conversations,
             sampling_params=SamplingParams(**self.vllm_sampling_params),
         )
 

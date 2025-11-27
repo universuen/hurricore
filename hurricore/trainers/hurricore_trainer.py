@@ -15,35 +15,41 @@ if TYPE_CHECKING:
     from hurricore.hooks import HurricoreHook
 
 
-class _Originals(AttributeDict):
-    models: list[nn.Module]
-    optimizers: list[Optimizer]
-    data_loaders: list[DataLoader]
-
-
-class _Context(AttributeDict):
-    num_epochs: int
-    epoch: int
-    batch_idx: int
-    batch: tuple[Tensor] | Tensor
-    step_loss: Tensor
-    num_steps_per_epoch: int
-
-    @property
-    def global_step(self) -> int:
-        epoch = self.epoch
-        num_steps_per_epoch = self.num_steps_per_epoch
-        batch_idx = self.batch_idx
-        return epoch * num_steps_per_epoch + batch_idx
-
-    @property
-    def total_steps(self) -> int:
-        num_epochs = self.num_epochs
-        num_steps_per_epoch = self.num_steps_per_epoch
-        return num_epochs * num_steps_per_epoch
-
-
 class HurricoreTrainer:
+
+    class Originals(AttributeDict):
+        """
+        Backup of original objects.
+        """
+        models: list[nn.Module]
+        optimizers: list[Optimizer]
+        data_loaders: list[DataLoader]
+
+
+    class Context(AttributeDict):
+        """
+        Context for training loop.
+        """
+        num_epochs: int
+        epoch: int
+        batch_idx: int
+        batch: tuple[Tensor] | Tensor
+        step_loss: Tensor
+        num_steps_per_epoch: int
+
+        @property
+        def global_step(self) -> int:
+            epoch = self.epoch
+            num_steps_per_epoch = self.num_steps_per_epoch
+            batch_idx = self.batch_idx
+            return epoch * num_steps_per_epoch + batch_idx
+
+        @property
+        def total_steps(self) -> int:
+            num_epochs = self.num_epochs
+            num_steps_per_epoch = self.num_steps_per_epoch
+            return num_epochs * num_steps_per_epoch
+
     def __init__(
         self,
         models: list[nn.Module],
@@ -53,11 +59,11 @@ class HurricoreTrainer:
         num_epochs: int,
         gradient_clipping_value: float | None = None,
         gradient_clipping_norm: float | None = None,
-        hooks: list[HurricoreHook] | None = None,
+        hooks: HurricoreHookList | None = None,
     ) -> None:
         env.accelerator = accelerator
         # Backup original objects
-        self.originals = _Originals(
+        self.originals = self.Originals(
             models=models,
             data_loaders=data_loaders,
             optimizers=optimizers,
@@ -78,7 +84,7 @@ class HurricoreTrainer:
         self.data_loader, self.original_data_loader = self.data_loaders[0], self.originals.data_loaders[0]
         # Setup context and number of epochs
         num_steps_per_epoch = max(len(dl) for dl in self.data_loaders)
-        self.context = _Context(
+        self.context = self.Context(
             num_epochs=num_epochs,
             num_steps_per_epoch=num_steps_per_epoch,
         )
@@ -87,7 +93,8 @@ class HurricoreTrainer:
         self.gradient_clipping_norm = gradient_clipping_norm
         # Setup hooks
         self.hooks: HurricoreHookList[HurricoreHook] = HurricoreHookList(hooks or [])
-        [hook.execute_on_trainer_init_end() for hook in self.hooks]
+        for hook in self.hooks:
+            hook.execute_on_trainer_init_end()
 
 
     @staticmethod
@@ -104,14 +111,16 @@ class HurricoreTrainer:
         self.context.batch_idx = 0
         self.context.global_step = -1
         # execute hooks on training start
-        [hook.execute_on_training_start() for hook in self.hooks]
+        for hook in self.hooks:
+            hook.execute_on_training_start()
         
         # Iterate over epochs
         for epoch in range(self.context.epoch, self.context.num_epochs):
             # Update context variables
             self.context.epoch = epoch
             # Execute hooks on epoch start
-            [hook.execute_on_epoch_start() for hook in self.hooks]
+            for hook in self.hooks:
+                hook.execute_on_epoch_start()
             # Iterate over batches
             for batch_idx, batch in enumerate(
                 iterable=self._build_data_iterator(self.data_loaders),
@@ -121,18 +130,22 @@ class HurricoreTrainer:
                 self.context.batch_idx = batch_idx
                 self.context.batch = batch
                 # Execute hooks on step start
-                [hook.execute_on_step_start() for hook in self.hooks]
+                for hook in self.hooks:
+                    hook.execute_on_step_start()
                 # Step on batch and collect loss
                 self.context.step_loss = self.step(batch)
                 # Execute hooks on step end
-                [hook.execute_on_step_end() for hook in self.hooks]
+                for hook in self.hooks:
+                    hook.execute_on_step_end()
             # Execute hooks on epoch end
-            [hook.execute_on_epoch_end() for hook in self.hooks]
+            for hook in self.hooks:
+                hook.execute_on_epoch_end()
             self.context.batch_idx = 0
 
         self.context.batch_idx = self.context.num_steps_per_epoch - 1
         # Execute hooks on training end
-        [hook.execute_on_training_end() for hook in self.hooks]
+        for hook in self.hooks:
+            hook.execute_on_training_end()
         # Wait for everyone to finish
         self.accelerator.wait_for_everyone()
         self.accelerator.end_training()

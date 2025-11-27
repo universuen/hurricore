@@ -6,7 +6,8 @@ from transformers import AutoProcessor, AutoModelForVision2Seq
 from PIL import Image
 
 from hurricore.trainers import LLMTrainer
-from hurricore.utils import QwenVLSFTCollator, split_dataset
+from hurricore.collators import VLMSFTCollator
+from hurricore.utils import split_dataset
 
 
 class RandomColorConversationDataset:
@@ -45,8 +46,8 @@ def main():
     )
 
     with accelerator.main_process_first():
-        processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
-        model = AutoModelForVision2Seq.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+        processor = AutoProcessor.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
+        model = AutoModelForVision2Seq.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
         dataset = RandomColorConversationDataset(num_samples=10000)
         training_dataset, validation_dataset = split_dataset(
             dataset=dataset,
@@ -54,7 +55,7 @@ def main():
         )
     
     trainer = LLMTrainer(
-        experiment_name="sft_mllm",
+        experiment_name="sft_vlm",
         data_folder_path=Path(__file__).parent / "data",
         num_epochs=3,
         learning_rate=1e-5,
@@ -62,7 +63,7 @@ def main():
         training_dataset=training_dataset,
         validation_dataset=validation_dataset,
         accelerator=accelerator,
-        collate_fn=QwenVLSFTCollator(
+        collate_fn=VLMSFTCollator(
             processor=processor,
         ),
     )

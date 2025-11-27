@@ -29,7 +29,7 @@ def main() -> None:
         temp_folder_path = folder_path
 
     url = launch_tensor_board(temp_folder_path)
-    print(f"Tensorboard is launched at {url}")
+    print(f"TensorBoard is launched at {url}")
     try:
         while True:
             pass

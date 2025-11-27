@@ -39,7 +39,7 @@ class TestTrainer(HurricoreTrainer):
         experiment_name: str = None,
         log_level: int = logging.INFO,
         log_interval: int = 1,
-        tensor_board_record_param_and_grad: bool = False,
+        tensorboard_record_param_and_grad: bool = False,
         evaluation_interval: int = 100,
         ckpt_interval: int = 500,
     ) -> None:
@@ -94,7 +94,7 @@ class TestTrainer(HurricoreTrainer):
             TensorBoardHook(
                 trainer=self,
                 folder_path=data_folder_path / 'tensorboards' / experiment_name,
-                record_param_and_grad=tensor_board_record_param_and_grad,
+                record_param_and_grad=tensorboard_record_param_and_grad,
             ),
             HistoryHook(
                 trainer=self,

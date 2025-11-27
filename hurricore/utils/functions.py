@@ -34,34 +34,6 @@ def split_list_into_chunks(original_list, chunk_size):
     return chunks
 
 
-
-def convert_vlm_inputs_to_vllm_prompts(
-        text_inputs: list[str],
-        image_inputs: list[Image.Image],
-        image_token: str = "<|image_pad|>",
-        *args, **kwargs,
-    ) -> list[dict]:
-    model_inputs = []
-    current_image_idx = 0
-
-    for i, prompt_text in enumerate(text_inputs):
-        num_images = prompt_text.count(image_token)
-        multi_modal_data = dict()
-        
-        if num_images > 0:
-            prompt_images = image_inputs[current_image_idx : current_image_idx + num_images]
-            multi_modal_data["image"] = prompt_images
-            current_image_idx += num_images
-
-        model_inputs.append(
-            {
-                "prompt": prompt_text,
-                "multi_modal_data": multi_modal_data,
-            }
-        )
-
-    return model_inputs
-
 def make_table(
     headers: list[str],
     rows: list[list],
@@ -208,7 +180,7 @@ def split_list(main_list: list, sub_list: list) -> list:
 
 
 
-def get_casaulty_matrix(batch_size, seq_len: int) -> torch.Tensor:
+def get_causal_matrix(batch_size, seq_len: int) -> torch.Tensor:
     """
     Returns a lower triangular matrix of shape (batch_size, seq_len, seq_len) with ones on the diagonal.
     """
@@ -504,7 +476,6 @@ def download_image(url: str) -> Image.Image:
         image = Image.open(img_data).convert('RGB')
     return image
  
-
 
 def get_trainable_layer_names(model: torch.nn.Module) -> list[str]:
     results = []

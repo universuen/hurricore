@@ -7,7 +7,7 @@ name = "hurricore"
 version = "0.1.1"
 description = "A deep learning framework based on PyTorch and Accelerate."
 readme = { file = "README.md", content-type = "text/markdown" }
-license = "MIT"
+license = { file = "LICENSE" }
 authors = [
     { name = "universuen", email = "universuen@gmail.com" }
 ]
@@ -16,18 +16,17 @@ dependencies = [
     "accelerate",
     "pytest",
     "tensorboard",
-    "pynvml",
+    "nvidia-ml-py",
     "lmdb",
     "scikit-learn",
     "torchmetrics",
     "matplotlib",
     "openai",
-    "rapidocr_onnxruntime",
     "transformers",
     "qwen_vl_utils",
     "deepspeed==0.15.4",
-    "vllm",
     "nvitop",
+    "vllm",
 ]
 
 [project.urls]

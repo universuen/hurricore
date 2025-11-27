@@ -5,7 +5,8 @@ from accelerate import Accelerator, DeepSpeedPlugin
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from hurricore.trainers import LLMTrainer
-from hurricore.utils import LLMSFTCollator, split_dataset
+from hurricore.collators import LLMSFTCollator
+from hurricore.utils import split_dataset
 
 
 class RandomNameConversationDataset:
@@ -41,8 +42,8 @@ def main():
     )
 
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
-        model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-0.6B")
+        model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-0.6B")
         dataset = RandomNameConversationDataset(num_samples=10000)
         training_dataset, validation_dataset = split_dataset(
             dataset=dataset,

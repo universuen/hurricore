@@ -5,7 +5,8 @@ from accelerate import Accelerator, DeepSpeedPlugin
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from hurricore.trainers import LLMGRPOTrainer
-from hurricore.utils import LLMSFTCollator, split_dataset
+from hurricore.collators import LLMGRPOCollator
+from hurricore.utils import split_dataset
 
 
 class RandomMathDataset:
@@ -34,7 +35,7 @@ class RandomMathGRPOTrainer(LLMGRPOTrainer):
             return -100
 
 
-class RandomMathCollator(LLMSFTCollator):
+class RandomMathCollator(LLMGRPOCollator):
     def __call__(self, batch: list[dict]) -> dict:
         conversations = []
         targets = []
@@ -55,11 +56,10 @@ class RandomMathCollator(LLMSFTCollator):
             conversations.append(conversation)
             targets.append(item["answer"])
 
-        return {
-            "vllm_prompts": super().__call__(conversations, tokenize=False),
-            "torch_model_inputs": super().__call__(conversations),
-            "targets": targets,
-        }
+        return super().__call__(
+            conversations=conversations,
+            targets=targets,
+        )
 
 
 def main():
@@ -73,8 +73,8 @@ def main():
     )
 
     with accelerator.main_process_first():
-        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
-        model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+        tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-0.6B")
+        model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-0.6B")
         dataset = RandomMathDataset(num_samples=10000)
         training_dataset, validation_dataset = split_dataset(
             dataset=dataset,
@@ -95,6 +95,7 @@ def main():
             tokenizer=tokenizer,
             generation_mode=True,
         ),
+        use_vllm=True,
     )
     trainer.run()
 

@@ -9,10 +9,14 @@ class ConfigBase(AttributeDict):
     It is also a subclass of AttributeDict which provides convenient access to instance attributes via dot notation.
     """
     def __init__(self, **kwargs) -> None:
-        for name, value in vars(self.__class__).items():
-            if re.match(r'^__.*__$', name) or callable(value):
+        # Iterate through MRO to collect all class attributes including inherited ones
+        for cls in reversed(self.__class__.__mro__):
+            if cls is AttributeDict or cls is dict:
                 continue
-            self[name] = value
+            for name, value in vars(cls).items():
+                if re.match(r'^__.*__', name) or callable(value):
+                    continue
+                self[name] = value
         super().__init__(**kwargs)
         self.__post_init__()
 

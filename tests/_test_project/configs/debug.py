@@ -45,7 +45,7 @@ class TrainerConfig(ConfigBase):
     log_interval: int = 1 * AcceleratorConfig().gradient_accumulation_steps
     # tensor board hook
     tensor_board_folder_path: Path = PathConfig().tensor_boards
-    tensor_board_record_param_and_grad: bool = True
+    tensorboard_record_param_and_grad: bool = True
     # history hook
     history_folder_path: Path = PathConfig().histories
     # checkpoint hook

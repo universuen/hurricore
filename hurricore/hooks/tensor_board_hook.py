@@ -1,9 +1,9 @@
 import shutil
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from hurricore.hooks import HurricoreHook
 from hurricore.trainers import HurricoreTrainer
@@ -44,7 +44,6 @@ class TensorBoardHook(HurricoreHook):
 
     def execute_on_trainer_init_end(self) -> None:
         self.writer = SummaryWriter(log_dir=self.folder_path) if self.trainer.accelerator.is_main_process else Dummy()
-        self.thread_pool_executor = ThreadPoolExecutor() if self.trainer.accelerator.is_main_process else Dummy()
         env.tensor_board_writer = self.writer
     
 
@@ -72,48 +71,49 @@ class TensorBoardHook(HurricoreHook):
         env.checkpointer.register_action(self._recover_from_checkpoint)
         if self.auto_launch and self.trainer.accelerator.is_main_process:
             url = launch_tensor_board(self.folder_path.parent)
-            env.logger.info(f"Tensorboard is launched at {url}")
+            env.logger.info(f"TensorBoard is launched at {url}")
 
 
     def _collect_param_grad_data(self) -> list:
         param_grad_data = []
-        models = self.trainer.originals.models
+        models = self.trainer.models
         for model_name, model in zip(auto_name(models), models):
             for layer_name, param in model.named_parameters():
-                if param.grad is not None:
-                    param_data = {
-                        'model_name': model_name,
-                        'layer_name': layer_name,
-                        'param': param.detach().float().cpu().clone(),
-                        'grad': param.grad.detach().float().cpu().clone()
-                    }
-                    param_grad_data.append(param_data)
+                param_data = {
+                    'model_name': model_name,
+                    'layer_name': layer_name,
+                    'param': param.detach().float().cpu().clone(),
+                    'grad': param.grad.detach().float().cpu().clone() if param.grad is not None else None,
+                }
+                param_grad_data.append(param_data)
         return param_grad_data  
 
 
     def execute_on_epoch_end(self) -> None:
         if not self.record_param_and_grad:
             return
-        param_grad_data = self._collect_param_grad_data()
-        self.thread_pool_executor.submit(
-            self._record_parameters_and_gradients, 
-            param_grad_data, 
-            self.trainer.context.global_step
-        )
+        if self.trainer.accelerator.is_main_process:
+            param_grad_data = self._collect_param_grad_data()
+            self._record_parameters_and_gradients(
+                param_grad_data=param_grad_data, 
+                step=self.trainer.context.global_step,
+            )
+        self.trainer.accelerator.wait_for_everyone()
 
 
-    def _record_parameters_and_gradients(self, param_grad_data, step) -> None:
-        for data in param_grad_data:
+    def _record_parameters_and_gradients(self, param_grad_data: dict, step: int) -> None:
+        for data in tqdm(param_grad_data, desc="Recording parameters and gradients"):
             self.writer.add_histogram(
                 f"Parameters/{data['model_name']}-{data['layer_name']}", 
                 data['param'],
-                step
+                step,
             )
-            self.writer.add_histogram(
-                f"Gradients/{data['model_name']}-{data['layer_name']}", 
-                data['grad'],
-                step
-            )
+            if data['grad'] is not None:
+                self.writer.add_histogram(
+                    f"Gradients/{data['model_name']}-{data['layer_name']}", 
+                    data['grad'],
+                    step,
+                )
         self.writer.flush()
 
 
@@ -129,7 +129,6 @@ class TensorBoardHook(HurricoreHook):
 
 
     def execute_on_training_end(self) -> None:
-        self.thread_pool_executor.shutdown(wait=True)
         self._shutdown_writer()
 
 
