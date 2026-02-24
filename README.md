@@ -106,126 +106,25 @@ bash install.sh
 bash install.sh your_project_name
 ```
 
-### Manual Installation
-
-```bash
-# Install core dependencies
-pip install -e .
-
-# Install with optional project dependencies
-pip install -e .[projects]
-```
-
-### Dependencies
-
-Core dependencies include:
-- `torch` - PyTorch deep learning framework
-- `accelerate` - Distributed training made easy
-- `transformers` - Hugging Face transformers
-- `deepspeed` - Training optimization
-- `vllm` - Fast LLM inference
-- `tensorboard` - Training visualization
-- And more (see `pyproject.toml`)
-
----
-
 ## 🎯 Quick Start
 
-> **Note**: While Hurricore can handle any model type, the following examples focus on LLM training (SFT and RL) as they demonstrate the framework's capabilities in demanding scenarios. You can easily adapt these patterns to your own models and tasks by extending the `HurricoreTrainer` base class.
+Check out the `examples/` directory for complete working examples focused on LLM training:
 
-### Example 1: Supervised Fine-Tuning (SFT) for LLM
+- **`sft_llm.py`**: Supervised fine-tuning for language models
+- **`rl_llm.py`**: Reinforcement learning with GRPO
+- **`sft_vlm.py`**: Vision-language model SFT
+- **`rl_vlm.py`**: Vision-language model RL
 
-```python
-from pathlib import Path
-from accelerate import Accelerator, DeepSpeedPlugin
-from transformers import AutoTokenizer, AutoModelForCausalLM
-from torch.utils.data import Dataset
+> **Extending to Other Models**: These examples demonstrate the framework's usage with LLMs, but the same patterns apply to any model type. Simply extend `HurricoreTrainer` (or `StandardTrainer`) and implement your custom training logic.
 
-from hurricore.trainers import LLMTrainer
-from hurricore.collators import LLMSFTCollator
-from hurricore.utils import split_dataset
+### Running Examples
 
+```bash
+# Run SFT example
+accelerate launch examples/sft_llm.py
 
-class ConversationDataset(Dataset):
-    def __getitem__(self, idx: int) -> list[dict]:
-        return [
-            {"role": "user", "content": "Hello!"},
-            {"role": "assistant", "content": "Hi there!"},
-        ]
-    
-    def __len__(self):
-        return 1000
-
-
-# Setup accelerator with DeepSpeed
-accelerator = Accelerator(
-    gradient_accumulation_steps=4,
-    mixed_precision="bf16",
-    deepspeed_plugin=DeepSpeedPlugin(zero_stage=1)
-)
-
-# Load model and tokenizer
-tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-0.6B")
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-0.6B")
-
-# Prepare datasets
-dataset = ConversationDataset()
-train_ds, val_ds = split_dataset(dataset, training_ratio=0.9)
-
-# Create trainer
-trainer = LLMTrainer(
-    experiment_name="my_sft_experiment",
-    data_folder_path=Path("./data"),
-    num_epochs=3,
-    per_device_batch_size=2,
-    learning_rate=1e-5,
-    model=model,
-    training_dataset=train_ds,
-    validation_dataset=val_ds,
-    accelerator=accelerator,
-    collate_fn=LLMSFTCollator(tokenizer=tokenizer),
-)
-
-# Start training
-trainer.run()
-```
-
-### Example 2: Reinforcement Learning with GRPO
-
-```python
-import re
-from hurricore.trainers import LLMGRPOTrainer
-from hurricore.collators import LLMRLCollator
-
-
-class MathRLTrainer(LLMGRPOTrainer):
-    def compute_reward(self, completion: str, target: str) -> float:
-        """Custom reward function for math problems"""
-        try:
-            answer = re.findall(r"<answer>(.*?)</answer>", completion)[0]
-            penalty = abs(int(answer) - int(target))
-            return 1000 - penalty
-        except:
-            return -100
-
-
-# Create RL trainer
-trainer = MathRLTrainer(
-    experiment_name="math_rl",
-    data_folder_path=Path("./data"),
-    num_epochs=3,
-    per_device_batch_size=1,
-    learning_rate=1e-6,
-    model=model,
-    tokenizer=tokenizer,
-    training_dataset=train_ds,
-    validation_dataset=val_ds,
-    accelerator=accelerator,
-    collate_fn=LLMRLCollator(tokenizer=tokenizer, enable_thinking=True),
-    use_vllm=True,  # Use vLLM for fast inference
-)
-
-trainer.run()
+# Run RL example
+accelerate launch examples/rl_llm.py
 ```
 ---
 
@@ -235,33 +134,17 @@ trainer.run()
 
 #### Trainers
 
-**Base Trainer:**
+**Base Trainers:**
+- **`StandardTrainer`**: Base class with general optimizer, data loaders and hooks.
 - **`HurricoreTrainer`**: Abstract base class - extend this to create trainers for any model and task
 
 **LLM-Focused Implementations:**
 - **`LLMTrainer`**: Standard supervised fine-tuning for LLMs
 - **`LLMGRPOTrainer`**: Group Relative Policy Optimization for RL
-- **`LLMDAPOTrainer`**: Direct Alignment from Preferences Optimization
-- **`LLMGSPOTrainer`**: Guided Self-Play Optimization
 
 **Other Task Trainers:**
 - **`MultiClassClassificationTrainer`**: Multi-class classification tasks
 - **`MultiLabelClassificationTrainer`**: Multi-label classification tasks
-
-#### Collators
-
-- **`LLMSFTCollator`**: Collator for LLM supervised fine-tuning
-- **`LLMRLCollator`**: Collator for LLM reinforcement learning
-- **`VLMSFTCollator`**: Collator for vision-language model SFT
-- **`VLMRLCollator`**: Collator for vision-language model RL
-
-#### Datasets
-
-- **`LMDBDataset`**: High-performance LMDB-backed dataset
-- **`BalancedDataset`**: Automatically balance class distributions
-- **`PackedDataset`**: Pack multiple samples for efficiency
-- **`FilteredDataset`**: Apply custom filtering logic
-- **`CycleDataset`**: Infinite cycling through data
 
 #### Hooks
 
@@ -272,28 +155,21 @@ Hooks allow you to customize training behavior at different stages:
 - **`TensorBoardHook`**: TensorBoard integration
 - **`LRSchedulerHook`**: Learning rate scheduling
 - **`ValidationLossHook`**: Compute validation loss
----
 
-## 💡 Examples
+#### Datasets
 
-Check out the `examples/` directory for complete working examples focused on LLM training:
+- **`LMDBDataset`**: High-performance LMDB-backed dataset
+- **`BalancedDataset`**: Automatically balance class distributions
+- **`FilteredDataset`**: Apply custom filtering logic
+- **`CycleDataset`**: Infinite cycling through data
 
-- **`sft_llm.py`**: Supervised fine-tuning for language models
-- **`rl_llm.py`**: Reinforcement learning with GRPO
-- **`sft_vlm.py`**: Vision-language model fine-tuning
-- **`rl_vlm.py`**: Vision-language model RL training
+#### Collators
 
-> **Extending to Other Models**: These examples demonstrate the framework's usage with LLMs, but the same patterns apply to any model type. Simply extend `HurricoreTrainer` and implement your custom training logic.
+- **`LLMSFTCollator`**: Collator for LLM supervised fine-tuning
+- **`LLMRLCollator`**: Collator for LLM reinforcement learning
+- **`VLMSFTCollator`**: Collator for vision-language model SFT
+- **`VLMRLCollator`**: Collator for vision-language model RL
 
-### Running Examples
-
-```bash
-# Run SFT example
-python examples/sft_llm.py
-
-# Run RL example
-python examples/rl_llm.py
-```
 
 ---
 
@@ -307,8 +183,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built on top of [PyTorch](https://pytorch.org/)
 - Powered by [Hugging Face Accelerate](https://github.com/huggingface/accelerate)
-- Integrated with [DeepSpeed](https://github.com/microsoft/DeepSpeed)
-- Fast inference with [vLLM](https://github.com/vllm-project/vllm)
 
 ---
 
