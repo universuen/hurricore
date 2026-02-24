@@ -38,7 +38,7 @@ class ClassificationEvaluationHook(HurricoreHook):
 
 
     def execute_on_step_end(self) -> None:
-        global_step = self.trainer.context.global_step + 1
+        global_step = self.trainer.training_context.global_step + 1
         if global_step % self.interval != 0:
             return
         env.logger.info(f'Evaluating model at step {global_step}...')
@@ -47,7 +47,7 @@ class ClassificationEvaluationHook(HurricoreHook):
     
     
     def execute_on_training_end(self) -> None:
-        global_step = self.trainer.context.global_step + 1
+        global_step = self.trainer.training_context.global_step + 1
         env.logger.info(f'Evaluating model at step {global_step}...')
         results=self.evaluate()
         self._log_results(results)
@@ -67,14 +67,14 @@ class ClassificationEvaluationHook(HurricoreHook):
             if isinstance(metric_value, float):
                 if metric_value == float('nan'):
                     metric_value = 0.0
-                env.tensor_board_writer.add_scalar(f'Metric/{metric_name}_{self.evaluator.average}_avg', metric_value, self.trainer.context.global_step)
-                env.history_recorder.record(f'metric_{metric_name}_{self.evaluator.average}_avg', metric_value, self.trainer.context.global_step)
+                env.tensor_board_writer.add_scalar(f'Metric/{metric_name}_{self.evaluator.average}_avg', metric_value, self.trainer.training_context.global_step)
+                env.history_recorder.record(f'metric_{metric_name}_{self.evaluator.average}_avg', metric_value, self.trainer.training_context.global_step)
 
             elif isinstance(metric_value, list):
                 for i, value in enumerate(metric_value):
                     if value == float('nan'):
                         value = 0.0
-                    env.tensor_board_writer.add_scalar(f'Metric/{metric_name}_class_{i}', value, self.trainer.context.global_step)
-                    env.history_recorder.record(f'metric_{metric_name}_class_{i}', value, self.trainer.context.global_step)
+                    env.tensor_board_writer.add_scalar(f'Metric/{metric_name}_class_{i}', value, self.trainer.training_context.global_step)
+                    env.history_recorder.record(f'metric_{metric_name}_class_{i}', value, self.trainer.training_context.global_step)
             else:
                 raise ValueError(f"Unsupported metric value type: {type(metric_value)}")

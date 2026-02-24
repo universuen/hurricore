@@ -26,7 +26,7 @@ class HurricoreTrainer:
         data_loaders: list[DataLoader]
 
 
-    class Context(AttributeDict):
+    class TrainingContext(AttributeDict):
         """
         Context for training loop.
         """
@@ -84,7 +84,7 @@ class HurricoreTrainer:
         self.data_loader, self.original_data_loader = self.data_loaders[0], self.originals.data_loaders[0]
         # Setup context and number of epochs
         num_steps_per_epoch = max(len(dl) for dl in self.data_loaders)
-        self.context = self.Context(
+        self.training_context = self.TrainingContext(
             num_epochs=num_epochs,
             num_steps_per_epoch=num_steps_per_epoch,
         )
@@ -107,42 +107,42 @@ class HurricoreTrainer:
 
     def run(self) -> None:
         # Initialize context variables
-        self.context.epoch = 0
-        self.context.batch_idx = 0
-        self.context.global_step = -1
+        self.training_context.epoch = 0
+        self.training_context.batch_idx = 0
+        self.training_context.global_step = -1
         # execute hooks on training start
         for hook in self.hooks:
             hook.execute_on_training_start()
         
         # Iterate over epochs
-        for epoch in range(self.context.epoch, self.context.num_epochs):
+        for epoch in range(self.training_context.epoch, self.training_context.num_epochs):
             # Update context variables
-            self.context.epoch = epoch
+            self.training_context.epoch = epoch
             # Execute hooks on epoch start
             for hook in self.hooks:
                 hook.execute_on_epoch_start()
             # Iterate over batches
             for batch_idx, batch in enumerate(
                 iterable=self._build_data_iterator(self.data_loaders),
-                start=self.context.batch_idx,
+                start=self.training_context.batch_idx,
             ):
                 # Update context variables
-                self.context.batch_idx = batch_idx
-                self.context.batch = batch
+                self.training_context.batch_idx = batch_idx
+                self.training_context.batch = batch
                 # Execute hooks on step start
                 for hook in self.hooks:
                     hook.execute_on_step_start()
                 # Step on batch and collect loss
-                self.context.step_loss = self.step(batch)
+                self.training_context.step_loss = self.step(batch)
                 # Execute hooks on step end
                 for hook in self.hooks:
                     hook.execute_on_step_end()
             # Execute hooks on epoch end
             for hook in self.hooks:
                 hook.execute_on_epoch_end()
-            self.context.batch_idx = 0
+            self.training_context.batch_idx = 0
 
-        self.context.batch_idx = self.context.num_steps_per_epoch - 1
+        self.training_context.batch_idx = self.training_context.num_steps_per_epoch - 1
         # Execute hooks on training end
         for hook in self.hooks:
             hook.execute_on_training_end()

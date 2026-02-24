@@ -19,31 +19,31 @@ class _TestTrainer(HurricoreTrainer):
     ):
         model = nn.Linear(1, 1)
         optimizer = AdamW(model.parameters(), lr=1)
+        data_loader = DataLoader(range(100), batch_size=batch_size, shuffle=True)
         super().__init__(
             models=[model],
             optimizers=[optimizer],
-            data_loaders=[DataLoader(range(100), batch_size=batch_size, shuffle=True)],
+            data_loaders=[data_loader],
             accelerator=Accelerator(),
             num_epochs=num_epochs,
+            hooks=[
+                LRSchedulerHook(
+                    trainer=self,
+                    lr_schedulers=[
+                        CosineAnnealingLR(
+                            optimizer=optimizer,
+                            T_max=num_epochs * len(data_loader) * num_processes,
+                            eta_min=0.0,
+                        )
+                    ],
+                    modes=['per_step']
+                )
+            ],
         )
-        num_batches = len(self.data_loader)
-        self.hooks = [
-            LRSchedulerHook(
-                trainer=self,
-                lr_schedulers=[
-                    CosineAnnealingLR(
-                        optimizer=optimizer,
-                        T_max=num_epochs * num_batches * num_processes,
-                        eta_min=0.0,
-                    )
-                ],
-                modes=['per_step']
-            )
-        ]
         self.iterated_results = []
     
     
-    def step(self) -> torch.Tensor:
+    def step(self, batch) -> torch.Tensor:
         self.optimizers[0].step()
         return torch.tensor(0.0)
     

@@ -17,13 +17,11 @@ class MultiClassClassificationTrainer(StandardTrainer):
         evaluation_average_method: Literal['micro', 'macro', 'weighted', 'none'] = 'none',
         threshold: float = 0.5,
         # Task specific hyper parameters
-        num_epochs: int = 3,
         per_device_batch_size: int = 32,
         learning_rate: float = 5e-5,
         **kwargs,
     ) -> None:
         super().__init__(
-            num_epochs=num_epochs,
             per_device_batch_size=per_device_batch_size,
             learning_rate=learning_rate,
             **kwargs,

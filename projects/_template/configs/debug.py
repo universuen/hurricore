@@ -52,10 +52,10 @@ class TrainerConfig(ConfigBase):
     # Hook specific configs
     experiment_name: str = experiment_name
     log_level: int = logging.INFO
-    log_interval: int = 1 * AcceleratorConfig().gradient_accumulation_steps
+    log_interval: int = 1
     tensorboard_record_param_and_grad: bool = True
-    evaluation_interval: int = 100 * AcceleratorConfig().gradient_accumulation_steps
-    ckpt_interval: int = 500 * AcceleratorConfig().gradient_accumulation_steps
+    evaluation_interval: int = 100
+    ckpt_interval: int = 500
 
 
 class RuntimeConfig(ConfigBase):

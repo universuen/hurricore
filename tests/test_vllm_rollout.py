@@ -4,18 +4,18 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from PIL import Image
 from accelerate import Accelerator
 
-from hurricore.utils import QwenVLSFTCollator, convert_vlm_inputs_to_vllm_prompts, VLLMRollout
+from hurricore.utils import VLLMRollout
+from hurricore.collators import VLMRLCollator
 
 
 def test_vllm_rollout():
     accelerator = Accelerator()
-    model = Qwen2_5_VLForConditionalGeneration.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
+    model = Qwen2_5_VLForConditionalGeneration.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
     print(model.config.name_or_path)
-    processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-7B-Instruct")
-    collator = QwenVLSFTCollator(
+    processor = AutoProcessor.from_pretrained("Qwen/Qwen3-VL-2B-Instruct")
+    collator = VLMRLCollator(
         processor=processor,
         generation_mode=True,
-        tokenize=False,
     )
 
     samples = [
@@ -32,13 +32,9 @@ def test_vllm_rollout():
             }
         ]
     ]
-    data = collator(samples)
-    vllm_model_inputs = convert_vlm_inputs_to_vllm_prompts(
-        text_inputs=data["text_inputs"],
-        image_inputs=data["image_inputs"],
-    )
+    vllm_conversations = collator(samples)["vllm_conversations"]
     from pprint import pprint
-    pprint(vllm_model_inputs)
+    pprint(vllm_conversations)
 
     os.environ["LOCAL_RANK"] = str(accelerator.process_index)
     os.environ["WORLD_SIZE"] = str(accelerator.num_processes)
@@ -52,11 +48,11 @@ def test_vllm_rollout():
             "tensor_parallel_size": 1,
         },
     )
-    completions = vllm_rollout.generate(
-        vllm_prompts=vllm_model_inputs,
+    completions_ids = vllm_rollout(
+        vllm_conversations=vllm_conversations,
     )
-    for completion in completions:
-        print(completion)
+    for completion_ids in completions_ids:
+        print(processor.decode(completion_ids, skip_special_tokens=True))
 
     
 if __name__ == "__main__":

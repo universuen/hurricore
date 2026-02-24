@@ -20,6 +20,7 @@ class HurricoreHookList(list, Generic[T]):
     def __iter__(self) -> Iterator[T]:
         return super().__iter__()
 
+
     def __contains__(self, key: str | Any) -> bool:
         if type(key) is not str:
             return super().__contains__(key)

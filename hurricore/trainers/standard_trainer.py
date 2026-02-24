@@ -91,8 +91,7 @@ class StandardTrainer(HurricoreTrainer):
         
         if experiment_name is None:
             experiment_name = datetime.now().strftime('%Y%m%d_%H%M')
-        if type(data_folder_path) is not Path:
-            data_folder_path = Path(data_folder_path)
+        data_folder_path = Path(data_folder_path)
         data_folder_path.mkdir(parents=True, exist_ok=True)
         
         self.init_context = self.InitContext()
@@ -149,7 +148,7 @@ class StandardTrainer(HurricoreTrainer):
                     level=self.init_context.log_level,
                     log_trainable_params=self.init_context.log_trainable_params,
                     log_file_path=self.init_context.data_folder_path / 'logs' / f'{self.init_context.experiment_name}.log',
-                    interval=self.init_context.log_interval,
+                    interval=self.init_context.log_interval * self.init_context.accelerator.gradient_accumulation_steps,
                 ),
                 LRSchedulerHook(
                     trainer=self,
@@ -160,22 +159,22 @@ class StandardTrainer(HurricoreTrainer):
                     trainer=self,
                     folder_path=self.init_context.data_folder_path / 'tensorboards' / self.init_context.experiment_name,
                     record_param_and_grad=self.init_context.tensorboard_record_param_and_grad,
-                    interval=self.init_context.log_interval,
+                    interval=self.init_context.log_interval * self.init_context.accelerator.gradient_accumulation_steps,
                 ),
                 HistoryHook(
                     trainer=self,
                     folder_path=self.init_context.data_folder_path / 'histories' / self.init_context.experiment_name,
-                    interval=self.init_context.log_interval,
+                    interval=self.init_context.log_interval * self.init_context.accelerator.gradient_accumulation_steps,
                 ),
                 ValidationLossHook(
                     trainer=self,
                     data_loader=self.init_context.validation_data_loader,
-                    interval=self.init_context.evaluation_interval,
+                    interval=self.init_context.evaluation_interval * self.init_context.accelerator.gradient_accumulation_steps,
                 ),
                 CheckpointHook(
                     trainer=self,
                     folder_path=self.init_context.data_folder_path / 'checkpoints' / self.init_context.experiment_name,
-                    interval=self.init_context.ckpt_interval,
+                    interval=self.init_context.ckpt_interval * self.init_context.accelerator.gradient_accumulation_steps,
                 ),
             ]
         )

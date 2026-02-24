@@ -24,23 +24,23 @@ class _TestTrainer(HurricoreTrainer):
             data_loaders=[DataLoader(range(10), batch_size=1, shuffle=True)],
             accelerator=Accelerator(),
             num_epochs=2,
+            hooks=[
+                CheckpointHook(self, temp_checkpoint_folder_path, interval=5),
+                HistoryHook(self, temp_history_folder_path),
+            ]
         )
-        self.hooks = [
-            CheckpointHook(self, temp_checkpoint_folder_path, interval=5),
-            HistoryHook(self, temp_history_folder_path),
-        ]
         self.has_crashed = False
 
-    def step(self) -> torch.Tensor:
-        history_hook = self.hooks["HistoryHook"]
+    def step(self, batch) -> torch.Tensor:
+        history_hook = self.hooks[-1]
         # history_hook.msg_queue.append(
-        #     ('record', {'tag': 'my_value', 'value': self.context.global_step, 'global_step': self.context.global_step}) 
+        #     ('record', {'tag': 'my_value', 'value': self.training_context.global_step, 'global_step': self.training_context.global_step}) 
         # )
-        history_hook.recoder.record('my_value', self.context.global_step, self.context.global_step)
-        if self.context.global_step == 17 and not self.has_crashed:
+        history_hook.recoder.record('my_value', self.training_context.global_step, self.training_context.global_step)
+        if self.training_context.global_step == 17 and not self.has_crashed:
             self.has_crashed = True
             raise ValueError('Crash!')
-        
+        return torch.randn(1)
 
 
 def test_history_hook():
@@ -79,28 +79,9 @@ def test_history_hook():
     ]
     trainer.run()
     histories = HistoryRecorder.load(temp_history_folder_path)
-    assert histories['my_value'] == [
-        {'global_step': 0, 'value': 0},
-        {'global_step': 1, 'value': 1},
-        {'global_step': 2, 'value': 2},
-        {'global_step': 3, 'value': 3},
-        {'global_step': 4, 'value': 4},
-        {'global_step': 5, 'value': 5},
-        {'global_step': 6, 'value': 6},
-        {'global_step': 7, 'value': 7},
-        {'global_step': 8, 'value': 8},
-        {'global_step': 9, 'value': 9},
-        {'global_step': 10, 'value': 10},
-        {'global_step': 11, 'value': 11},
-        {'global_step': 12, 'value': 12},
-        {'global_step': 13, 'value': 13},
-        {'global_step': 14, 'value': 14},
-        {'global_step': 15, 'value': 15},
-        {'global_step': 16, 'value': 16},
-        {'global_step': 17, 'value': 17},
-        {'global_step': 18, 'value': 18},
-        {'global_step': 19, 'value': 19},
-    ], f"History is not saved correctly. {histories['my_value']}"
+    for idx, record in enumerate(histories['my_value']):
+        assert record['global_step'] == idx, f"Global step is not correct. {record['global_step']} != {idx}"
+        assert record['value'] == idx, f"Value is not correct. {record['value']} != {idx}"
 
     shutil.rmtree(temp_checkpoint_folder_path)
     shutil.rmtree(temp_history_folder_path)

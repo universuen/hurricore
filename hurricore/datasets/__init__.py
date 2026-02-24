@@ -6,3 +6,4 @@ from hurricore.datasets.deduplicated_dataset import DeduplicatedDataset  # noqa:
 from hurricore.datasets.filtered_dataset import FilteredDataset  # noqa: F401
 from hurricore.datasets.cycle_dataset import CycleDataset  # noqa: F401
 from hurricore.datasets.continual_learning_dataset import ContinualLearningDataset  # noqa: F401
+from hurricore.datasets.safe_dataset import SafeDataset  # noqa: F401

@@ -24,15 +24,13 @@ class _TestTrainer(HurricoreTrainer):
             data_loaders=[DataLoader(range(10), batch_size=1, shuffle=True)],
             accelerator=Accelerator(),
             num_epochs=2,
+            hooks=[CheckpointHook(self, folder_path=temp_folder_path, interval=5)],
         )
-        self.hooks = [CheckpointHook(self, folder_path=temp_folder_path, interval=5)]
         self.iterated_results = []
     
     
-    def step(self) -> torch.Tensor:
-        batch = self.accelerator.gather(
-            self.context.batch
-        ).sort()[0]
+    def step(self, batch) -> torch.Tensor:
+        batch = self.accelerator.gather(batch).sort()[0]
         self.iterated_results.append(batch)
         return torch.tensor(0.0)
     
@@ -49,15 +47,13 @@ class _TestTrainerWithMultipleDataLoader(HurricoreTrainer):
             ],
             accelerator=Accelerator(),
             num_epochs=2,
+            hooks=[CheckpointHook(self, folder_path=temp_folder_path, interval=5)],
         )
-        self.hooks = [CheckpointHook(self, folder_path=temp_folder_path, interval=5)]
         self.iterated_results = []
     
     
-    def step(self) -> torch.Tensor:
-        batch = self.accelerator.gather(
-            self.context.batch
-        )
+    def step(self, batch) -> torch.Tensor:
+        batch = self.accelerator.gather(batch)
         self.iterated_results.append(batch)
         return torch.tensor(0.0)
 
@@ -170,7 +166,7 @@ def test_checkpoint_hook_context():
     trainer.accelerator.wait_for_everyone()
         
     trainer.run()
-    original_context = deepcopy(trainer.context)
+    original_context = deepcopy(trainer.training_context)
     
     # remove all but the 5th and the 15th
     if trainer.accelerator.is_main_process:
@@ -183,7 +179,7 @@ def test_checkpoint_hook_context():
     # test reproducibility on the 2nd epoch
     trainer = _TestTrainer()
     trainer.run()
-    new_context = deepcopy(trainer.context)
+    new_context = deepcopy(trainer.training_context)
     for key in vars(original_context).keys():
         new_value = getattr(new_context, key)
         original_value = getattr(original_context, key)
@@ -205,7 +201,7 @@ def test_checkpoint_hook_context():
     # test reproducibility on the 1st epoch
     trainer = _TestTrainer()
     trainer.run()
-    new_context = deepcopy(trainer.context)
+    new_context = deepcopy(trainer.training_context)
     for key in vars(original_context).keys():
         assert new_value == original_value, \
             (

@@ -18,7 +18,7 @@ from hurricore.utils import (
     Dummy,
     ConfigBase,
     env,
-    auto_name,
+    auto_name_iterable,
     get_list_mean,
     get_params_details_table,
     get_device_utilization,
@@ -169,6 +169,7 @@ class LoggingHook(HurricoreHook):
         )
         assert interval > 0, 'Log interval must be greater than 0.'
         log_file_path = Path(log_file_path)
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
         self.interval = interval
         self.extra_log_bar_data = dict()
     
@@ -195,8 +196,8 @@ class LoggingHook(HurricoreHook):
             accelerator=self.trainer.accelerator
         )
         self.time_estimator = _TimeEstimator(
-            num_epochs=self.trainer.context.num_epochs,
-            num_steps_per_epoch=self.trainer.context.num_steps_per_epoch,
+            num_epochs=self.trainer.training_context.num_epochs,
+            num_steps_per_epoch=self.trainer.training_context.num_steps_per_epoch,
         )
         self.loss_manager = _LossManager(
             accelerator=self.trainer.accelerator
@@ -225,7 +226,7 @@ class LoggingHook(HurricoreHook):
         self.logger.info(f'Running with {self.trainer.accelerator.num_processes} processes')
         self.logger.info(f'Trainer & Hooks:\n{self.trainer}')
         models = self.trainer.originals.models
-        for name, model in zip(auto_name(models), models):
+        for name, model in zip(auto_name_iterable(models), models):
             self.logger.info(f'{name} structure:\n{model}')
             if self.init_context.log_trainable_params:
                 self.logger.info(f"{name} trainable layers:\n\t" + "\n\t".join(get_trainable_layer_names(model)))
@@ -239,18 +240,18 @@ class LoggingHook(HurricoreHook):
     
     def execute_on_epoch_start(self) -> None:
         self.loss_manager.reset()
-        self.logger.info(f'Epoch {self.trainer.context.epoch + 1} started')
+        self.logger.info(f'Epoch {self.trainer.training_context.epoch + 1} started')
     
         
     def execute_on_step_end(self) -> None:
         self.time_estimator.step()
-        if (self.trainer.context.global_step + 1) % self.interval == 0:
+        if (self.trainer.training_context.global_step + 1) % self.interval == 0:
             self._log_states_bar()
     
       
     def execute_on_epoch_end(self) -> None: 
         avg_loss = self.loss_manager.average_loss
-        self.logger.info(f'Epoch {self.trainer.context.epoch + 1} finished with average loss: {avg_loss: .5f}')
+        self.logger.info(f'Epoch {self.trainer.training_context.epoch + 1} finished with average loss: {avg_loss: .5f}')
     
     
     def execute_on_training_end(self) -> None:
@@ -258,24 +259,25 @@ class LoggingHook(HurricoreHook):
 
     
     def _log_states_bar(self):
-        self.loss_manager.update(self.trainer.context.step_loss)
+        self.loss_manager.update(self.trainer.training_context.step_loss)
         remaining_time = self.time_estimator.get_estimated_remaining_time(
-            epoch=self.trainer.context.epoch,
-            batch_idx=self.trainer.context.batch_idx,
+            epoch=self.trainer.training_context.epoch,
+            batch_idx=self.trainer.training_context.batch_idx,
         )
         device_utilization, used_memory, total_memory = self.device_monitor.get_states()
 
-        idx = self.trainer.context.batch_idx + 1
-        num_epochs = self.trainer.context.num_epochs
-        num_steps_per_epoch = self.trainer.context.num_steps_per_epoch
-        epoch = self.trainer.context.epoch + 1
-        progress = (self.trainer.context.global_step + 1) / (num_epochs * num_steps_per_epoch)
+        idx = self.trainer.training_context.batch_idx + 1
+        num_epochs = self.trainer.training_context.num_epochs
+        num_steps_per_epoch = self.trainer.training_context.num_steps_per_epoch
+        epoch = self.trainer.training_context.epoch + 1
+        real_steps = (self.trainer.training_context.global_step + 1) // self.trainer.accelerator.gradient_accumulation_steps
+        real_total_steps = self.trainer.training_context.total_steps // self.trainer.accelerator.gradient_accumulation_steps
         
         # LR patch
         lr_status = f"{self.trainer.optimizer.param_groups[0]['lr']:.2e}"
         if len(self.trainer.optimizers) > 1:
             lr_status = ""
-            for optimizer_name, optimizer in zip(auto_name(self.trainer.optimizers), self.trainer.optimizers):
+            for optimizer_name, optimizer in zip(auto_name_iterable(self.trainer.optimizers), self.trainer.optimizers):
                 lr_status += f"[{optimizer_name}: {optimizer.param_groups[0]['lr']:.2e}]"
 
         states = (
@@ -283,7 +285,7 @@ class LoggingHook(HurricoreHook):
             f"Batch: {idx}/{num_steps_per_epoch} | "
             f"Loss: {self.loss_manager.latest_loss:.5f} | "
             f"LR: {lr_status} | "
-            f"Prog.: {progress:.2%} | "
+            f"Prog.: {real_steps}/{real_total_steps} {real_steps/real_total_steps:.2%} | "
             f"T.L.: {remaining_time} | "
             f"Util.: {device_utilization:.1f}% "
             f"{used_memory / 1024 ** 3:.1f}/{total_memory / 1024 ** 3:.1f} GB"

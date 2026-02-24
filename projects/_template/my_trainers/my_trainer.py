@@ -7,4 +7,4 @@ from hurricore.trainers import StandardTrainer
 
 class MyTrainer(StandardTrainer):
     def compute_loss(self, batch: Any) -> torch.Tensor:
-        pass
+        raise NotImplementedError

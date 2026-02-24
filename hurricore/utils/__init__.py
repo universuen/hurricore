@@ -3,6 +3,7 @@ from hurricore.utils.attribute_dict import AttributeDict  # noqa: F401
 from hurricore.utils.dummy import Dummy  # noqa: F401
 from hurricore.utils.logger import Logger  # noqa: F401
 from hurricore.utils.open_ai_chat import OpenAIChat  # noqa: F401
+from hurricore.utils.open_ai_batch_inferencer import OpenAIBatchInferencer  # noqa: F401
 from hurricore.utils.functions import *  # noqa: F403
 from hurricore.utils.evaluators import *  # noqa: F403
 from hurricore.utils.decorators import *  # noqa: F403
@@ -15,3 +16,4 @@ from hurricore.utils.cycle_iterator import CycleIterator  # noqa: F401
 from hurricore.utils.checkpointer import Checkpointer  # noqa: F401
 from hurricore.utils.hurricore_hook_list import HurricoreHookList  # noqa: F401
 from hurricore.utils.vllm_rollout import VLLMRollout  # noqa: F401
+from hurricore.utils.huggingface_model_saver import HuggingfaceModelSaver  # noqa: F401

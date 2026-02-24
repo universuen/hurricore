@@ -32,14 +32,20 @@ class VLLMRollout:
 
     def update_weights(self, model: PreTrainedModel = None) -> None:
         model = model or self.model
+        inner_model = self.vllm.llm_engine.model_executor.driver_worker.worker.model_runner.model
+
         if deepspeed_zero3_enabled():
-            for param_name, param in model.named_parameters():
-                with deepspeed.zero.GatheredParameters([param]):
-                    inner_model = self.vllm.llm_engine.model_executor.driver_worker.worker.model_runner.model
-                    inner_model.load_weights([(param_name, param.data)])
+            import deepspeed
+            def weight_generator():
+                for name, param in model.named_parameters():
+                    if hasattr(param, 'ds_active_sub_modules'):
+                        param.ds_active_sub_modules.clear()
+                    with deepspeed.zero.GatheredParameters([param], modifier_rank=None):
+                        yield name, param       
+            inner_model.load_weights(weight_generator())
         else:
-            inner_model = self.vllm.llm_engine.model_executor.driver_worker.worker.model_runner.model
             inner_model.load_weights(model.named_parameters())
+            
         self.vllm.reset_prefix_cache()
     
 
@@ -47,14 +53,16 @@ class VLLMRollout:
             self, 
             vllm_conversations: list[list[dict]], 
             sampling_params: SamplingParams = None,
-        ) -> list[str]:
+            return_text: bool = True,
+        ) -> list[str] | list[list[int]]:
         outputs = self.vllm.chat(
             vllm_conversations, 
             sampling_params=sampling_params,
             use_tqdm=False,
         )
-        completions = [output.outputs[0].text for output in outputs]
-        return completions
+        if return_text:
+            return [output.outputs[0].text for output in outputs]
+        return [output.outputs[0].token_ids for output in outputs]
     
     
     def sleep(self) -> None:
@@ -63,4 +71,3 @@ class VLLMRollout:
 
     def wake_up(self) -> None:
         self.vllm.wake_up()
-

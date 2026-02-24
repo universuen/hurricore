@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 import torch
 
 from hurricore.trainers import LLMGRPOTrainer
-from hurricore.hooks import LoggingHook
-from hurricore.utils import Dummy, env
 
 
 class LLMDAPOTrainer(LLMGRPOTrainer):
@@ -19,50 +15,59 @@ class LLMDAPOTrainer(LLMGRPOTrainer):
     ) -> None:
         
         super().__init__(
-            ref_model=Dummy(),
+            beta=0,
             **kwargs,
         )
         
         self.epsilon_low = epsilon_low
         self.epsilon_high = epsilon_high
-
+    
 
     def compute_loss(self, batch: dict) -> torch.Tensor:
         assert type(batch) is dict, f"Expected batch to be a dict, got {type(batch)}"
         assert "torch_model_inputs" in batch, f"Expected batch to contain 'torch_model_inputs', but got {batch.keys()}"
-        # Get grouped completions and advantages
-        grouped_completions, grouped_rewards = self.get_grouped_completions_with_rewards(batch)
+        # Get group completions and advantages
+        group_completions_ids, group_rewards = self.get_group_completions_ids_with_rewards(batch)
 
         # Compute advantages
-        grouped_advantages = self.compute_grouped_advantages(grouped_rewards).to(self.accelerator.device)
+        group_advantages = self.compute_group_advantages(group_rewards).to(self.accelerator.device)
         
         # Compute initial policy probabilities
-        init_token_log_probs, token_masks = self.get_grouped_token_log_probs_with_masks(
+        init_group_token_log_probs, effective_token_mask = self.get_group_token_log_probs_with_mask(
             model=self.model,
             torch_model_inputs=batch["torch_model_inputs"],
-            grouped_completions=grouped_completions,
+            group_completions_ids=group_completions_ids,
         )
+
+        # Update effective_token_mask to ignore truncated samples if needed
+        if self.ignore_truncated_samples:
+            with torch.no_grad():
+                has_eos = (group_completions_ids == self.tokenizer.eos_token_id).any(dim=-1)
+                valid_mask = has_eos.unsqueeze(-1)
+                effective_token_mask *= valid_mask.to(effective_token_mask.dtype).to(effective_token_mask.device)
+
 
         # Inner Update Loop
         total_loss = 0.0
         for i in range(self.num_updates_per_batch):
             # Re-compute current policy probabilities for the same completions if not the first step
-            token_log_probs = self.get_grouped_token_log_probs_with_masks(
+            group_token_log_probs = self.get_group_token_log_probs_with_mask(
                 model=self.model,
                 torch_model_inputs=batch["torch_model_inputs"],
-                grouped_completions=grouped_completions,
-            )[0] if i > 0 else init_token_log_probs
+                group_completions_ids=group_completions_ids,
+            )[0] if i > 0 else init_group_token_log_probs
             
-            # Compute token losses using the PPO objective
-            ratios = (token_log_probs - init_token_log_probs.detach()).exp()
+            # Compute token losses
+            ratios = (group_token_log_probs - init_group_token_log_probs.detach()).exp()
             clipped_ratios = torch.clamp(ratios, 1 - self.epsilon_low, 1 + self.epsilon_high)
-            token_losses = - torch.min(
-                ratios * grouped_advantages.unsqueeze(-1), 
-                clipped_ratios * grouped_advantages.unsqueeze(-1),
+            
+            group_token_losses = -torch.min(
+                ratios * group_advantages.unsqueeze(-1), 
+                clipped_ratios * group_advantages.unsqueeze(-1),
             )
             
-            # Apply mask and compute average loss
-            step_loss = (token_losses * token_masks).sum() / (token_masks.sum() + 1e-9)
+            # Apply mask and compute average loss for this update step
+            step_loss = (group_token_losses * effective_token_mask).sum() / (effective_token_mask.sum() + 1e-9)
             
             # Accumulate the loss
             total_loss += step_loss
@@ -70,40 +75,9 @@ class LLMDAPOTrainer(LLMGRPOTrainer):
         # Average the loss over all update steps
         final_loss = total_loss / self.num_updates_per_batch
 
-        self._update_records(
-            grouped_rewards=grouped_rewards,
-            grouped_completions=grouped_completions,
-        )
-
-        return final_loss
-
-
-    def _update_records(
-            self,
-            grouped_rewards: torch.Tensor,
-            grouped_completions: list[list[str]], 
-        ) -> None:
-        # Update reward
-        gathered_grouped_rewards = self.accelerator.gather(grouped_rewards.to(self.accelerator.device))
-        reward = gathered_grouped_rewards.mean().item()
-
-        # Update response length
-        response_length = 0
-        for batched_completion in grouped_completions:
-            response_length += sum([len(i) for i in batched_completion]) / len(batched_completion)
-        response_length /= len(grouped_completions)
-        gathered_response_length = self.accelerator.gather(torch.tensor(response_length).to(self.accelerator.device))
-        response_length = gathered_response_length.mean().item()
-
         # Update records
-        logging_hook: LoggingHook = self.hooks["LoggingHook"]
-        logging_hook.extra_log_bar_data.update(
-            {
-                "Reward": f"{reward:.2f}",
-                "RspLen": f"{response_length:.2f}",
-            }
+        self._update_records(
+            group_rewards=group_rewards,
+            group_completions_ids=group_completions_ids,
         )
-        env.tensor_board_writer.add_scalar('Reward/Training', reward, self.context.global_step)
-        env.tensor_board_writer.add_scalar('Response Length/Training', response_length, self.context.global_step)
-        env.history_recorder.record('training_reward', reward, self.context.global_step)
-        env.history_recorder.record('training_response_length', response_length, self.context.global_step)
+        return final_loss

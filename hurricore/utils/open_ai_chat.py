@@ -11,9 +11,9 @@ import base64
 class OpenAIChat:
     def __init__(
         self,
-        model_name: str = "gpt-5",
+        model_name: str = "gemini-3-pro",
         system_prompt: str | Image.Image | list[str | Image.Image] | None = None,
-        multi_turn: bool = False,
+        multi_turn_mode: bool = False,
         api_key: str | None = os.getenv("OPENAI_API_KEY"),
         base_url: str | None = os.getenv("OPENAI_API_BASE_URL"),
     ) -> None:
@@ -24,19 +24,20 @@ class OpenAIChat:
             base_url=base_url,
         )
         self.reset()
-        self.multi_turn = multi_turn
+        self.multi_turn_mode = multi_turn_mode
     
 
     def reset(self) -> None:
         self.messgages = [
             {
                 "role": "system",
-                "content": self._build_content(self.system_prompt),
+                "content": self.format_content(self.system_prompt),
             }
         ] if self.system_prompt is not None else []
 
 
-    def _build_content(self, content_sequence: str | Image.Image | list[str | Image.Image]) -> list[dict]:
+    @staticmethod
+    def format_content(content_sequence: str | Image.Image | list[str | Image.Image]) -> list[dict]:
         content = []
         if not isinstance(content_sequence, list):
             content_sequence = [content_sequence]
@@ -68,12 +69,12 @@ class OpenAIChat:
         return content
 
 
-    def ask(
+    def __call__(
             self, 
-            content_sequence: str | Image.Image | list[str | Image.Image],
+            query: str | Image.Image | list[str | Image.Image],
             **kwargs,
         ) -> str:
-        content = self._build_content(content_sequence)
+        content = self.format_content(query)
         self.messgages.append(
             {
                 "role": "user",
@@ -92,6 +93,11 @@ class OpenAIChat:
                 "content": assistant_response_content,
             }
         )
-        if self.multi_turn is False:
+        if self.multi_turn_mode is False:
             self.reset()
         return assistant_response_content
+
+
+if __name__ == "__main__":
+    chat = OpenAIChat()
+    print(chat("Hello"))

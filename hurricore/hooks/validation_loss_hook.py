@@ -4,9 +4,9 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from hurricore.hooks import HurricoreHook, CheckpointHook
+from hurricore.hooks import HurricoreHook
 from hurricore.trainers import HurricoreTrainer
-from hurricore.utils import env, AttributeDict
+from hurricore.utils import env, AttributeDict, Checkpointer, HuggingfaceModelSaver
 
 
 class ValidationLossHook(HurricoreHook):
@@ -34,14 +34,14 @@ class ValidationLossHook(HurricoreHook):
 
 
     def execute_on_step_end(self) -> None:
-        if (self.trainer.context.global_step + 1) % self.interval != 0:
+        if (self.trainer.training_context.global_step + 1) % self.interval != 0:
             return
-        env.logger.info(f'Evaluating model at step {self.trainer.context.global_step + 1}...')
+        env.logger.info(f'Evaluating model at step {self.trainer.training_context.global_step + 1}...')
         self.evaluate()
 
 
     def execute_on_training_end(self) -> None:
-        env.logger.info(f'Evaluating model at step {self.trainer.context.global_step + 1}...')
+        env.logger.info(f'Evaluating model at step {self.trainer.training_context.global_step + 1}...')
         self.evaluate()
 
 
@@ -62,15 +62,13 @@ class ValidationLossHook(HurricoreHook):
         mean_loss = self.trainer.accelerator.gather(all_losses).mean().item()
         if mean_loss < self.records.best_loss:
             self.records.best_loss = mean_loss
-            self.records.best_step = self.trainer.context.global_step
-            # Save the best checkpoint
-            if "CheckpointHook" in self.trainer.hooks:
-                ckpt_hook: CheckpointHook = self.trainer.hooks["CheckpointHook"]
-                ckpt_path = ckpt_hook.folder_path / "ckpt_lowest_val_loss"
-                ckpt_path = env.checkpointer.save_state(ckpt_path)
+            self.records.best_step = self.trainer.training_context.global_step
+            if isinstance(env.checkpointer, Checkpointer):
+                ckpt_path = env.checkpointer.save_state("ckpt_lowest_val_loss")
                 env.logger.info(f"Saved best checkpoint to {ckpt_path}")
-            else:
-                env.logger.warning("No checkpoint hook found")
+            if isinstance(env.huggingface_model_saver, HuggingfaceModelSaver):
+                model_saving_path = env.huggingface_model_saver.save("lowest_val_loss_model")
+                env.logger.info(f"Saved best model to {model_saving_path}")
 
         env.logger.info(
             f"Validation loss: {mean_loss:.4f} "
@@ -79,10 +77,10 @@ class ValidationLossHook(HurricoreHook):
         env.history_recorder.record(
             tag='validation_loss',
             value=mean_loss,
-            global_step=self.trainer.context.global_step + 1
+            global_step=self.trainer.training_context.global_step + 1
         )
         env.tensor_board_writer.add_scalar(
             tag='Loss/Validation',
             scalar_value=mean_loss,
-            global_step=self.trainer.context.global_step + 1,
+            global_step=self.trainer.training_context.global_step + 1,
         )

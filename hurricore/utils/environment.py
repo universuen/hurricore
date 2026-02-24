@@ -6,6 +6,7 @@ from hurricore.utils.checkpointer import Checkpointer
 from hurricore.utils.history_recorder import HistoryRecorder
 from hurricore.utils.singleton import Singleton
 from hurricore.utils.dummy import Dummy
+from hurricore.utils.huggingface_model_saver import HuggingfaceModelSaver
 
 
 class Environment(metaclass=Singleton):
@@ -14,10 +15,9 @@ class Environment(metaclass=Singleton):
     process_logger: Logger
     history_recorder: HistoryRecorder
     tensor_board_writer: SummaryWriter
-    # lr_status: str
     checkpointer: Checkpointer
     accelerator: Accelerator
-
+    huggingface_model_saver: HuggingfaceModelSaver
 
     def __getattr__(self, name: str):
         return Dummy()

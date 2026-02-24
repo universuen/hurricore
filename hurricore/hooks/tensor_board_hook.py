@@ -10,7 +10,7 @@ from hurricore.trainers import HurricoreTrainer
 from hurricore.utils import (
     Dummy,
     env,
-    auto_name,
+    auto_name_iterable,
     launch_tensor_board,
 )
 
@@ -50,20 +50,20 @@ class TensorBoardHook(HurricoreHook):
     def execute_on_step_end(self) -> None:
         if not self.trainer.accelerator.is_main_process:
             return
-        if (self.trainer.context.global_step + 1) % self.interval != 0:
+        if (self.trainer.training_context.global_step + 1) % self.interval != 0:
             return
         # Record LR
-        for optimizer_name, optimizer in zip(auto_name(self.trainer.optimizers), self.trainer.optimizers):
+        for optimizer_name, optimizer in zip(auto_name_iterable(self.trainer.optimizers), self.trainer.optimizers):
             self.writer.add_scalar(
                 tag=f'LR/{optimizer_name}',
                 scalar_value=optimizer.param_groups[0]['lr'],
-                global_step=self.trainer.context.global_step,
+                global_step=self.trainer.training_context.global_step,
             )
         # Record loss
         self.writer.add_scalar(
             tag='Loss/Training',
-            scalar_value=self.trainer.context.step_loss.item(),
-            global_step=self.trainer.context.global_step,
+            scalar_value=self.trainer.training_context.step_loss.item(),
+            global_step=self.trainer.training_context.global_step,
         )
     
     
@@ -77,7 +77,7 @@ class TensorBoardHook(HurricoreHook):
     def _collect_param_grad_data(self) -> list:
         param_grad_data = []
         models = self.trainer.models
-        for model_name, model in zip(auto_name(models), models):
+        for model_name, model in zip(auto_name_iterable(models), models):
             for layer_name, param in model.named_parameters():
                 param_data = {
                     'model_name': model_name,
@@ -96,7 +96,7 @@ class TensorBoardHook(HurricoreHook):
             param_grad_data = self._collect_param_grad_data()
             self._record_parameters_and_gradients(
                 param_grad_data=param_grad_data, 
-                step=self.trainer.context.global_step,
+                step=self.trainer.training_context.global_step,
             )
         self.trainer.accelerator.wait_for_everyone()
 
@@ -120,7 +120,7 @@ class TensorBoardHook(HurricoreHook):
     def execute_on_step_start(self) -> None:
         if not self.trainer.accelerator.is_main_process:
             return
-        if self.trainer.context.global_step == 0:
+        if self.trainer.training_context.global_step == 0:
             shutil.rmtree(self.folder_path)
             while self.folder_path.exists():
                 env.logger.info(f'Waiting for {self.folder_path} to be deleted...')
@@ -138,7 +138,7 @@ class TensorBoardHook(HurricoreHook):
         self._shutdown_writer()
         self.writer = SummaryWriter(
             log_dir=self.folder_path, 
-            purge_step=self.trainer.context.global_step
+            purge_step=self.trainer.training_context.global_step
         )
         env.tensor_board_writer = self.writer
 

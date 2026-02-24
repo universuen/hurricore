@@ -3,7 +3,7 @@ import os
 from transformers import AutoTokenizer, Qwen2_5_VLProcessor
 from PIL import Image
 
-from hurricore.utils import LLMSFTCollator, QwenVLSFTCollator
+from hurricore.collators import LLMSFTCollator, VLMSFTCollator
 
 
 def test_llm_sft_collator():
@@ -41,7 +41,7 @@ def test_llm_sft_collator():
 
 def test_qwen_vl_sft_collator():
     processor = Qwen2_5_VLProcessor.from_pretrained("Qwen/Qwen2.5-VL-3B-Instruct")
-    collator = QwenVLSFTCollator(processor=processor)
+    collator = VLMSFTCollator(processor=processor)
     conversations = [
         [
             {"role": "user", "content": [Image.new("RGB", (100, 100)), Image.new("RGB", (200, 200)), "What is this?"]},

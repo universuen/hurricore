@@ -1,7 +1,7 @@
 import unittest
 from torch.utils.data import Dataset
 
-from hurricore.utils.datasets.deduplicated_dataset import DeduplicatedDataset, hash_anything
+from hurricore.datasets.deduplicated_dataset import DeduplicatedDataset, hash_anything
 
 # Mock dataset for testing
 class MockDataset(Dataset):

@@ -4,7 +4,7 @@ from tqdm import tqdm
 
 from hurricore.hooks import HurricoreHook
 from hurricore.trainers import HurricoreTrainer
-from hurricore.utils import env, AttributeDict
+from hurricore.utils import env, AttributeDict, Checkpointer, HuggingfaceModelSaver
 
 
 class LLMRLEvaluationHook(HurricoreHook):
@@ -32,7 +32,7 @@ class LLMRLEvaluationHook(HurricoreHook):
 
 
     def execute_on_step_end(self) -> None:
-        if (self.trainer.context.global_step + 1) % self.interval == 0:
+        if (self.trainer.training_context.global_step + 1) % self.interval == 0:
             self.evaluate()
 
     
@@ -48,13 +48,14 @@ class LLMRLEvaluationHook(HurricoreHook):
         all_rewards = []
         all_rsp_lens = []
         for batch in data_loader:
-            grouped_completions, grouped_rewards = self.trainer.get_grouped_completions_with_rewards(
+            group_completions_ids, group_rewards = self.trainer.get_group_completions_ids_with_rewards(
                 batch=batch,
                 group_size=1,
             )
-            completions, rewards = grouped_completions[0], grouped_rewards[0]
-            all_rewards.extend(rewards)
-            all_rsp_lens.extend([len(x) for x in completions])
+            batch_completions = self.trainer.tokenizer.batch_decode(group_completions_ids[0], skip_special_tokens=True)
+            batch_rewards = group_rewards[0]
+            all_rewards.extend(batch_rewards)
+            all_rsp_lens.extend([self.trainer.get_num_tokens(i) for i in batch_completions])
         all_rewards = torch.tensor(all_rewards, device=self.trainer.accelerator.device, dtype=torch.float32)
         all_rsp_lens = torch.tensor(all_rsp_lens, device=self.trainer.accelerator.device, dtype=torch.float32)
         self.trainer.accelerator.wait_for_everyone()
@@ -63,15 +64,13 @@ class LLMRLEvaluationHook(HurricoreHook):
 
         if avg_reward > self.records.best_reward:
             self.records.best_reward = avg_reward
-            self.records.best_step = self.trainer.context.global_step + 1
-            # Save the best checkpoint
-            if "CheckpointHook" in self.trainer.hooks:
-                ckpt_hook = self.trainer.hooks["CheckpointHook"]
-                ckpt_path = ckpt_hook.folder_path / "ckpt_highest_val_reward"
-                ckpt_path = env.checkpointer.save_state(ckpt_path)
+            self.records.best_step = self.trainer.training_context.global_step + 1
+            if isinstance(env.checkpointer, Checkpointer):
+                ckpt_path = env.checkpointer.save_state("ckpt_highest_val_reward")
                 env.logger.info(f"Saved best checkpoint to {ckpt_path}")
-            else:
-                env.logger.warning("No checkpoint hook found")
+            if isinstance(env.huggingface_model_saver, HuggingfaceModelSaver):
+                model_saving_path = env.huggingface_model_saver.save("highest_val_reward_model")
+                env.logger.info(f"Saved best model to {model_saving_path}")
 
         env.logger.info(
             f"Validation reward: {avg_reward:.2f} "
@@ -82,21 +81,21 @@ class LLMRLEvaluationHook(HurricoreHook):
         env.tensor_board_writer.add_scalar(
             tag='Reward/Validation',
             scalar_value=avg_reward,
-            global_step=self.trainer.context.global_step + 1,
+            global_step=self.trainer.training_context.global_step + 1,
         )
         env.tensor_board_writer.add_scalar(
             tag='Response Length/Validation',
             scalar_value=avg_rsp_len,
-            global_step=self.trainer.context.global_step + 1,
+            global_step=self.trainer.training_context.global_step + 1,
         )
 
         env.history_recorder.record(
             tag='validation_reward',
             value=avg_reward,
-            global_step=self.trainer.context.global_step + 1
+            global_step=self.trainer.training_context.global_step + 1
         )
         env.history_recorder.record(
             tag='validation_response_length',
             value=avg_rsp_len,
-            global_step=self.trainer.context.global_step + 1
+            global_step=self.trainer.training_context.global_step + 1
         )

@@ -217,7 +217,7 @@ def get_time_stamp() -> str:
     return now.strftime("%Y%m%d-%H%M%S")
 
 
-def auto_name(iterable: Iterable) -> list[str]:
+def auto_name_iterable(iterable: Iterable) -> list[str]:
     names = []
     names_cnt = {}
     for i in iterable:
@@ -257,7 +257,7 @@ def get_params_details_table(*models: tuple[torch.nn.Module], format_numbers: bo
     if len(models) == 0:
         return "\n\tNo models provided.\n"
 
-    model_names = auto_name(models)
+    model_names = auto_name_iterable(models)
     param_data = []
     max_total_str_len = 0
     max_trainable_str_len = 0
@@ -411,10 +411,10 @@ def split_dataset(
         batch_size: int = 32,
         random_seed: int = 42,
     ) -> tuple[Dataset, Dataset]:
-    random.seed(random_seed)
     if get_label_fn is None:
         print("get_label_fn not provided. Using random split.")
         all_indices = list(range(len(dataset)))
+        random.seed(random_seed)
         random.shuffle(all_indices)
         num_training_indices = int(training_ratio * len(all_indices))
         training_indices = all_indices[:num_training_indices]
@@ -434,6 +434,7 @@ def split_dataset(
                 num_training_indices -= 1
             if num_training_indices == 0:
                 num_training_indices += 1
+            random.seed(random_seed)
             random.shuffle(indices)
             training_indices.extend(indices[:num_training_indices])
             validation_indices.extend(indices[num_training_indices:])

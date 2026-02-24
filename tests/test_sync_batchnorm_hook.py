@@ -25,11 +25,11 @@ class _TestTrainer(HurricoreTrainer):
             data_loaders=[DataLoader(range(1), batch_size=1, shuffle=True)],
             accelerator=Accelerator(),
             num_epochs=1,
+            hooks=[SyncBatchNormHook(self)]
         )
-        self.hooks = [SyncBatchNormHook(self)]
         
     
-    def compute_loss(self) -> torch.Tensor:
+    def compute_loss(self, batch) -> torch.Tensor:
         return torch.tensor(0.0, requires_grad=True)
 
 

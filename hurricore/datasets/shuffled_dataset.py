@@ -5,9 +5,11 @@ import random
 
 
 class ShuffledDataset(Dataset):
-    def __init__(self, dataset: Dataset):
+    def __init__(self, dataset: Dataset, seed: int = 42):
+        super().__init__()
         self.dataset = dataset
         self.indices = list(range(len(dataset)))
+        random.seed(seed)
         random.shuffle(self.indices)
 
     def __len__(self) -> int:

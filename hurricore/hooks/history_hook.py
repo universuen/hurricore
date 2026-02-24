@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-import pickle
+import json
 import shutil
 from time import sleep
 
@@ -39,12 +39,12 @@ class HistoryHook(HurricoreHook):
     def execute_on_step_end(self) -> None:
         if not self.trainer.accelerator.is_main_process:
             return
-        if (self.trainer.context.global_step + 1) % self.interval != 0:
+        if (self.trainer.training_context.global_step + 1) % self.interval != 0:
             return
         self.recoder.record(
             tag='training_loss',
-            value=self.trainer.context.step_loss.item(),
-            global_step=self.trainer.context.global_step,
+            value=self.trainer.training_context.step_loss.item(),
+            global_step=self.trainer.training_context.global_step,
         )
 
 
@@ -57,7 +57,7 @@ class HistoryHook(HurricoreHook):
     def execute_on_step_start(self) -> None:
         if not self.trainer.accelerator.is_main_process:
             return
-        if self.trainer.context.global_step == 0:
+        if self.trainer.training_context.global_step == 0:
             shutil.rmtree(self.folder_path)
             while self.folder_path.exists():
                 env.logger.info(f'Waiting for {self.folder_path} to be deleted...')
@@ -68,12 +68,17 @@ class HistoryHook(HurricoreHook):
     def _recover_from_checkpoint(self) -> None:
         if not self.trainer.accelerator.is_main_process:
             return
-        histories = self.recoder.load(self.folder_path)
+
+        histories = HistoryRecorder.load(self.folder_path)
+        
+        current_step = self.trainer.training_context.global_step
+
         for tag, history in histories.items():
-            histories[tag] = [
-                record 
-                for record in history 
-                if record['global_step'] < self.trainer.context.global_step
+            valid_records = [
+                record for record in history 
+                if record['global_step'] < current_step
             ]
-            with (self.folder_path / f'{tag}.pkl').open('wb') as f:
-                pickle.dump(histories[tag], f)
+            target_file_path = self.folder_path / f'{tag}.jsonl'
+            with target_file_path.open('w', encoding='utf-8') as f:
+                for record in valid_records:
+                    f.write(json.dumps(record, ensure_ascii=False) + '\n')

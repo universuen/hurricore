@@ -8,13 +8,15 @@ from accelerate import Accelerator
 
 
 class Checkpointer:
-    def __init__(self, accelerator: Accelerator):
+    def __init__(self, accelerator: Accelerator, folder_path: Path):
         self.accelerator = accelerator
+        self.folder_path = folder_path
         self.register_state = accelerator.register_for_checkpointing
         self.registered_actions = []
 
 
-    def save_state(self, ckpt_path: Path) -> Path:
+    def save_state(self, name: str) -> Path:
+        ckpt_path = self.folder_path / name
         if ckpt_path.exists() and self.accelerator.is_main_process:
             shutil.rmtree(ckpt_path)
         self.accelerator.wait_for_everyone()
@@ -22,8 +24,8 @@ class Checkpointer:
         return ckpt_path
 
 
-    def load_state(self, ckpt_dir: Path) -> None:
-        self.accelerator.load_state(str(ckpt_dir))
+    def load_state(self, ckpt_path: Path) -> None:
+        self.accelerator.load_state(str(ckpt_path))
     
 
     def reprepare_data_loader(self, data_loader: DataLoader, seed: int = 42) -> DataLoader:

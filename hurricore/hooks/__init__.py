@@ -6,5 +6,7 @@ from hurricore.hooks.checkpoint_hook import CheckpointHook  # noqa: F401
 from hurricore.hooks.sync_batch_norm_hook import SyncBatchNormHook  # noqa: F401
 from hurricore.hooks.history_hook import HistoryHook  # noqa: F401
 from hurricore.hooks.classification_evaluation_hook import ClassificationEvaluationHook  # noqa: F401
+from hurricore.hooks.huggingface_model_save_hook import HuggingfaceModelSaveHook  # noqa: F401
 from hurricore.hooks.validation_loss_hook import ValidationLossHook  # noqa: F401
 from hurricore.hooks.llm_rl_evaluation_hook import LLMRLEvaluationHook  # noqa: F401
+

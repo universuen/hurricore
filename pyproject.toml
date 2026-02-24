@@ -7,7 +7,6 @@ name = "hurricore"
 version = "0.1.1"
 description = "A deep learning framework based on PyTorch and Accelerate."
 readme = { file = "README.md", content-type = "text/markdown" }
-license = { file = "LICENSE" }
 authors = [
     { name = "universuen", email = "universuen@gmail.com" }
 ]
@@ -24,7 +23,7 @@ dependencies = [
     "openai",
     "transformers",
     "qwen_vl_utils",
-    "deepspeed==0.15.4",
+    "deepspeed",
     "nvitop",
     "vllm",
 ]
@@ -32,8 +31,10 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/universuen/hurricore"
 
-[tool.setuptools]
-packages = { find = { include = ["hurricore"] } }
+[tool.setuptools.packages.find]
+where = ["."] 
+include = ["hurricore*"]
+namespaces = false 
 
 [tool.pyright]
 include = ["hurricore"]
