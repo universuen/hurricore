@@ -102,7 +102,7 @@ cd hurricore
 # Install the package
 bash install.sh
 
-# Or install with project dependencies
+# Or install with a named project
 bash install.sh your_project_name
 ```
 
