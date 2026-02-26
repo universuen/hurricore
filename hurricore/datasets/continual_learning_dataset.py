@@ -7,16 +7,16 @@ from torch.utils.data import Dataset
 class ContinualLearningDataset(Dataset):
     def __init__(
         self,
-        replay_dataset: Dataset,
+        memory_dataset: Dataset,
         update_dataset: Dataset,
-        replay_ratio: float = 0.5,
+        memory_propotion: float = 0.5,
     ) -> None:
         super().__init__()
-        self.replay_dataset = replay_dataset
+        self.memory_dataset = memory_dataset
         self.update_dataset = update_dataset
-        self.replay_ratio = replay_ratio
+        self.memory_propotion = memory_propotion
         self.num_update_samples = len(update_dataset)
-        self.num_memory_samples = int((replay_ratio / (1 - replay_ratio)) * len(update_dataset))
+        self.num_memory_samples = int((memory_propotion / (1 - memory_propotion)) * len(update_dataset))
     
 
     def __len__(self) -> int:
@@ -24,4 +24,4 @@ class ContinualLearningDataset(Dataset):
     
 
     def __getitem__(self, index: int) -> Any:
-        return self.update_dataset[index] if index < self.num_update_samples else random.choice(self.replay_dataset)
+        return self.update_dataset[index] if index < self.num_update_samples else random.choice(self.memory_dataset)
